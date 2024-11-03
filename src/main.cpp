@@ -3,12 +3,16 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <glm/vec3.hpp>
+#include "lib/Camera/camera.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 const uint WIDTH = 640;
 const uint HEIGHT = 480;
+
+const float orbitingSpeed = 1e-4;
 
 #pragma region shader utils
 std::string loadShaderSource(const char* filePath) {
@@ -145,10 +149,16 @@ int main(int, char**) {
     stbi_image_free(data);
     #pragma endregion
 
+    Camera cam(glm::vec3(0.f, 0.f, 15.f));
+
     glUseProgram(shaderProgram);
     glUniform1i(glGetUniformLocation(shaderProgram, "background_texture"), 0);
+    double prevTime = 0.;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
+
+        double time = glfwGetTime();
+        double dt = time - prevTime;
 
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -166,10 +176,16 @@ int main(int, char**) {
         glUniform1f(glGetUniformLocation(shaderProgram, "time"), (float)glfwGetTime());
         glUniform2f(glGetUniformLocation(shaderProgram, "resolution"), width, height);
 
-        glUniform3f(glGetUniformLocation(shaderProgram, "cam_pos"), 0.f, 0.f, 15.f);
-        glUniform3f(glGetUniformLocation(shaderProgram, "cam_forward"), 0.f, 0.f, -1.f);
-        glUniform3f(glGetUniformLocation(shaderProgram, "cam_right"), 1.f, 0.f, 0.f);
-        glUniform3f(glGetUniformLocation(shaderProgram, "cam_up"), 0.f, 1.f, 0.f);
+        cam.rotateAround(orbitingSpeed * dt, glm::vec3(0., 0., 0.));
+        glm::vec3 camPos = cam.getPos();
+        glm::vec3 camForward = cam.getForward();
+        glm::vec3 camRight = cam.getRight();
+        glm::vec3 camUp = cam.getUp();
+
+        glUniform3f(glGetUniformLocation(shaderProgram, "cam_pos"), camPos.x, camPos.y, camPos.z);
+        glUniform3f(glGetUniformLocation(shaderProgram, "cam_forward"), camForward.x, camForward.y, camForward.z);
+        glUniform3f(glGetUniformLocation(shaderProgram, "cam_right"), camRight.x, camRight.y, camRight.z);
+        glUniform3f(glGetUniformLocation(shaderProgram, "cam_up"), camUp.x, camUp.y, camUp.z);
 
         glfwSwapBuffers(window);
     }

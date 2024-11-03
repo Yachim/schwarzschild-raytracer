@@ -8,6 +8,13 @@ add_executable(schwarzschild_raytracer
     src/main.cpp
     src/stb_image.h
     src/glad.c
+
+    src/lib/Camera/camera.cpp
+    src/lib/Camera/camera.h
+    src/lib/Object/object.cpp
+    src/lib/Object/object.h
+    src/lib/utils/utils.cpp
+    src/lib/utils/utils.h
 )
 
 add_custom_target(copy_assets ALL
