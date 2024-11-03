@@ -12,7 +12,7 @@
 const uint WIDTH = 640;
 const uint HEIGHT = 480;
 
-const float orbitingSpeed = 1e-4;
+const float orbitingSpeed = 0.5;
 
 #pragma region shader utils
 std::string loadShaderSource(const char* filePath) {
@@ -176,7 +176,7 @@ int main(int, char**) {
         glUniform1f(glGetUniformLocation(shaderProgram, "time"), (float)glfwGetTime());
         glUniform2f(glGetUniformLocation(shaderProgram, "resolution"), width, height);
 
-        cam.rotateAround(orbitingSpeed * dt, glm::vec3(0., 0., 0.));
+        cam.rotateAround(orbitingSpeed * dt);
         glm::vec3 camPos = cam.getPos();
         glm::vec3 camForward = cam.getForward();
         glm::vec3 camRight = cam.getRight();
@@ -188,6 +188,7 @@ int main(int, char**) {
         glUniform3f(glGetUniformLocation(shaderProgram, "cam_up"), camUp.x, camUp.y, camUp.z);
 
         glfwSwapBuffers(window);
+        prevTime = time;
     }
 
     glDeleteProgram(shaderProgram);

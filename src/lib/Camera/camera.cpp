@@ -43,8 +43,8 @@ void Camera::calculateUp() {
 }
 
 void Camera::rotateAround(float angle, glm::vec3 point, glm::vec3 axis) {
-    m_pos = rotateVector(angle, m_pos, point, axis);
-    m_forward = rotateVector(angle, m_forward, point, axis);
-    m_right = rotateVector(angle, m_right, point, axis);
-    m_up = rotateVector(angle, m_up, point, axis);
+    m_pos = rotateVector(angle, m_pos - point, axis) + point;
+    m_forward = rotateVector(angle, m_forward, axis);
+    m_right = rotateVector(angle, m_right, axis);
+    m_up = rotateVector(angle, m_up, axis);
 }

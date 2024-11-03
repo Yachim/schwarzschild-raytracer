@@ -3,11 +3,9 @@
 
 // https://math.stackexchange.com/a/1432182/1276440
 // a: v, b: axis
-glm::vec3 rotateVector(float angle, glm::vec3 vec, glm::vec3 point, glm::vec3 axis) {
-    glm::vec3 v = vec - point;
-
-    glm::vec3 perpPart = dot(v, axis) / dot(axis, axis) * axis;
-    glm::vec3 orthPart = v - perpPart;
+glm::vec3 rotateVector(float angle, glm::vec3 vec, glm::vec3 axis) {
+    glm::vec3 perpPart = dot(vec, axis) / dot(axis, axis) * axis;
+    glm::vec3 orthPart = vec - perpPart;
     float orthPartLength = orthPart.length();
 
     glm::vec3 w = cross(axis, orthPart);
@@ -16,7 +14,5 @@ glm::vec3 rotateVector(float angle, glm::vec3 vec, glm::vec3 point, glm::vec3 ax
     float x2 = sin(angle) / w.length();
 
     glm::vec3 newOrthPart = orthPartLength * (x1 * orthPart + x2 * w);
-    glm::vec3 newV = newOrthPart + perpPart;
-
-    return newV + point;
+    return newOrthPart + perpPart;
 }
