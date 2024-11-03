@@ -1,7 +1,7 @@
-#include <glm/vec3.hpp>
+#ifndef CAMERA_H
+#define CAMERA_H
 
-#ifndef CAMERA_DEFINED
-#define CAMERA_DEFINED
+#include <glm/vec3.hpp>
 #include "../Object/object.h"
 
 class Camera: public Object {

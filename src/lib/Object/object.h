@@ -1,7 +1,7 @@
-#include <glm/vec3.hpp>
+#ifndef OBJECT_H
+#define OBJECT_H
 
-#ifndef OBJECT_DEFINED
-#define OBJECT_DEFINED
+#include <glm/vec3.hpp>
 
 class Object {
 public:
