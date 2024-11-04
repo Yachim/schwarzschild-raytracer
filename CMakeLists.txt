@@ -22,6 +22,7 @@ add_custom_target(copy_assets ALL
 )
 add_dependencies(schwarzschild_raytracer copy_assets)
 
+include_directories(include)
 target_link_libraries(schwarzschild_raytracer
     glfw
     OpenGL::GL
