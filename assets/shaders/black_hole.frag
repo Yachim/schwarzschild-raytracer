@@ -27,12 +27,32 @@ uniform int max_revolutions = 2;
 uniform float u_f = 0.001;
 uniform float radial_treshold = 0.999; // minimum value of v_0 . n when the trajectory is considered radial
 
+// Lighting parameters
+struct Light {
+    vec3 position;
+    vec3 color;
+    float intensity;
+};
+
+uniform Light light = Light(
+    vec3(10.0, 10.0, 10.0),  // position
+    vec3(1.0, 1.0, 1.0),     // color
+    1.0                      // intensity
+);
+
+struct Material {
+    vec4 color;
+    float ambient;
+    float diffuse;
+    float specular;
+    float shininess;
+};
+
 struct Sphere {
     vec3 center;
     float radius;
     bool opaque;
-    vec4 color;
-    bool uv_colors;
+    Material material;
 };
 
 // assuming normalized p
@@ -69,6 +89,29 @@ vec2 rk4_step(float u_i, float du_i, float delta_phi) {
 
 float square_vector(vec3 v) {
     return dot(v, v);
+}
+
+vec3 calculate_lighting(vec3 point, vec3 normal, vec3 view_dir, Material material) {
+    vec3 base_color = material.color.rgb;
+    
+    // Ambient
+    vec3 ambient = material.ambient * base_color;
+    
+    // Diffuse
+    vec3 light_dir = normalize(light.position - point);
+    float diff = max(dot(normal, light_dir), 0.0);
+    vec3 diffuse = material.diffuse * diff * light.color * base_color;
+    
+    // Specular
+    vec3 reflect_dir = reflect(-light_dir, normal);
+    float spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
+    vec3 specular = material.specular * spec * light.color;
+    
+    // Attenuation
+    float distance = length(light.position - point);
+    float attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * distance * distance);
+    
+    return (ambient + (diffuse + specular) * attenuation) * light.intensity;
 }
 
 // #region intersections
@@ -117,7 +160,6 @@ bool intersect_closest_sphere(vec3 origin, vec3 dir, Sphere spheres[MAX_SPHERES]
     return hit;
 }
 
-// returns true if opaque - return early
 bool intersect(vec3 origin, vec3 dir, out vec4 color, Sphere spheres[MAX_SPHERES], float max_lambda) {
     color = vec4(0., 0., 0., 0.);
     bool opaque = false;
@@ -125,18 +167,23 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, Sphere spheres[MAX_SPHERES
     vec3 intersection_point;
     Sphere sphere;
     if (intersect_closest_sphere(origin, dir, spheres, intersection_point, sphere, max_lambda)) {
-        if (sphere.uv_colors) {
-            vec2 tex_coords = sphere_map(normalize(intersection_point - sphere.center));
-            color += vec4(tex_coords.x, tex_coords.y, 1., sphere.color.w);
-        }
-        else {
-            color += sphere.color;
-        }
+        vec3 normal = normalize(intersection_point - sphere.center);
+        vec3 view_dir = normalize(cam_pos - intersection_point);
+        
+        vec3 lit_color = calculate_lighting(
+            intersection_point,
+            normal,
+            view_dir,
+            sphere.material
+        );
+        
+        color = vec4(lit_color, sphere.material.color.a);
         opaque = sphere.opaque;
     }
 
     return opaque;
 }
+
 bool intersect(vec3 origin, vec3 dir, out vec4 color, Sphere spheres[MAX_SPHERES]) {
     return intersect(origin, dir, color, spheres, -1.);
 }
@@ -145,16 +192,52 @@ vec4 get_bg(vec3 dir) {
     vec2 tex_coords = sphere_map(dir);
     return texture(background_texture, tex_coords);
 }
-// #endregion
 
 void main() {
     float ray_forward = 1. / tan(cam_fov / 360. * PI);
     float max_angle = 2. * float(max_revolutions) * PI;
 
+    // Updated sphere definitions with materials
     Sphere spheres[MAX_SPHERES] = Sphere[MAX_SPHERES](
-        Sphere(vec3(0., 0., 0.), 1., true, vec4(0., 0., 0., 1.), false), // event horizon
-        Sphere(vec3(0., 0., 10.), 1., true, vec4(0., 1., 0., 1.), false),
-        Sphere(7.5 * normalize(vec3(1., 0., 1.)), 2., true, vec4(0., 0., 1., 1.), false)
+        // Event horizon
+        Sphere(
+            vec3(0., 0., 0.), 
+            1., 
+            true, 
+            Material(
+                vec4(0., 0., 0., 1.),
+                0.1,  // ambient
+                0.0,  // diffuse (black hole absorbs all light)
+                0.0,  // specular
+                32.0 // shininess
+            )
+        ),
+        // Green sphere
+        Sphere(
+            vec3(0., 0., 10.),
+            1.,
+            true,
+            Material(
+                vec4(0., 1., 0., 1.),
+                0.1,   // ambient
+                0.9,   // diffuse
+                0.5,   // specular
+                32.0  // shininess
+            )
+        ),
+        // Blue sphere
+        Sphere(
+            7.5 * normalize(vec3(1., 0., 1.)),
+            2.,
+            true,
+            Material(
+                vec4(0., 0., 1., 1.),
+                0.1,   // ambient
+                0.9,   // diffuse
+                0.5,   // specular
+                32.0  // shininess
+            )
+        )
     );
 
     vec3 ray = normalize(cam_right * uv.x + cam_up * uv.y * resolution.y / resolution.x + ray_forward * cam_forward);
