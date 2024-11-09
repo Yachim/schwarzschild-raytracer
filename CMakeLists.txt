@@ -9,10 +9,22 @@ add_executable(schwarzschild_raytracer
     src/stb_image.h
     src/glad.c
 
+
     src/lib/Camera/camera.cpp
     src/lib/Camera/camera.h
+
     src/lib/Object/object.cpp
     src/lib/Object/object.h
+
+    src/lib/Material/material.cpp
+    src/lib/Material/material.h
+
+    src/lib/Sphere/sphere.cpp
+    src/lib/Sphere/sphere.h
+
+    src/lib/Light/light.cpp
+    src/lib/Light/light.h
+
     src/lib/utils/utils.cpp
     src/lib/utils/utils.h
 )
