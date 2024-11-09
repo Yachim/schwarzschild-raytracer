@@ -23,7 +23,7 @@ uniform float cam_fov = 90.; // degrees, horizontal fov
 uniform int max_steps = 1000;
 uniform int max_revolutions = 2;
 
-uniform float u_f = 0.001;
+uniform float u_f = 0.01;
 uniform float radial_treshold = 0.999; // minimum value of v_0 . n when the trajectory is considered radial
 
 // Lighting parameters
@@ -59,17 +59,18 @@ struct Sphere {
 uniform int num_spheres;
 uniform Sphere spheres[MAX_SPHERES];
 
+const Material BLANK_MAT = Material(
+    vec4(0.0, 0.0, 0.0, 1.0),   // color
+    0.1,                        // ambient
+    0.0,                        // diffuse (black hole absorbs all light)
+    0.0,                        // specular
+    32.0                        // shininess
+);
 const Sphere BLACK_HOLE = Sphere(
     vec3(0.0, 0.0, 0.0),  // center
     1.0,                  // radius
     true,                 // opaque
-    Material(             // material
-        vec4(0.0, 0.0, 0.0, 1.0),  // color
-        0.1,                        // ambient
-        0.0,                        // diffuse (black hole absorbs all light)
-        0.0,                        // specular
-        32.0                        // shininess
-    )
+    BLANK_MAT
 );
 
 // assuming normalized p
@@ -165,6 +166,9 @@ bool sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, out vec3 intersectio
     intersection_point = origin + lambda * dir;
     return lambda >= 0 && (max_lambda < 0. || lambda < max_lambda);
 }
+bool sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, out vec3 intersection_point) {
+    return sphere_intersect(origin, dir, sphere, intersection_point, -1.);
+}
 
 bool intersect_closest_sphere(vec3 origin, vec3 dir, out vec3 closest_intersection_point, out Sphere closest_sphere, float max_lambda) {
     float min_dist = -1.;
@@ -238,7 +242,7 @@ void main() {
     vec3 normal_vec = normalize(cam_pos);
     bool hit_opaque;
     FragColor = vec4(0., 0., 0., 0.);
-    if (abs(dot(ray, normal_vec)) >= radial_treshold) {
+    if (abs(dot(ray, normal_vec)) >= radial_treshold) { // if radial trajectory
         vec4 intersection_color;
         hit_opaque = intersect(cam_pos, ray, intersection_color);
         FragColor += intersection_color;
@@ -250,12 +254,35 @@ void main() {
 
     vec3 prev_ray_pos;
     vec3 ray_pos = cam_pos;
-    vec3 ray_dir;
     float u = 1. / length(cam_pos);
     float du = -u * dot(ray, normal_vec) / dot(ray, tangent_vec);
 
     float phi = 0.;
     for (int i = 0; i < max_steps; i++) {
+        if (u < u_f) {
+            vec3 u_f_intersection_point;
+            if(!sphere_intersect(ray_pos, ray, Sphere(vec3(0., 0., 0.), 1./u_f, false, BLANK_MAT), u_f_intersection_point)) {
+                vec4 intersection_color;
+                hit_opaque = intersect(ray_pos, ray, intersection_color);
+                FragColor += intersection_color;
+                if (!hit_opaque) FragColor += get_bg(ray);
+                return;
+            }
+
+            normal_vec = normalize(u_f_intersection_point);
+            if (abs(dot(ray, normal_vec)) >= radial_treshold) { // if radial trajectory
+                vec4 intersection_color;
+                hit_opaque = intersect(cam_pos, ray, intersection_color);
+                FragColor += intersection_color;
+                if (!hit_opaque) FragColor += get_bg(ray);
+                return;
+            }
+
+            tangent_vec = normalize(cross(cross(normal_vec, ray), normal_vec));
+            u = 1. / length(u_f_intersection_point);
+            du = -u * dot(ray, normal_vec) / dot(ray, tangent_vec);
+        }
+
         float step_size = (max_angle - phi) / float(max_steps - i);
         phi += step_size;
 
@@ -269,13 +296,13 @@ void main() {
         ray_pos = (cos(phi) * normal_vec + sin(phi) * tangent_vec) / u;
         vec3 delta_ray = ray_pos - prev_ray_pos;
         float ray_length = length(delta_ray);
-        ray_dir = delta_ray / ray_length;
+        ray = delta_ray / ray_length;
 
         vec4 intersection_color;
-        hit_opaque = intersect(prev_ray_pos, ray_dir, intersection_color, ray_length);
+        hit_opaque = intersect(prev_ray_pos, ray, intersection_color, ray_length);
         FragColor += intersection_color;
         if (hit_opaque) return;
     }
 
-    FragColor += get_bg(ray_dir);
+    FragColor += get_bg(ray);
 }

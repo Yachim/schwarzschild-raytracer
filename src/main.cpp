@@ -153,7 +153,7 @@ int main(int, char**) {
     #pragma endregion
 
     Camera cam(glm::vec3(0.f, 0.f, 15.f));
-    Sphere sphere(glm::vec3(0., 0., 10.));
+    Sphere sphere(glm::vec3(-10., 0., 0.));
     Material sphereMat = sphere.getMaterial();
     sphereMat.setColor(glm::vec4(1., 0., 0., 1.));
     Light light{};
@@ -203,7 +203,7 @@ int main(int, char**) {
         glUniform1f(glGetUniformLocation(shaderProgram, "time"), (float)glfwGetTime());
         glUniform2f(glGetUniformLocation(shaderProgram, "resolution"), width, height);
 
-        cam.rotateAround(orbitingSpeed * dt);
+        //cam.rotateAround(orbitingSpeed * dt);
         glm::vec3 camPos = cam.getPos();
         glm::vec3 camForward = cam.getForward();
         glm::vec3 camRight = cam.getRight();
