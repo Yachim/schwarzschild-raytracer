@@ -6,7 +6,6 @@ precision highp float;
 precision highp sampler2D;
 
 #define PI 3.1415926535
-#define MAX_SPHERES 3
 
 in vec2 uv;
 out vec4 FragColor;
@@ -32,13 +31,14 @@ struct Light {
     vec3 position;
     vec3 color;
     float intensity;
+    float attenuation_constant;
+    float attenuation_linear;
+    float attenuation_quadratic;
 };
 
-uniform Light light = Light(
-    vec3(10.0, 10.0, 10.0),  // position
-    vec3(1.0, 1.0, 1.0),     // color
-    1.0                      // intensity
-);
+#define MAX_LIGHTS 4
+uniform int num_lights;
+uniform Light lights[MAX_LIGHTS];
 
 struct Material {
     vec4 color;
@@ -54,6 +54,23 @@ struct Sphere {
     bool opaque;
     Material material;
 };
+
+#define MAX_SPHERES 3
+uniform int num_spheres;
+uniform Sphere spheres[MAX_SPHERES];
+
+const Sphere BLACK_HOLE = Sphere(
+    vec3(0.0, 0.0, 0.0),  // center
+    1.0,                  // radius
+    true,                 // opaque
+    Material(             // material
+        vec4(0.0, 0.0, 0.0, 1.0),  // color
+        0.1,                        // ambient
+        0.0,                        // diffuse (black hole absorbs all light)
+        0.0,                        // specular
+        32.0                        // shininess
+    )
+);
 
 // assuming normalized p
 // returns (u, v), where u, v in [0, 1]
@@ -93,25 +110,33 @@ float square_vector(vec3 v) {
 
 vec3 calculate_lighting(vec3 point, vec3 normal, vec3 view_dir, Material material) {
     vec3 base_color = material.color.rgb;
+    vec3 final_color = material.ambient * base_color; // Ambient component
     
-    // Ambient
-    vec3 ambient = material.ambient * base_color;
+    for (int i = 0; i < num_lights; i++) {
+        Light light = lights[i];
+        vec3 light_dir = normalize(light.position - point);
+        float distance = length(light.position - point);
+        
+        // Attenuation
+        float attenuation = 1.0 / (
+            light.attenuation_constant + 
+            light.attenuation_linear * distance + 
+            light.attenuation_quadratic * distance * distance
+        );
+        
+        // Diffuse
+        float diff = max(dot(normal, light_dir), 0.0);
+        vec3 diffuse = material.diffuse * diff * light.color * base_color;
+        
+        // Specular
+        vec3 reflect_dir = reflect(-light_dir, normal);
+        float spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
+        vec3 specular = material.specular * spec * light.color;
+        
+        final_color += (diffuse + specular) * attenuation * light.intensity;
+    }
     
-    // Diffuse
-    vec3 light_dir = normalize(light.position - point);
-    float diff = max(dot(normal, light_dir), 0.0);
-    vec3 diffuse = material.diffuse * diff * light.color * base_color;
-    
-    // Specular
-    vec3 reflect_dir = reflect(-light_dir, normal);
-    float spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
-    vec3 specular = material.specular * spec * light.color;
-    
-    // Attenuation
-    float distance = length(light.position - point);
-    float attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * distance * distance);
-    
-    return (ambient + (diffuse + specular) * attenuation) * light.intensity;
+    return final_color;
 }
 
 // #region intersections
@@ -141,32 +166,43 @@ bool sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, out vec3 intersectio
     return lambda >= 0 && (max_lambda < 0. || lambda < max_lambda);
 }
 
-bool intersect_closest_sphere(vec3 origin, vec3 dir, Sphere spheres[MAX_SPHERES], out vec3 closest_intersection_point, out Sphere closest_sphere, float max_lambda) {
+bool intersect_closest_sphere(vec3 origin, vec3 dir, out vec3 closest_intersection_point, out Sphere closest_sphere, float max_lambda) {
     float min_dist = -1.;
     bool hit = false;
-    for (int i = 0; i < MAX_SPHERES; i++) {
+
+    // First check black hole
+    vec3 intersection_point;
+    if (sphere_intersect(origin, dir, BLACK_HOLE, intersection_point, max_lambda)) {
+        closest_intersection_point = intersection_point;
+        closest_sphere = BLACK_HOLE;
+        min_dist = distance(intersection_point, origin);
+        hit = true;
+    }
+    
+    // Then check all other spheres
+    for (int i = 0; i < num_spheres; i++) {
         Sphere sphere = spheres[i];
-        vec3 intersection_point;
-        bool current_hit = sphere_intersect(origin, dir, sphere, intersection_point, max_lambda);
-        float dist = distance(intersection_point, origin);
-        if (current_hit && (min_dist < 0. || dist < min_dist)) {
-            closest_intersection_point = intersection_point;
-            closest_sphere = sphere;
-            min_dist = dist;
-            hit = current_hit;
+        if (sphere_intersect(origin, dir, sphere, intersection_point, max_lambda)) {
+            float dist = distance(intersection_point, origin);
+            if (!hit || dist < min_dist) {
+                closest_intersection_point = intersection_point;
+                closest_sphere = sphere;
+                min_dist = dist;
+                hit = true;
+            }
         }
     }
 
     return hit;
 }
 
-bool intersect(vec3 origin, vec3 dir, out vec4 color, Sphere spheres[MAX_SPHERES], float max_lambda) {
+bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
     color = vec4(0., 0., 0., 0.);
     bool opaque = false;
 
     vec3 intersection_point;
     Sphere sphere;
-    if (intersect_closest_sphere(origin, dir, spheres, intersection_point, sphere, max_lambda)) {
+    if (intersect_closest_sphere(origin, dir, intersection_point, sphere, max_lambda)) {
         vec3 normal = normalize(intersection_point - sphere.center);
         vec3 view_dir = normalize(cam_pos - intersection_point);
         
@@ -184,8 +220,8 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, Sphere spheres[MAX_SPHERES
     return opaque;
 }
 
-bool intersect(vec3 origin, vec3 dir, out vec4 color, Sphere spheres[MAX_SPHERES]) {
-    return intersect(origin, dir, color, spheres, -1.);
+bool intersect(vec3 origin, vec3 dir, out vec4 color) {
+    return intersect(origin, dir, color, -1.);
 }
 
 vec4 get_bg(vec3 dir) {
@@ -197,49 +233,6 @@ void main() {
     float ray_forward = 1. / tan(cam_fov / 360. * PI);
     float max_angle = 2. * float(max_revolutions) * PI;
 
-    // Updated sphere definitions with materials
-    Sphere spheres[MAX_SPHERES] = Sphere[MAX_SPHERES](
-        // Event horizon
-        Sphere(
-            vec3(0., 0., 0.), 
-            1., 
-            true, 
-            Material(
-                vec4(0., 0., 0., 1.),
-                0.1,  // ambient
-                0.0,  // diffuse (black hole absorbs all light)
-                0.0,  // specular
-                32.0 // shininess
-            )
-        ),
-        // Green sphere
-        Sphere(
-            vec3(0., 0., 10.),
-            1.,
-            true,
-            Material(
-                vec4(0., 1., 0., 1.),
-                0.1,   // ambient
-                0.9,   // diffuse
-                0.5,   // specular
-                32.0  // shininess
-            )
-        ),
-        // Blue sphere
-        Sphere(
-            7.5 * normalize(vec3(1., 0., 1.)),
-            2.,
-            true,
-            Material(
-                vec4(0., 0., 1., 1.),
-                0.1,   // ambient
-                0.9,   // diffuse
-                0.5,   // specular
-                32.0  // shininess
-            )
-        )
-    );
-
     vec3 ray = normalize(cam_right * uv.x + cam_up * uv.y * resolution.y / resolution.x + ray_forward * cam_forward);
 
     vec3 normal_vec = normalize(cam_pos);
@@ -247,7 +240,7 @@ void main() {
     FragColor = vec4(0., 0., 0., 0.);
     if (abs(dot(ray, normal_vec)) >= radial_treshold) {
         vec4 intersection_color;
-        hit_opaque = intersect(cam_pos, ray, intersection_color, spheres);
+        hit_opaque = intersect(cam_pos, ray, intersection_color);
         FragColor += intersection_color;
         if (!hit_opaque) FragColor += get_bg(ray);
         return;
@@ -279,7 +272,7 @@ void main() {
         ray_dir = delta_ray / ray_length;
 
         vec4 intersection_color;
-        hit_opaque = intersect(prev_ray_pos, ray_dir, intersection_color, spheres, ray_length);
+        hit_opaque = intersect(prev_ray_pos, ray_dir, intersection_color, ray_length);
         FragColor += intersection_color;
         if (hit_opaque) return;
     }

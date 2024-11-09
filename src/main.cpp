@@ -152,7 +152,44 @@ int main(int, char**) {
     Camera cam(glm::vec3(0.f, 0.f, 15.f));
 
     glUseProgram(shaderProgram);
+
     glUniform1i(glGetUniformLocation(shaderProgram, "background_texture"), 0);
+
+    // Setting up lights
+    glUniform1i(glGetUniformLocation(shaderProgram, "num_lights"), 1);
+    // For each light (i from 0 to num_lights-1):
+    glUniform3f(glGetUniformLocation(shaderProgram, ("lights[" + std::to_string(0) + "].position").c_str()), 10.0f, 10.0f, 10.0f);
+    glUniform3f(glGetUniformLocation(shaderProgram, ("lights[" + std::to_string(0) + "].color").c_str()), 1.0f, 1.0f, 1.0f);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("lights[" + std::to_string(0) + "].intensity").c_str()), 2.5f);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("lights[" + std::to_string(0) + "].attenuation_constant").c_str()), 1.0f);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("lights[" + std::to_string(0) + "].attenuation_linear").c_str()), 0.09f);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("lights[" + std::to_string(0) + "].attenuation_quadratic").c_str()), 0.032f);
+
+    // Setting up additional spheres (not counting black hole)
+    glUniform1i(glGetUniformLocation(shaderProgram, "num_spheres"), 2);  // For 2 additional spheres
+
+    // Green sphere
+    int i = 0;
+    glUniform3f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(i) + "].center").c_str()), 0.0f, 0.0f, 10.0f);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(i) + "].radius").c_str()), 1.0f);
+    glUniform1i(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(i) + "].opaque").c_str()), 1);
+    glUniform4f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(i) + "].material.color").c_str()), 0.0f, 1.0f, 0.0f, 1.0f);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(i) + "].material.ambient").c_str()), 0.1f);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(i) + "].material.diffuse").c_str()), 0.9f);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(i) + "].material.specular").c_str()), 0.5f);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(i) + "].material.shininess").c_str()), 32.0f);
+
+    // Blue sphere
+    i = 1;
+    glUniform3f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(i) + "].center").c_str()), 7.5f, 0.0f, 7.5f);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(i) + "].radius").c_str()), 2.0f);
+    glUniform1i(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(i) + "].opaque").c_str()), 1);
+    glUniform4f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(i) + "].material.color").c_str()), 0.0f, 0.0f, 1.0f, 1.0f);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(i) + "].material.ambient").c_str()), 0.1f);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(i) + "].material.diffuse").c_str()), 0.9f);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(i) + "].material.specular").c_str()), 0.5f);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(i) + "].material.shininess").c_str()), 32.0f);
+
     double prevTime = 0.;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
