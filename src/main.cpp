@@ -9,8 +9,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-const uint WIDTH = 640;
-const uint HEIGHT = 480;
+const uint WIDTH = 1280;
+const uint HEIGHT = 720;
 
 const float orbitingSpeed = 0.5;
 
