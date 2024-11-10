@@ -1,4 +1,6 @@
 // TODO: two sided normals
+// TODO: loading
+// TODO: disk, hollow disk classes
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -25,6 +27,14 @@ const float ZOOM_SENSITIVITY = 5000.;
 const float DEFAULT_FOV = 90.;
 const float MIN_FOV = 10.;
 const float MAX_FOV = 120.;
+
+// 0 for 2k, 1 for 8k
+#define TEXTURE_QUALITY 1
+#if TEXTURE_QUALITY == 0
+    #define TEXTURE_PATH "assets/textures/background_2k.jpg"
+#elif TEXTURE_QUALITY == 1
+    #define TEXTURE_PATH "assets/textures/background_8k.jpg"
+#endif
 
 #pragma region shader utils
 std::string loadShaderSource(const char* filePath) {
@@ -148,7 +158,7 @@ int main(int, char**) {
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
     // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
-    unsigned char *data = stbi_load("assets/textures/background_8k.jpg", &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load(TEXTURE_PATH, &width, &height, &nrChannels, 0);
     if (data)
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
