@@ -20,6 +20,11 @@ const uint HEIGHT = 720;
 
 const float MOVE_SPEED = 5.;
 const float SENSITIVITY = 100.;
+const float ZOOM_SENSITIVITY = 5000.;
+
+const float DEFAULT_FOV = 90.;
+const float MIN_FOV = 10.;
+const float MAX_FOV = 120.;
 
 #pragma region shader utils
 std::string loadShaderSource(const char* filePath) {
@@ -202,6 +207,8 @@ int main(int, char**) {
     glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(1) + "].type").c_str()), 3);
     glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(1) + "].index").c_str()), 0);
 
+    float fov = DEFAULT_FOV;
+
     double prevMouseX, prevMouseY;
     glfwGetCursorPos(window, &prevMouseX, &prevMouseY);
     glm::vec2 prevMouse = glm::vec2(prevMouseX, prevMouseY);
@@ -278,6 +285,7 @@ int main(int, char**) {
         deltaMouse.y /= height;
 
         int stateMouseRight = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+        int stateMouseLeft = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
         if (stateMouseRight == GLFW_PRESS) {
             // rotation x-axis
             camForward = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camForward, glm::vec3(0., 1., 0.));
@@ -292,6 +300,13 @@ int main(int, char**) {
             cam.setRight(camRight);
             cam.setUp(camUp);
         }
+        else if (stateMouseLeft == GLFW_PRESS) {
+            fov += ZOOM_SENSITIVITY * (float)dt * deltaMouse.y;
+            if (fov < MIN_FOV) fov = MIN_FOV;
+            if (fov > MAX_FOV) fov = MAX_FOV;
+            glUniform1f(glGetUniformLocation(shaderProgram, "cam_fov"), fov);
+        }
+
         #pragma endregion
 
         glfwSwapBuffers(window);
