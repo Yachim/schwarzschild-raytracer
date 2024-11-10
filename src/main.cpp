@@ -173,12 +173,22 @@ int main(int, char**) {
     glUniform1i(glGetUniformLocation(shaderProgram, "num_spheres"), 1);
     glUniform3f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].center").c_str()), sphere.getPos().x, sphere.getPos().y, sphere.getPos().z);
     glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].radius").c_str()), sphere.getRadius());
-    glUniform1i(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].opaque").c_str()), 1); // TODO  
+    glUniform1i(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].opaque").c_str()), 1); // TODO:  
     glUniform4f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].material.color").c_str()), sphereMat.getColor().x, sphereMat.getColor().y, sphereMat.getColor().z, sphereMat.getColor().w);
     glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].material.ambient").c_str()), sphereMat.getAmbient());
     glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].material.diffuse").c_str()), sphereMat.getDiffuse());
     glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].material.specular").c_str()), sphereMat.getSpecular());
     glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].material.shininess").c_str()), sphereMat.getShininess());
+
+    glUniform1i(glGetUniformLocation(shaderProgram, "num_planes"), 1);
+    glUniform3f(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].point").c_str()), 0., 0., 0.);
+    glUniform3f(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].normal").c_str()), 0., 0., -1.);
+    glUniform1i(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].opaque").c_str()), 1); // TODO:
+    glUniform4f(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].material.color").c_str()), 0., 0., 1., 1.);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].material.ambient").c_str()), sphereMat.getAmbient());
+    glUniform1f(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].material.diffuse").c_str()), sphereMat.getDiffuse());
+    glUniform1f(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].material.specular").c_str()), sphereMat.getSpecular());
+    glUniform1f(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].material.shininess").c_str()), sphereMat.getShininess());
 
     double prevTime = 0.;
     while (!glfwWindowShouldClose(window)) {
@@ -203,7 +213,7 @@ int main(int, char**) {
         glUniform1f(glGetUniformLocation(shaderProgram, "time"), (float)glfwGetTime());
         glUniform2f(glGetUniformLocation(shaderProgram, "resolution"), width, height);
 
-        //cam.rotateAround(orbitingSpeed * dt);
+        cam.rotateAround(orbitingSpeed * dt);
         glm::vec3 camPos = cam.getPos();
         glm::vec3 camForward = cam.getForward();
         glm::vec3 camRight = cam.getRight();

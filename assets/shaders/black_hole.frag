@@ -24,7 +24,7 @@ uniform int max_steps = 1000;
 uniform int max_revolutions = 2;
 
 uniform float u_f = 0.01;
-uniform float radial_treshold = 0.999; // minimum value of v_0 . n when the trajectory is considered radial
+uniform float parallel_treshold = 0.999; // minimum value of a dot product of two unit vectors a . b, when the vectors are considered parallel; perpendicular_treshold = 1 - parallel_treshold
 
 // Lighting parameters
 struct Light {
@@ -72,6 +72,17 @@ const Sphere BLACK_HOLE = Sphere(
     true,                 // opaque
     BLANK_MAT
 );
+
+struct Plane {
+    vec3 point;
+    vec3 normal; // normalized
+    bool opaque;
+    Material material;
+};
+
+#define MAX_PLANES 3
+uniform int num_planes;
+uniform Plane planes[MAX_PLANES];
 
 // assuming normalized p
 // returns (u, v), where u, v in [0, 1]
@@ -164,7 +175,7 @@ bool sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, out vec3 intersectio
     }
 
     intersection_point = origin + lambda * dir;
-    return lambda >= 0 && (max_lambda < 0. || lambda < max_lambda);
+    return lambda >= 0 && (max_lambda < 0. || lambda <= max_lambda);
 }
 bool sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, out vec3 intersection_point) {
     return sphere_intersect(origin, dir, sphere, intersection_point, -1.);
@@ -200,25 +211,72 @@ bool intersect_closest_sphere(vec3 origin, vec3 dir, out vec3 closest_intersecti
     return hit;
 }
 
+bool plane_intersect(vec3 origin, vec3 dir, Plane plane, out vec3 intersection_point, float max_lambda) {
+    float denom = dot(plane.normal, dir);
+    if (denom < 1. - parallel_treshold) return false;
+
+    float lambda = dot(plane.normal, plane.point - origin) / denom;
+    intersection_point = origin + dir * lambda;
+    return lambda >= 0. && (max_lambda < 0. || lambda <= max_lambda);
+}
+
+bool intersect_closest_plane(vec3 origin, vec3 dir, out vec3 closest_intersection_point, out Plane closest_plane, float max_lambda) {
+    float min_dist = -1.;
+    bool hit = false;
+
+    vec3 intersection_point;
+    for (int i = 0; i < num_planes; i++) {
+        Plane plane = planes[i];
+        if (plane_intersect(origin, dir, plane, intersection_point, max_lambda)) {
+            float dist = distance(intersection_point, origin);
+            if (!hit || dist < min_dist) {
+                closest_intersection_point = intersection_point;
+                closest_plane = plane;
+                min_dist = dist;
+                hit = true;
+            }
+        }
+    }
+
+    return hit;
+}
+
 bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
     color = vec4(0., 0., 0., 0.);
     bool opaque = false;
 
-    vec3 intersection_point;
+    vec3 sphere_intersection_point;
     Sphere sphere;
-    if (intersect_closest_sphere(origin, dir, intersection_point, sphere, max_lambda)) {
-        vec3 normal = normalize(intersection_point - sphere.center);
-        vec3 view_dir = normalize(cam_pos - intersection_point);
-        
+    bool sphere_hit = intersect_closest_sphere(origin, dir, sphere_intersection_point, sphere, max_lambda);
+
+    vec3 plane_intersection_point;
+    Plane plane;
+    bool plane_hit = intersect_closest_plane(origin, dir, plane_intersection_point, plane, max_lambda);
+
+    vec3 normal;
+    vec3 intersection_point;
+    Material material;
+    if (sphere_hit) {
+        normal = normalize(sphere_intersection_point - sphere.center);
+        intersection_point = sphere_intersection_point;
+        material = sphere.material;
+        opaque = sphere.opaque;
+    }
+    if (plane_hit && distance(plane_intersection_point, origin) < distance(sphere_intersection_point, origin)) {
+        normal = plane.normal;
+        intersection_point = plane_intersection_point;
+        material = plane.material;
+        opaque = plane.opaque;
+    }
+
+    if (sphere_hit || plane_hit) {
         vec3 lit_color = calculate_lighting(
             intersection_point,
             normal,
-            view_dir,
-            sphere.material
+            dir,
+            material
         );
-        
-        color = vec4(lit_color, sphere.material.color.a);
-        opaque = sphere.opaque;
+        color = vec4(lit_color, material.color.a);
     }
 
     return opaque;
@@ -242,7 +300,7 @@ void main() {
     vec3 normal_vec = normalize(cam_pos);
     bool hit_opaque;
     FragColor = vec4(0., 0., 0., 0.);
-    if (abs(dot(ray, normal_vec)) >= radial_treshold) { // if radial trajectory
+    if (abs(dot(ray, normal_vec)) >= parallel_treshold) { // if radial trajectory
         vec4 intersection_color;
         hit_opaque = intersect(cam_pos, ray, intersection_color);
         FragColor += intersection_color;
@@ -270,7 +328,7 @@ void main() {
             }
 
             normal_vec = normalize(u_f_intersection_point);
-            if (abs(dot(ray, normal_vec)) >= radial_treshold) { // if radial trajectory
+            if (abs(dot(ray, normal_vec)) >= parallel_treshold) { // if radial trajectory
                 vec4 intersection_color;
                 hit_opaque = intersect(cam_pos, ray, intersection_color);
                 FragColor += intersection_color;
