@@ -5,10 +5,12 @@
 #include <fstream>
 #include <sstream>
 #include <glm/vec3.hpp>
+#include <glm/geometric.hpp>
 #include "lib/Camera/camera.h"
 #include "lib/Sphere/sphere.h"
 #include "lib/Material/material.h"
 #include "lib/Light/light.h"
+#include "lib/utils/utils.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -153,7 +155,7 @@ int main(int, char**) {
     stbi_image_free(data);
     #pragma endregion
 
-    Camera cam(glm::vec3(0.f, 0.f, 15.f));
+    Camera cam(glm::vec3(0.f, 7.5, 15.), glm::vec3(0., -7.5, -15.), glm::vec3(1., 0., 0.));
     Sphere sphere(glm::vec3(-10., 0., 0.));
     Material sphereMat = sphere.getMaterial();
     sphereMat.setColor(glm::vec4(1., 0., 0., 1.));
@@ -181,20 +183,21 @@ int main(int, char**) {
     glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].material.specular").c_str()), sphereMat.getSpecular());
     glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].material.shininess").c_str()), sphereMat.getShininess());
 
-    glUniform1i(glGetUniformLocation(shaderProgram, "num_planes"), 1);
-    glUniform3f(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].point").c_str()), 0., 0., 0.);
-    glUniform3f(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].normal").c_str()), 0., 0., -1.);
-    glUniform1i(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].opaque").c_str()), 1); // TODO:
-    glUniform4f(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].material.color").c_str()), 0., 0., 1., 1.);
-    glUniform1f(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].material.ambient").c_str()), sphereMat.getAmbient());
-    glUniform1f(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].material.diffuse").c_str()), sphereMat.getDiffuse());
-    glUniform1f(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].material.specular").c_str()), sphereMat.getSpecular());
-    glUniform1f(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].material.shininess").c_str()), sphereMat.getShininess());
+    glUniform1i(glGetUniformLocation(shaderProgram, "num_disks"), 1);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("disks[" + std::to_string(0) + "].radius").c_str()), 5.);
+    glUniform3f(glGetUniformLocation(shaderProgram, ("disks[" + std::to_string(0) + "].plane.point").c_str()), 0., 0., 0.);
+    glUniform3f(glGetUniformLocation(shaderProgram, ("disks[" + std::to_string(0) + "].plane.normal").c_str()), 0., -1., 0.);
+    glUniform1i(glGetUniformLocation(shaderProgram, ("disks[" + std::to_string(0) + "].plane.opaque").c_str()), 1); // TODO:
+    glUniform4f(glGetUniformLocation(shaderProgram, ("disks[" + std::to_string(0) + "].plane.material.color").c_str()), 1., 0.5, 0.1, 1.);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("disks[" + std::to_string(0) + "].plane.material.ambient").c_str()), sphereMat.getAmbient());
+    glUniform1f(glGetUniformLocation(shaderProgram, ("disks[" + std::to_string(0) + "].plane.material.diffuse").c_str()), sphereMat.getDiffuse());
+    glUniform1f(glGetUniformLocation(shaderProgram, ("disks[" + std::to_string(0) + "].plane.material.specular").c_str()), sphereMat.getSpecular());
+    glUniform1f(glGetUniformLocation(shaderProgram, ("disks[" + std::to_string(0) + "].plane.material.shininess").c_str()), sphereMat.getShininess());
 
     glUniform1i(glGetUniformLocation(shaderProgram, "num_objects"), 2);
     glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(0) + "].type").c_str()), 0);
     glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(0) + "].index").c_str()), 0);
-    glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(1) + "].type").c_str()), 1);
+    glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(1) + "].type").c_str()), 2);
     glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(1) + "].index").c_str()), 0);
 
 
@@ -221,7 +224,6 @@ int main(int, char**) {
         glUniform1f(glGetUniformLocation(shaderProgram, "time"), (float)glfwGetTime());
         glUniform2f(glGetUniformLocation(shaderProgram, "resolution"), width, height);
 
-        cam.rotateAround(orbitingSpeed * dt);
         glm::vec3 camPos = cam.getPos();
         glm::vec3 camForward = cam.getForward();
         glm::vec3 camRight = cam.getRight();

@@ -84,15 +84,25 @@ struct Plane {
 uniform int num_planes;
 uniform Plane planes[MAX_PLANES];
 
+struct Disk {
+    Plane plane;
+    float radius;
+};
+
+#define MAX_DISKS 3
+uniform int num_disks;
+uniform Disk disks[MAX_DISKS];
+
 // types:
 // 0: sphere
 // 1: plane
+// 2: disk
 struct Object {
     int type;
     int index; // indexing respective arrays
 };
 
-#define MAX_OBJECTS MAX_SPHERES + MAX_PLANES/* + MAX_DISKS*/
+#define MAX_OBJECTS MAX_SPHERES + MAX_PLANES + MAX_DISKS
 uniform int num_objects;
 uniform Object objects[MAX_OBJECTS];
 
@@ -202,6 +212,11 @@ bool plane_intersect(vec3 origin, vec3 dir, Plane plane, out vec3 intersection_p
     return lambda >= 0. && (max_lambda < 0. || lambda <= max_lambda);
 }
 
+bool disk_intersect(vec3 origin, vec3 dir, Disk disk, out vec3 intersection_point, float max_lambda) {
+    bool hit = plane_intersect(origin, dir, disk.plane, intersection_point, max_lambda);
+    return hit && square_vector(intersection_point - disk.plane.point) <= disk.radius * disk.radius;
+}
+
 bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
     float min_dist = -1.;
     bool hit = false;
@@ -209,6 +224,7 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
     vec3 normal;
     bool opaque = false;
     
+    // black hole check
     vec3 intersection_point = vec3(0., 0., 0.);
     if (sphere_intersect(origin, dir, BLACK_HOLE, intersection_point, max_lambda)) {
         material = BLACK_HOLE.material;
@@ -242,6 +258,12 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
                 current_normal = plane.normal;
                 current_opaque = plane.opaque;
                 break;
+            case 2: // disk
+                Disk disk = disks[object_index];
+                current_hit = disk_intersect(origin, dir, disk, intersection_point, max_lambda);
+                current_material = disk.plane.material;
+                current_normal = disk.plane.normal;
+                current_opaque = disk.plane.opaque;
         }
 
         if (current_hit) {

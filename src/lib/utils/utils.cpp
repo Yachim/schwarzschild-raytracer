@@ -16,3 +16,9 @@ glm::vec3 rotateVector(float angle, glm::vec3 vec, glm::vec3 axis) {
     glm::vec3 newOrthPart = orthPartLength * (x1 * orthPart + x2 * w);
     return newOrthPart + perpPart;
 }
+
+std::string vec3ToString(glm::vec3 vec) {
+    std::ostringstream oss;
+    oss << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
+    return oss.str();
+}

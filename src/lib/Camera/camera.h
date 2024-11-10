@@ -24,8 +24,6 @@ public:
     void calculateRight();
     void calculateUp();
 
-    void rotateAround(float angle, glm::vec3 point = glm::vec3(0., 0., 0.), glm::vec3 axis = glm::vec3(0., 1., 0.));
-
 private:
     glm::vec3 m_forward{0.f, 0.f, -1.f};
     glm::vec3 m_right{1.f, 0.f, 0.f};
