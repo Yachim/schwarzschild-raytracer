@@ -1,3 +1,4 @@
+// TODO: two sided normals
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -189,6 +190,13 @@ int main(int, char**) {
     glUniform1f(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].material.diffuse").c_str()), sphereMat.getDiffuse());
     glUniform1f(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].material.specular").c_str()), sphereMat.getSpecular());
     glUniform1f(glGetUniformLocation(shaderProgram, ("planes[" + std::to_string(0) + "].material.shininess").c_str()), sphereMat.getShininess());
+
+    glUniform1i(glGetUniformLocation(shaderProgram, "num_objects"), 2);
+    glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(0) + "].type").c_str()), 0);
+    glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(0) + "].index").c_str()), 0);
+    glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(1) + "].type").c_str()), 1);
+    glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(1) + "].index").c_str()), 0);
+
 
     double prevTime = 0.;
     while (!glfwWindowShouldClose(window)) {

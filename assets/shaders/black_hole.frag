@@ -84,6 +84,18 @@ struct Plane {
 uniform int num_planes;
 uniform Plane planes[MAX_PLANES];
 
+// types:
+// 0: sphere
+// 1: plane
+struct Object {
+    int type;
+    int index; // indexing respective arrays
+};
+
+#define MAX_OBJECTS MAX_SPHERES + MAX_PLANES/* + MAX_DISKS*/
+uniform int num_objects;
+uniform Object objects[MAX_OBJECTS];
+
 // assuming normalized p
 // returns (u, v), where u, v in [0, 1]
 vec2 sphere_map(vec3 p) {
@@ -181,36 +193,6 @@ bool sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, out vec3 intersectio
     return sphere_intersect(origin, dir, sphere, intersection_point, -1.);
 }
 
-bool intersect_closest_sphere(vec3 origin, vec3 dir, out vec3 closest_intersection_point, out Sphere closest_sphere, float max_lambda) {
-    float min_dist = -1.;
-    bool hit = false;
-
-    // First check black hole
-    vec3 intersection_point;
-    if (sphere_intersect(origin, dir, BLACK_HOLE, intersection_point, max_lambda)) {
-        closest_intersection_point = intersection_point;
-        closest_sphere = BLACK_HOLE;
-        min_dist = distance(intersection_point, origin);
-        hit = true;
-    }
-    
-    // Then check all other spheres
-    for (int i = 0; i < num_spheres; i++) {
-        Sphere sphere = spheres[i];
-        if (sphere_intersect(origin, dir, sphere, intersection_point, max_lambda)) {
-            float dist = distance(intersection_point, origin);
-            if (!hit || dist < min_dist) {
-                closest_intersection_point = intersection_point;
-                closest_sphere = sphere;
-                min_dist = dist;
-                hit = true;
-            }
-        }
-    }
-
-    return hit;
-}
-
 bool plane_intersect(vec3 origin, vec3 dir, Plane plane, out vec3 intersection_point, float max_lambda) {
     float denom = dot(plane.normal, dir);
     if (denom < 1. - parallel_treshold) return false;
@@ -220,56 +202,62 @@ bool plane_intersect(vec3 origin, vec3 dir, Plane plane, out vec3 intersection_p
     return lambda >= 0. && (max_lambda < 0. || lambda <= max_lambda);
 }
 
-bool intersect_closest_plane(vec3 origin, vec3 dir, out vec3 closest_intersection_point, out Plane closest_plane, float max_lambda) {
+bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
     float min_dist = -1.;
     bool hit = false;
+    Material material;
+    vec3 normal;
+    bool opaque = false;
+    
+    vec3 intersection_point = vec3(0., 0., 0.);
+    if (sphere_intersect(origin, dir, BLACK_HOLE, intersection_point, max_lambda)) {
+        material = BLACK_HOLE.material;
+        normal = normalize(intersection_point - BLACK_HOLE.center);
+        min_dist = distance(intersection_point, origin);
+        hit = true;
+        opaque = true;
+    }
+    
+    for (int i = 0; i < num_objects; i++) {
+        Object object = objects[i];
+        int object_type = object.type;
+        int object_index = object.index;
 
-    vec3 intersection_point;
-    for (int i = 0; i < num_planes; i++) {
-        Plane plane = planes[i];
-        if (plane_intersect(origin, dir, plane, intersection_point, max_lambda)) {
+        bool current_hit = false;
+        Material current_material;
+        vec3 current_normal;
+        bool current_opaque;
+        switch (object_type) {
+            case 0: // sphere
+                Sphere sphere = spheres[object_index];
+                current_hit = sphere_intersect(origin, dir, sphere, intersection_point, max_lambda);
+                current_material = sphere.material;
+                current_normal = normalize(intersection_point - sphere.center);
+                current_opaque = sphere.opaque;
+                break;
+            case 1: // plane
+                Plane plane = planes[object_index];
+                current_hit = plane_intersect(origin, dir, plane, intersection_point, max_lambda);
+                current_material = plane.material;
+                current_normal = plane.normal;
+                current_opaque = plane.opaque;
+                break;
+        }
+
+        if (current_hit) {
             float dist = distance(intersection_point, origin);
             if (!hit || dist < min_dist) {
-                closest_intersection_point = intersection_point;
-                closest_plane = plane;
                 min_dist = dist;
                 hit = true;
+                material = current_material;
+                normal = current_normal;
+                opaque = current_opaque;
             }
         }
     }
 
-    return hit;
-}
-
-bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
     color = vec4(0., 0., 0., 0.);
-    bool opaque = false;
-
-    vec3 sphere_intersection_point;
-    Sphere sphere;
-    bool sphere_hit = intersect_closest_sphere(origin, dir, sphere_intersection_point, sphere, max_lambda);
-
-    vec3 plane_intersection_point;
-    Plane plane;
-    bool plane_hit = intersect_closest_plane(origin, dir, plane_intersection_point, plane, max_lambda);
-
-    vec3 normal;
-    vec3 intersection_point;
-    Material material;
-    if (sphere_hit) {
-        normal = normalize(sphere_intersection_point - sphere.center);
-        intersection_point = sphere_intersection_point;
-        material = sphere.material;
-        opaque = sphere.opaque;
-    }
-    if (plane_hit && distance(plane_intersection_point, origin) < distance(sphere_intersection_point, origin)) {
-        normal = plane.normal;
-        intersection_point = plane_intersection_point;
-        material = plane.material;
-        opaque = plane.opaque;
-    }
-
-    if (sphere_hit || plane_hit) {
+    if (hit) {
         vec3 lit_color = calculate_lighting(
             intersection_point,
             normal,
