@@ -93,16 +93,27 @@ struct Disk {
 uniform int num_disks;
 uniform Disk disks[MAX_DISKS];
 
+struct HollowDisk {
+    Plane plane;
+    float inner_radius;
+    float outer_radius;
+};
+
+#define MAX_HOLLOW_DISKS 3
+uniform int num_hollow_disks;
+uniform HollowDisk hollow_disks[MAX_HOLLOW_DISKS];
+
 // types:
 // 0: sphere
 // 1: plane
 // 2: disk
+// 3: hollow disk
 struct Object {
     int type;
     int index; // indexing respective arrays
 };
 
-#define MAX_OBJECTS MAX_SPHERES + MAX_PLANES + MAX_DISKS
+#define MAX_OBJECTS MAX_SPHERES + MAX_PLANES + MAX_DISKS + MAX_HOLLOW_DISKS
 uniform int num_objects;
 uniform Object objects[MAX_OBJECTS];
 
@@ -217,6 +228,12 @@ bool disk_intersect(vec3 origin, vec3 dir, Disk disk, out vec3 intersection_poin
     return hit && square_vector(intersection_point - disk.plane.point) <= disk.radius * disk.radius;
 }
 
+bool hollow_disk_intersect(vec3 origin, vec3 dir, HollowDisk disk, out vec3 intersection_point, float max_lambda) {
+    bool hit = plane_intersect(origin, dir, disk.plane, intersection_point, max_lambda);
+    float squared_dist = square_vector(intersection_point - disk.plane.point);
+    return hit && squared_dist >= disk.inner_radius * disk.inner_radius && squared_dist <= disk.outer_radius * disk.outer_radius;
+}
+
 bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
     float min_dist = -1.;
     bool hit = false;
@@ -264,6 +281,14 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
                 current_material = disk.plane.material;
                 current_normal = disk.plane.normal;
                 current_opaque = disk.plane.opaque;
+                break;
+            case 3: // hollow disk
+                HollowDisk hollow_disk = hollow_disks[object_index];
+                current_hit = hollow_disk_intersect(origin, dir, hollow_disk, intersection_point, max_lambda);
+                current_material = hollow_disk.plane.material;
+                current_normal = hollow_disk.plane.normal;
+                current_opaque = hollow_disk.plane.opaque;
+                break;
         }
 
         if (current_hit) {
