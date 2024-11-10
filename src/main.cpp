@@ -18,7 +18,8 @@
 const uint WIDTH = 1280;
 const uint HEIGHT = 720;
 
-const float orbitingSpeed = 0.5;
+const float MOVE_SPEED = 5.;
+const float SENSITIVITY = 100.;
 
 #pragma region shader utils
 std::string loadShaderSource(const char* filePath) {
@@ -155,7 +156,7 @@ int main(int, char**) {
     stbi_image_free(data);
     #pragma endregion
 
-    Camera cam(glm::vec3(0.f, 7.5, 15.), glm::vec3(0., -7.5, -15.), glm::vec3(1., 0., 0.));
+    Camera cam(glm::vec3(0., 0., 15.));
     Sphere sphere(glm::vec3(-10., 0., 0.));
     Material sphereMat = sphere.getMaterial();
     sphereMat.setColor(glm::vec4(1., 0., 0., 1.));
@@ -200,7 +201,9 @@ int main(int, char**) {
     glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(1) + "].type").c_str()), 2);
     glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(1) + "].index").c_str()), 0);
 
-
+    double prevMouseX, prevMouseY;
+    glfwGetCursorPos(window, &prevMouseX, &prevMouseY);
+    glm::vec2 prevMouse = glm::vec2(prevMouseX, prevMouseY);
     double prevTime = 0.;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -234,8 +237,65 @@ int main(int, char**) {
         glUniform3f(glGetUniformLocation(shaderProgram, "cam_right"), camRight.x, camRight.y, camRight.z);
         glUniform3f(glGetUniformLocation(shaderProgram, "cam_up"), camUp.x, camUp.y, camUp.z);
 
+        #pragma region input
+        int stateW = glfwGetKey(window, GLFW_KEY_W);
+        int stateA = glfwGetKey(window, GLFW_KEY_A);
+        int stateS = glfwGetKey(window, GLFW_KEY_S);
+        int stateD = glfwGetKey(window, GLFW_KEY_D);
+        int stateE = glfwGetKey(window, GLFW_KEY_E);
+        int stateQ = glfwGetKey(window, GLFW_KEY_Q);
+
+        glm::vec3 axis = glm::vec3(0., 0., 0.);
+        if (stateW == GLFW_PRESS) {
+            axis += camForward;
+        }
+        if (stateA == GLFW_PRESS) {
+            axis -= camRight;
+        }
+        if (stateS == GLFW_PRESS) {
+            axis -= camForward;
+        }
+        if (stateD == GLFW_PRESS) {
+            axis += camRight;
+        }
+        if (stateE == GLFW_PRESS) {
+            axis += camUp;
+        }
+        if (stateQ == GLFW_PRESS) {
+            axis -= camUp;
+        }
+        float axisLength = glm::length(axis);
+        if (axisLength > 0.) axis /= axisLength;
+        camPos += axis * MOVE_SPEED * (float)dt;
+        cam.setPos(camPos);
+
+        double mouseX, mouseY;
+        glfwGetCursorPos(window, &mouseX, &mouseY);
+        glm::vec2 mouse = glm::vec2(mouseX, mouseY);
+        glm::vec2 deltaMouse = mouse - prevMouse;
+        deltaMouse.x /= width;
+        deltaMouse.y /= height;
+
+        int stateMouseRight = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+        if (stateMouseRight == GLFW_PRESS) {
+            // rotation x-axis
+            camForward = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camForward, glm::vec3(0., 1., 0.));
+            camRight = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camRight, glm::vec3(0., 1., 0.));
+            camUp = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camUp, glm::vec3(0., 1., 0.));
+
+            // rotation y-axis FIXME: clamp this
+            camForward = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.y, camForward, camRight);
+            camUp = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.y, camUp, camRight);
+
+            cam.setForward(camForward);
+            cam.setRight(camRight);
+            cam.setUp(camUp);
+        }
+        #pragma endregion
+
         glfwSwapBuffers(window);
         prevTime = time;
+        prevMouse = mouse;
     }
 
     glDeleteProgram(shaderProgram);
