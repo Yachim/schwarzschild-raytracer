@@ -272,6 +272,7 @@ int main(int, char**) {
         int stateD = glfwGetKey(window, GLFW_KEY_D);
         int stateE = glfwGetKey(window, GLFW_KEY_E);
         int stateQ = glfwGetKey(window, GLFW_KEY_Q);
+        int stateF = glfwGetKey(window, GLFW_KEY_F);
 
         glm::vec3 axis = glm::vec3(0., 0., 0.);
         if (stateW == GLFW_PRESS) {
@@ -292,6 +293,9 @@ int main(int, char**) {
         if (stateQ == GLFW_PRESS) {
             axis -= camUp;
         }
+        if (stateF == GLFW_PRESS) {
+            fov = DEFAULT_FOV;
+        }
         float axisLength = glm::length(axis);
         if (axisLength > 0.) axis /= axisLength;
         camPos += axis * MOVE_SPEED * (float)dt;
@@ -307,38 +311,24 @@ int main(int, char**) {
         int stateMouseRight = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
         int stateMouseLeft = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
         if (stateMouseRight == GLFW_PRESS) {
-            if (time - prevRClickTime <= DOUBLE_CLICK_TRESHOLD) {
+            // rotation x-axis
+            camForward = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camForward, glm::vec3(0., 1., 0.));
+            camRight = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camRight, glm::vec3(0., 1., 0.));
+            camUp = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camUp, glm::vec3(0., 1., 0.));
 
-            }
-            else {
-                // rotation x-axis
-                camForward = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camForward, glm::vec3(0., 1., 0.));
-                camRight = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camRight, glm::vec3(0., 1., 0.));
-                camUp = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camUp, glm::vec3(0., 1., 0.));
+            // rotation y-axis FIXME: clamp this
+            camForward = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.y, camForward, camRight);
+            camUp = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.y, camUp, camRight);
 
-                // rotation y-axis FIXME: clamp this
-                camForward = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.y, camForward, camRight);
-                camUp = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.y, camUp, camRight);
-
-                cam.setForward(camForward);
-                cam.setRight(camRight);
-                cam.setUp(camUp);
-            }
-
-            prevRClickTime = time;
+            cam.setForward(camForward);
+            cam.setRight(camRight);
+            cam.setUp(camUp);
         }
         else if (stateMouseLeft == GLFW_PRESS) {
-            if (time - prevLClickTime <= DOUBLE_CLICK_TRESHOLD) {
-                fov = DEFAULT_FOV;
-            }
-            else {
-                fov += ZOOM_SENSITIVITY * (float)dt * deltaMouse.y;
-                if (fov < MIN_FOV) fov = MIN_FOV;
-                if (fov > MAX_FOV) fov = MAX_FOV;
-                glUniform1f(glGetUniformLocation(shaderProgram, "cam_fov"), fov);
-            }
-
-            prevLClickTime = time;
+            fov += ZOOM_SENSITIVITY * (float)dt * deltaMouse.y;
+            if (fov < MIN_FOV) fov = MIN_FOV;
+            if (fov > MAX_FOV) fov = MAX_FOV;
+            glUniform1f(glGetUniformLocation(shaderProgram, "cam_fov"), fov);
         }
 
         #pragma endregion
