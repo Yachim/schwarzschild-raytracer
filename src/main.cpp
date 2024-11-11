@@ -1,6 +1,7 @@
 // TODO: two sided normals
 // TODO: loading
 // TODO: disk, hollow disk classes
+// TODO: clocks
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -23,7 +24,7 @@ const uint HEIGHT = 720;
 // the higher, the more fields
 // renders only half
 // set <= 0 to deactivate
-const float CHECKERBOARD_DETAIL = 200.;
+const float CHECKERBOARD_DETAIL = 0.;
 
 const float DOUBLE_CLICK_TRESHOLD = 0.5; // max time since last click in seconds
 const float MOVE_SPEED = 5.;
@@ -269,11 +270,15 @@ int main(int, char**) {
         int stateQ = glfwGetKey(window, GLFW_KEY_Q);
         int stateF = glfwGetKey(window, GLFW_KEY_F);
 
+        int stateShift = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT);
+        int stateCtrl = glfwGetKey(window, GLFW_KEY_LEFT_CONTROL);
+
         int stateEsc = glfwGetKey(window, GLFW_KEY_ESCAPE);
         if (stateEsc == GLFW_PRESS) {
             break;
         }
 
+        float speed = MOVE_SPEED;
         glm::vec3 axis = glm::vec3(0., 0., 0.);
         if (stateW == GLFW_PRESS) {
             axis += camForward;
@@ -297,10 +302,16 @@ int main(int, char**) {
             fov = DEFAULT_FOV;
             glUniform1f(glGetUniformLocation(shaderProgram, "cam_fov"), fov);
         }
+        if (stateShift == GLFW_PRESS) {
+            speed = MOVE_SPEED * 2.;
+        }
+        if (stateCtrl == GLFW_PRESS) {
+            speed = MOVE_SPEED / 2.;
+        }
 
         float axisLength = glm::length(axis);
         if (axisLength > 0.) axis /= axisLength;
-        camPos += axis * MOVE_SPEED * (float)dt;
+        camPos += axis * speed * (float)dt;
         cam.setPos(camPos);
 
         double mouseX, mouseY;
