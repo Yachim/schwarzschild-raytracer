@@ -25,7 +25,7 @@ uniform int max_steps = 1000;
 uniform int max_revolutions = 2;
 
 uniform float u_f = 0.01;
-uniform float parallel_treshold = 0.999; // minimum value of a dot product of two unit vectors a . b, when the vectors are considered parallel; perpendicular_treshold = 1 - parallel_treshold
+uniform float parallel_treshold = 0.9999999; // minimum value of a dot product of two unit vectors a . b, when the vectors are considered parallel; perpendicular_treshold = 1 - parallel_treshold
 
 // Lighting parameters
 struct Light {
@@ -190,6 +190,22 @@ vec3 calculate_lighting(vec3 point, vec3 normal, vec3 view_dir, Material materia
     return final_color;
 }
 
+// return -1 if not neither positive
+float min_positive(float n1, float n2) {
+    float n = -1.;
+    if (n1 > 0 && n2 > 0) {
+        n = min(n1, n2);
+    }
+    else if (n1 > 0) {
+        n = n1;
+    }
+    else if (n2 > 0) {
+        n = n2;
+    }
+
+    return n;
+}
+
 // #region intersections
 bool sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, out vec3 intersection_point, float max_lambda) {
     float D = pow(dot(dir, origin - sphere.base.pos), 2) - square_vector(origin - sphere.base.pos) + sphere.radius * sphere.radius;
@@ -202,16 +218,7 @@ bool sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, out vec3 intersectio
     float lambda1 = first_term - sqrt_D;
     float lambda2 = first_term + sqrt_D;
 
-    float lambda = -1.;
-    if (lambda1 > 0 && lambda2 > 0) {
-        lambda = min(lambda1, lambda2);
-    }
-    else if (lambda1 > 0) {
-        lambda = lambda1;
-    }
-    else if (lambda2 > 0) {
-        lambda = lambda2;
-    }
+    float lambda = min_positive(lambda1, lambda2);
 
     intersection_point = origin + lambda * dir;
     return lambda >= 0 && (max_lambda < 0. || lambda <= max_lambda);
@@ -345,7 +352,7 @@ void main() {
     vec3 normal_vec = normalize(cam_pos);
     bool hit_opaque;
     FragColor = vec4(0., 0., 0., 0.);
-    if (abs(dot(ray, normal_vec)) >= parallel_treshold) { // if radial trajectory, FIXME: trace only until |v_0 . n| < p (v_0: ray, n: normal_vec, p: paralell_treshold)
+    if (abs(dot(ray, normal_vec)) >= parallel_treshold) { // if radial trajectory
         vec4 intersection_color;
         hit_opaque = intersect(cam_pos, ray, intersection_color);
         FragColor += intersection_color;
