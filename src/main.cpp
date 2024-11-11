@@ -20,6 +20,11 @@
 const uint WIDTH = 1280;
 const uint HEIGHT = 720;
 
+// the higher, the more fields
+// renders only half
+// set < 0 to deactivate
+const float CHECKERBOARD_DETAIL = 200.;
+
 const float DOUBLE_CLICK_TRESHOLD = 0.5; // max time since last click in seconds
 const float MOVE_SPEED = 5.;
 const float SENSITIVITY = 100.;
@@ -218,6 +223,7 @@ int main(int, char**) {
     glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(1) + "].type").c_str()), 3);
     glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(1) + "].index").c_str()), 0);
 
+    glUniform1f(glGetUniformLocation(shaderProgram, "checkerboard_detail"), CHECKERBOARD_DETAIL);
     float fov = DEFAULT_FOV;
 
     double prevMouseX, prevMouseY;
