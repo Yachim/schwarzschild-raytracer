@@ -1,6 +1,7 @@
 #version 330 core
 // right-handed y-up coordinates
 // camera has left-handed y-up coordinates
+// TODO: raytrace towards light?
 
 precision highp float;
 precision highp sampler2D;

@@ -22,12 +22,12 @@ const uint HEIGHT = 720;
 
 // the higher, the more fields
 // renders only half
-// set < 0 to deactivate
+// set <= 0 to deactivate
 const float CHECKERBOARD_DETAIL = 200.;
 
 const float DOUBLE_CLICK_TRESHOLD = 0.5; // max time since last click in seconds
 const float MOVE_SPEED = 5.;
-const float SENSITIVITY = 100.;
+const float SENSITIVITY = 300.;
 const float ZOOM_SENSITIVITY = 5000.;
 
 const float DEFAULT_FOV = 90.;
@@ -260,11 +260,6 @@ int main(int, char**) {
         glm::vec3 camRight = cam.getRight();
         glm::vec3 camUp = cam.getUp();
 
-        glUniform3f(glGetUniformLocation(shaderProgram, "cam_pos"), camPos.x, camPos.y, camPos.z);
-        glUniform3f(glGetUniformLocation(shaderProgram, "cam_forward"), camForward.x, camForward.y, camForward.z);
-        glUniform3f(glGetUniformLocation(shaderProgram, "cam_right"), camRight.x, camRight.y, camRight.z);
-        glUniform3f(glGetUniformLocation(shaderProgram, "cam_up"), camUp.x, camUp.y, camUp.z);
-
         #pragma region input
         int stateW = glfwGetKey(window, GLFW_KEY_W);
         int stateA = glfwGetKey(window, GLFW_KEY_A);
@@ -295,6 +290,7 @@ int main(int, char**) {
         }
         if (stateF == GLFW_PRESS) {
             fov = DEFAULT_FOV;
+            glUniform1f(glGetUniformLocation(shaderProgram, "cam_fov"), fov);
         }
         float axisLength = glm::length(axis);
         if (axisLength > 0.) axis /= axisLength;
@@ -330,8 +326,12 @@ int main(int, char**) {
             if (fov > MAX_FOV) fov = MAX_FOV;
             glUniform1f(glGetUniformLocation(shaderProgram, "cam_fov"), fov);
         }
-
         #pragma endregion
+
+        glUniform3f(glGetUniformLocation(shaderProgram, "cam_pos"), camPos.x, camPos.y, camPos.z);
+        glUniform3f(glGetUniformLocation(shaderProgram, "cam_forward"), camForward.x, camForward.y, camForward.z);
+        glUniform3f(glGetUniformLocation(shaderProgram, "cam_right"), camRight.x, camRight.y, camRight.z);
+        glUniform3f(glGetUniformLocation(shaderProgram, "cam_up"), camUp.x, camUp.y, camUp.z);
 
         glfwSwapBuffers(window);
         prevTime = time;
