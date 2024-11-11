@@ -161,13 +161,13 @@ int main(int, char**) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // load image, create texture and generate mipmaps
-    int width, height, nrChannels;
+    int textureWidth, textureHeight, nrChannels;
     stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
     // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
-    unsigned char *data = stbi_load(TEXTURE_PATH, &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load(TEXTURE_PATH, &textureWidth, &textureHeight, &nrChannels, 0);
     if (data)
     {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     else
@@ -269,6 +269,11 @@ int main(int, char**) {
         int stateQ = glfwGetKey(window, GLFW_KEY_Q);
         int stateF = glfwGetKey(window, GLFW_KEY_F);
 
+        int stateEsc = glfwGetKey(window, GLFW_KEY_ESCAPE);
+        if (stateEsc == GLFW_PRESS) {
+            break;
+        }
+
         glm::vec3 axis = glm::vec3(0., 0., 0.);
         if (stateW == GLFW_PRESS) {
             axis += camForward;
@@ -292,6 +297,7 @@ int main(int, char**) {
             fov = DEFAULT_FOV;
             glUniform1f(glGetUniformLocation(shaderProgram, "cam_fov"), fov);
         }
+
         float axisLength = glm::length(axis);
         if (axisLength > 0.) axis /= axisLength;
         camPos += axis * MOVE_SPEED * (float)dt;
