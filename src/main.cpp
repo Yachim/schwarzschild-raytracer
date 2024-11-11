@@ -210,7 +210,7 @@ int main(int, char**) {
     glUniform1f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.base.material.shininess").c_str()), sphereMat.getShininess());
     glUniform1f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].inner_radius").c_str()), 2.5);
     glUniform1f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].outer_radius").c_str()), 5.);
-    glUniform3f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.normal").c_str()), 0., -1., 0.);
+    glUniform3f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.normal").c_str()), 0., 1., 0.);
 
     glUniform1i(glGetUniformLocation(shaderProgram, "num_objects"), 2);
     glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(0) + "].type").c_str()), 0);

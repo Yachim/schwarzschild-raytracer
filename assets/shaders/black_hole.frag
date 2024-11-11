@@ -221,7 +221,7 @@ bool sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, out vec3 intersectio
 
 bool plane_intersect(vec3 origin, vec3 dir, Plane plane, out vec3 intersection_point, float max_lambda) {
     float denom = dot(plane.normal, dir);
-    if (denom < 1. - parallel_treshold) return false;
+    if (abs(denom) < 1. - parallel_treshold) return false;
 
     float lambda = dot(plane.normal, plane.base.pos - origin) / denom;
     intersection_point = origin + dir * lambda;
@@ -313,7 +313,7 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
         vec3 lit_color = calculate_lighting(
             intersection_point,
             normal,
-            dir,
+            -dir,
             material
         );
         color = vec4(lit_color, material.color.a);
