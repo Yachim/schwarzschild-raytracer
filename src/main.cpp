@@ -183,7 +183,7 @@ int main(int, char**) {
     glUniform1i(glGetUniformLocation(shaderProgram, "background_texture"), 0);
 
     glUniform1i(glGetUniformLocation(shaderProgram, "num_lights"), 1);
-    glUniform3f(glGetUniformLocation(shaderProgram, ("lights[" + std::to_string(0) + "].position").c_str()), light.getPos().x, light.getPos().y, light.getPos().z);
+    glUniform3f(glGetUniformLocation(shaderProgram, ("lights[" + std::to_string(0) + "].pos").c_str()), light.getPos().x, light.getPos().y, light.getPos().z);
     glUniform3f(glGetUniformLocation(shaderProgram, ("lights[" + std::to_string(0) + "].color").c_str()), light.getColor().x, light.getColor().y, light.getColor().z);
     glUniform1f(glGetUniformLocation(shaderProgram, ("lights[" + std::to_string(0) + "].intensity").c_str()), light.getIntensity());
     glUniform1f(glGetUniformLocation(shaderProgram, ("lights[" + std::to_string(0) + "].attenuation_constant").c_str()), light.getAttenuationConstant());
@@ -191,26 +191,26 @@ int main(int, char**) {
     glUniform1f(glGetUniformLocation(shaderProgram, ("lights[" + std::to_string(0) + "].attenuation_quadratic").c_str()), light.getAttenuationQuadratic());
 
     glUniform1i(glGetUniformLocation(shaderProgram, "num_spheres"), 1);
-    glUniform3f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].center").c_str()), sphere.getPos().x, sphere.getPos().y, sphere.getPos().z);
+    glUniform3f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].base.pos").c_str()), sphere.getPos().x, sphere.getPos().y, sphere.getPos().z);
+    glUniform1i(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].base.opaque").c_str()), 1); // TODO:  
+    glUniform4f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].base.material.color").c_str()), sphereMat.getColor().x, sphereMat.getColor().y, sphereMat.getColor().z, sphereMat.getColor().w);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].base.material.ambient").c_str()), sphereMat.getAmbient());
+    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].base.material.diffuse").c_str()), sphereMat.getDiffuse());
+    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].base.material.specular").c_str()), sphereMat.getSpecular());
+    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].base.material.shininess").c_str()), sphereMat.getShininess());
     glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].radius").c_str()), sphere.getRadius());
-    glUniform1i(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].opaque").c_str()), 1); // TODO:  
-    glUniform4f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].material.color").c_str()), sphereMat.getColor().x, sphereMat.getColor().y, sphereMat.getColor().z, sphereMat.getColor().w);
-    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].material.ambient").c_str()), sphereMat.getAmbient());
-    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].material.diffuse").c_str()), sphereMat.getDiffuse());
-    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].material.specular").c_str()), sphereMat.getSpecular());
-    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].material.shininess").c_str()), sphereMat.getShininess());
 
     glUniform1i(glGetUniformLocation(shaderProgram, "num_hollow_disks"), 1);
+    glUniform3f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.base.pos").c_str()), 0., 0., 0.);
+    glUniform1i(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.base.opaque").c_str()), 1); // TODO:
+    glUniform4f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.base.material.color").c_str()), 1., 0.5, 0.1, 1.);
+    glUniform1f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.base.material.ambient").c_str()), sphereMat.getAmbient());
+    glUniform1f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.base.material.diffuse").c_str()), sphereMat.getDiffuse());
+    glUniform1f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.base.material.specular").c_str()), sphereMat.getSpecular());
+    glUniform1f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.base.material.shininess").c_str()), sphereMat.getShininess());
     glUniform1f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].inner_radius").c_str()), 2.5);
     glUniform1f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].outer_radius").c_str()), 5.);
-    glUniform3f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.point").c_str()), 0., 0., 0.);
     glUniform3f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.normal").c_str()), 0., -1., 0.);
-    glUniform1i(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.opaque").c_str()), 1); // TODO:
-    glUniform4f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.material.color").c_str()), 1., 0.5, 0.1, 1.);
-    glUniform1f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.material.ambient").c_str()), sphereMat.getAmbient());
-    glUniform1f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.material.diffuse").c_str()), sphereMat.getDiffuse());
-    glUniform1f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.material.specular").c_str()), sphereMat.getSpecular());
-    glUniform1f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.material.shininess").c_str()), sphereMat.getShininess());
 
     glUniform1i(glGetUniformLocation(shaderProgram, "num_objects"), 2);
     glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(0) + "].type").c_str()), 0);
