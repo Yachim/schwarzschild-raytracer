@@ -345,7 +345,7 @@ void main() {
     vec3 normal_vec = normalize(cam_pos);
     bool hit_opaque;
     FragColor = vec4(0., 0., 0., 0.);
-    if (abs(dot(ray, normal_vec)) >= parallel_treshold) { // if radial trajectory
+    if (abs(dot(ray, normal_vec)) >= parallel_treshold) { // if radial trajectory, FIXME: trace only until |v_0 . n| < p (v_0: ray, n: normal_vec, p: paralell_treshold)
         vec4 intersection_color;
         hit_opaque = intersect(cam_pos, ray, intersection_color);
         FragColor += intersection_color;
