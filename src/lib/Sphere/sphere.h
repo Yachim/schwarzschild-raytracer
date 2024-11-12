@@ -5,7 +5,7 @@
 #include "../Object/object.h"
 #include "../Material/material.h"
 
-class Sphere: public Object {
+class Sphere : public Object {
 public:
     Sphere();
     Sphere(glm::vec3 pos);

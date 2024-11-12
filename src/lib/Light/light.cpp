@@ -1,12 +1,12 @@
 #include "light.h"
 
-Light::Light(): Light::Light(glm::vec3(10., 10., 10.), glm::vec3(1., 1., 1.), 2.5) {}
-Light::Light(glm::vec3 pos, glm::vec3 color, float intensity, float attenuationConstant, float attenuationLinear, float attenuationQuadratic):
+Light::Light() : Light::Light(glm::vec3(10., 10., 10.), glm::vec3(1., 1., 1.), 2.5) {}
+Light::Light(glm::vec3 pos, glm::vec3 color, float intensity, float attenuationConstant, float attenuationLinear, float attenuationQuadratic) :
     Object(pos),
-    m_color(color), 
-    m_intensity(intensity), 
-    m_attenuation_constant(attenuationConstant), 
-    m_attenuation_linear(attenuationLinear), 
+    m_color(color),
+    m_intensity(intensity),
+    m_attenuation_constant(attenuationConstant),
+    m_attenuation_linear(attenuationLinear),
     m_attenuation_quadratic(attenuationQuadratic) {}
 
 glm::vec3 Light::getColor() { return m_color; }

@@ -25,7 +25,7 @@ public:
     void setShininess(float shininess);
 
 private:
-    glm::vec4 m_color{0., 0., 0., 1.};
+    glm::vec4 m_color{ 0., 0., 0., 1. };
     float m_ambient = 0.1;
     float m_diffuse = 0.9;
     float m_specular = 0.5;

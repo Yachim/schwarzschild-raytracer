@@ -11,6 +11,6 @@ public:
     void setPos(glm::vec3 newPos);
 
 protected:
-    glm::vec3 m_pos{0.f, 0.f, 0.f};
+    glm::vec3 m_pos{ 0.f, 0.f, 0.f };
 };
 #endif

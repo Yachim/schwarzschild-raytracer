@@ -1,9 +1,9 @@
 #include "sphere.h"
 
-Sphere::Sphere(): Object() {}
-Sphere::Sphere(glm::vec3 pos): Object(pos) {}
-Sphere::Sphere(glm::vec3 pos, float radius): Object(pos), m_radius(radius) {}
-Sphere::Sphere(glm::vec3 pos, float radius, Material mat): Object(pos), m_radius(radius), m_material(mat) {}
+Sphere::Sphere() : Object() {}
+Sphere::Sphere(glm::vec3 pos) : Object(pos) {}
+Sphere::Sphere(glm::vec3 pos, float radius) : Object(pos), m_radius(radius) {}
+Sphere::Sphere(glm::vec3 pos, float radius, Material mat) : Object(pos), m_radius(radius), m_material(mat) {}
 
 float Sphere::getRadius() {
     return m_radius;

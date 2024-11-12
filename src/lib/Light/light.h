@@ -4,13 +4,13 @@
 #include <glm/vec2.hpp>
 #include "../Object/object.h"
 
-class Light: public Object {
+class Light : public Object {
 public:
     Light();
-    Light(glm::vec3 pos, glm::vec3 color, float intensity, 
-          float attenuationConstant = 1., 
-          float attenuationLinear = 0.09, 
-          float attenuationQuadratic = 0.032);
+    Light(glm::vec3 pos, glm::vec3 color, float intensity,
+        float attenuationConstant = 1.,
+        float attenuationLinear = 0.09,
+        float attenuationQuadratic = 0.032);
 
     glm::vec3 getColor();
     void setColor(const glm::vec3 color);

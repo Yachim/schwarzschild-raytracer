@@ -37,9 +37,9 @@ const float MAX_FOV = 120.;
 // 0 for 2k, 1 for 8k
 #define TEXTURE_QUALITY 0
 #if TEXTURE_QUALITY == 0
-    #define TEXTURE_PATH "assets/textures/background_2k.jpg"
+#define TEXTURE_PATH "assets/textures/background_2k.jpg"
 #elif TEXTURE_QUALITY == 1
-    #define TEXTURE_PATH "assets/textures/background_8k.jpg"
+#define TEXTURE_PATH "assets/textures/background_8k.jpg"
 #endif
 
 #pragma region shader utils
@@ -96,7 +96,7 @@ int main(int, char**) {
         return -1;
     }
 
-    #pragma region quad
+#pragma region quad
     float vertices[] = {
         // positions        // texture coords
          1.f,  1.f, 0.0f,    1.f,  1.f,   // top right
@@ -128,9 +128,9 @@ int main(int, char**) {
     // texture coord attribute
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-    #pragma endregion
+#pragma endregion
 
-    #pragma region shader
+#pragma region shader
     std::string vertexShaderSource = loadShaderSource("assets/shaders/full_screen_quad.vert");
     std::string fragmentShaderSource = loadShaderSource("assets/shaders/black_hole.frag");
     if (vertexShaderSource.empty() || fragmentShaderSource.empty()) return -1;
@@ -155,12 +155,12 @@ int main(int, char**) {
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
-    #pragma endregion
+#pragma endregion
 
-    #pragma region texture
+#pragma region texture
     unsigned int background_texture;
     glGenTextures(1, &background_texture);
-    glBindTexture(GL_TEXTURE_2D, background_texture); 
+    glBindTexture(GL_TEXTURE_2D, background_texture);
     // set the texture wrapping parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -171,18 +171,16 @@ int main(int, char**) {
     int textureWidth, textureHeight, nrChannels;
     stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
     // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
-    unsigned char *data = stbi_load(TEXTURE_PATH, &textureWidth, &textureHeight, &nrChannels, 0);
-    if (data)
-    {
+    unsigned char* data = stbi_load(TEXTURE_PATH, &textureWidth, &textureHeight, &nrChannels, 0);
+    if (data) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
-    else
-    {
+    else {
         std::cout << "Failed to load texture" << std::endl;
     }
     stbi_image_free(data);
-    #pragma endregion
+#pragma endregion
 
     Sphere sphere(glm::vec3(-10., 0., 0.));
     Material sphereMat = sphere.getMaterial();
@@ -191,7 +189,7 @@ int main(int, char**) {
 
     glUseProgram(shaderProgram);
 
-    #pragma region uniforms
+#pragma region uniforms
     glUniform1i(glGetUniformLocation(shaderProgram, "background_texture"), 0);
 
     glUniform1i(glGetUniformLocation(shaderProgram, "num_lights"), 1);
@@ -231,14 +229,14 @@ int main(int, char**) {
     glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(1) + "].index").c_str()), 0);
 
     glUniform1f(glGetUniformLocation(shaderProgram, "checkerboard_detail"), CHECKERBOARD_DETAIL);
-    #pragma endregion
+#pragma endregion
 
-    #pragma region input
+#pragma region input
     Input* input = Input::GetInstance();
     glfwSetKeyCallback(window, Input::keyCallback);
     glfwSetMouseButtonCallback(window, Input::mouseButtonCallback);
     glfwSetCursorPosCallback(window, Input::cursorPosCallback);
-    #pragma endregion
+#pragma endregion
 
     double prevTime = 0.;
     glm::vec2 prevMouse = glm::vec2(0.5, 0.5);
@@ -260,7 +258,7 @@ int main(int, char**) {
         glfwGetWindowSize(window, &width, &height);
         glViewport(0, 0, width, height);
 
-        #pragma region movement
+#pragma region movement
         glm::vec3 camPos = cam.getPos();
         glm::vec3 camForward = cam.getForward();
         glm::vec3 camRight = cam.getRight();
@@ -306,9 +304,9 @@ int main(int, char**) {
             if (fov > MAX_FOV) fov = MAX_FOV;
             cam.setFov(fov);
         }
-        #pragma endregion
+#pragma endregion
 
-        #pragma region uniforms
+#pragma region uniforms
         glUniform1f(glGetUniformLocation(shaderProgram, "time"), (float)glfwGetTime());
         glUniform2f(glGetUniformLocation(shaderProgram, "resolution"), width, height);
         glUniform1f(glGetUniformLocation(shaderProgram, "cam_fov"), cam.getFov());
@@ -317,7 +315,7 @@ int main(int, char**) {
         glUniform3f(glGetUniformLocation(shaderProgram, "cam_forward"), camForward.x, camForward.y, camForward.z);
         glUniform3f(glGetUniformLocation(shaderProgram, "cam_right"), camRight.x, camRight.y, camRight.z);
         glUniform3f(glGetUniformLocation(shaderProgram, "cam_up"), camUp.x, camUp.y, camUp.z);
-        #pragma endregion
+#pragma endregion
 
         glfwSwapBuffers(window);
         prevTime = windowTime;

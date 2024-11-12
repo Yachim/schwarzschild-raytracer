@@ -11,7 +11,7 @@
 // https://refactoring.guru/design-patterns/singleton/cpp/example#example-1
 class Input {
 private:
-    static Input *m_instance;
+    static Input* m_instance;
     static std::mutex m_mutex;
 
 #pragma region config
@@ -39,13 +39,13 @@ protected:
     ~Input() {};
 
 public:
-    Input(Input &other) = delete;
-    void operator=(const Input &) = delete;
-    static Input *GetInstance();
+    Input(Input& other) = delete;
+    void operator=(const Input&) = delete;
+    static Input* GetInstance();
 
-    static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
-    static void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
-    static void cursorPosCallback(GLFWwindow *window, double xpos, double ypos);
+    static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+    static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 
     float getAxis();         // forward/backward
     glm::vec2 getAxis2D();   // forward/backward, left/right

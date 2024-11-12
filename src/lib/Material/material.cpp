@@ -1,8 +1,8 @@
 #include "material.h"
 
 Material::Material() {}
-Material::Material(glm::vec4 color): m_color(color) {}
-Material::Material(glm::vec4 color, float ambient, float diffuse, float specular, float shininess):
+Material::Material(glm::vec4 color) : m_color(color) {}
+Material::Material(glm::vec4 color, float ambient, float diffuse, float specular, float shininess) :
     m_color(color), m_ambient(ambient), m_diffuse(diffuse), m_specular(specular), m_shininess(m_shininess) {}
 
 glm::vec4 Material::getColor() {
