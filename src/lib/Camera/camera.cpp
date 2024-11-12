@@ -41,3 +41,10 @@ void Camera::calculateRight() {
 void Camera::calculateUp() {
     m_up = glm::normalize(glm::cross(m_right, m_forward));
 }
+
+void Camera::setFov(float fov) {
+    m_fov = fov;
+}
+float Camera::getFov() {
+    return m_fov;
+}

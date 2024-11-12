@@ -18,20 +18,18 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-const uint WIDTH = 1280;
-const uint HEIGHT = 720;
+const uint DEFAULT_WIDTH = 1280;
+const uint DEFAULT_HEIGHT = 720;
 
 // the higher, the more fields
 // renders only half
 // set <= 0 to deactivate
-const float CHECKERBOARD_DETAIL = 0.;
+const float CHECKERBOARD_DETAIL = 200.;
 
-const float DOUBLE_CLICK_TRESHOLD = 0.5; // max time since last click in seconds
 const float MOVE_SPEED = 5.;
 const float SENSITIVITY = 300.;
 const float ZOOM_SENSITIVITY = 5000.;
 
-const float DEFAULT_FOV = 90.;
 const float MIN_FOV = 10.;
 const float MAX_FOV = 120.;
 
@@ -72,12 +70,118 @@ GLuint compileShader(GLenum type, const char* source) {
 }
 #pragma endregion
 
+#pragma region state
+double windowTime = 0.;
+double prevTime = 0.;
+double dt = 0.;
+
+bool lClicked = false;
+bool rClicked = false;
+glm::vec2 mouse = glm::vec2(0.5, 0.5);
+glm::vec2 prevMouse = glm::vec2(0.5, 0.5);
+glm::vec2 deltaMouse = glm::vec2();
+
+Camera cam(glm::vec3(0., 1., 15.));
+
+int width = DEFAULT_WIDTH;
+int height = DEFAULT_HEIGHT;
+#pragma endregion
+
+#pragma region input handling
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (action != GLFW_PRESS) return;
+
+    if (key == GLFW_KEY_ESCAPE) {
+        glfwTerminate();
+        return;
+    }
+
+    glm::vec3 camPos = cam.getPos();
+    glm::vec3 camForward = cam.getForward();
+    glm::vec3 camRight = cam.getRight();
+    glm::vec3 camUp = cam.getUp();
+
+    glm::vec3 moveDirection = glm::vec3();
+    if (key == GLFW_KEY_W) {
+        moveDirection += camForward;
+    }
+    if (key == GLFW_KEY_A) {
+        moveDirection -= camRight;
+    }
+    if (key == GLFW_KEY_S) {
+        moveDirection -= camForward;
+    }
+    if (key == GLFW_KEY_D) {
+        moveDirection += camRight;
+    }
+    if (key == GLFW_KEY_E) {
+        moveDirection += camUp;
+    }
+    if (key == GLFW_KEY_Q) {
+        moveDirection -= camUp;
+    }
+
+    float speed = MOVE_SPEED;
+    if (mods == GLFW_MOD_SHIFT) {
+        speed = MOVE_SPEED * 2.;
+    }
+    else if (mods == GLFW_MOD_CONTROL) {
+        speed = MOVE_SPEED / 2.;
+    }
+
+    float moveAmount = glm::length(moveDirection);
+    if (moveAmount > 0.) moveDirection /= moveAmount;
+    camPos += moveDirection * speed * (float)dt;
+    cam.setPos(camPos);
+
+    if (key == GLFW_KEY_F) {
+        cam.setFov(DEFAULT_FOV);
+    }
+}
+
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    lClicked = action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT;
+    rClicked = action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_RIGHT;
+}
+
+void cursorPositionCallback(GLFWwindow* window, double xpos, double ypos) {
+    mouse = glm::vec2(xpos / width, ypos / height);
+
+    glm::vec3 camForward = cam.getForward();
+    glm::vec3 camRight = cam.getRight();
+    glm::vec3 camUp = cam.getUp();
+
+    if (rClicked) {
+        // rotation x-axis
+        camForward = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camForward, glm::vec3(0., 1., 0.));
+        camRight = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camRight, glm::vec3(0., 1., 0.));
+        camUp = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camUp, glm::vec3(0., 1., 0.));
+
+        // rotation y-axis FIXME: clamp this
+        camForward = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.y, camForward, camRight);
+        camUp = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.y, camUp, camRight);
+
+        cam.setForward(camForward);
+        cam.setRight(camRight);
+        cam.setUp(camUp);
+    }
+    else if (lClicked) {
+        float fov = cam.getFov();
+        fov += ZOOM_SENSITIVITY * (float)dt * deltaMouse.y;
+        if (fov < MIN_FOV) fov = MIN_FOV;
+        if (fov > MAX_FOV) fov = MAX_FOV;
+        cam.setFov(fov);
+    }
+}
+#pragma endregion
+
 int main(int, char**) {
+    std::cout << vec3ToString(glm::vec3()) <<std::endl;
     if (!glfwInit()) {
         return -1;
     }
 
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Schwarzschild Raytracer", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(DEFAULT_WIDTH, DEFAULT_HEIGHT, "Schwarzschild Raytracer", NULL, NULL);
     if (!window) {
         glfwTerminate();
         return -1;
@@ -178,7 +282,6 @@ int main(int, char**) {
     stbi_image_free(data);
     #pragma endregion
 
-    Camera cam(glm::vec3(0., 1., 15.));
     Sphere sphere(glm::vec3(-10., 0., 0.));
     Material sphereMat = sphere.getMaterial();
     sphereMat.setColor(glm::vec4(1., 0., 0., 1.));
@@ -186,6 +289,7 @@ int main(int, char**) {
 
     glUseProgram(shaderProgram);
 
+    #pragma region uniforms
     glUniform1i(glGetUniformLocation(shaderProgram, "background_texture"), 0);
 
     glUniform1i(glGetUniformLocation(shaderProgram, "num_lights"), 1);
@@ -225,7 +329,7 @@ int main(int, char**) {
     glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(1) + "].index").c_str()), 0);
 
     glUniform1f(glGetUniformLocation(shaderProgram, "checkerboard_detail"), CHECKERBOARD_DETAIL);
-    float fov = DEFAULT_FOV;
+    #pragma endregion
 
     double prevMouseX, prevMouseY;
     glfwGetCursorPos(window, &prevMouseX, &prevMouseY);
@@ -233,12 +337,18 @@ int main(int, char**) {
     double prevLClickTime = -1.;
     double prevRClickTime = -1.;
 
-    double prevTime = 0.;
+    #pragma region input
+    glfwSetKeyCallback(window, keyCallback);
+    glfwSetMouseButtonCallback(window, mouseButtonCallback);
+    glfwSetCursorPosCallback(window, cursorPositionCallback);
+    #pragma endregion
+
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
-        double time = glfwGetTime();
-        double dt = time - prevTime;
+        windowTime = glfwGetTime();
+        dt = windowTime - prevTime;
+        deltaMouse = mouse - prevMouse;
 
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -249,109 +359,27 @@ int main(int, char**) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, background_texture);
 
-        int width, height;
         glfwGetWindowSize(window, &width, &height);
         glViewport(0, 0, width, height);
-
-        glUniform1f(glGetUniformLocation(shaderProgram, "time"), (float)glfwGetTime());
-        glUniform2f(glGetUniformLocation(shaderProgram, "resolution"), width, height);
 
         glm::vec3 camPos = cam.getPos();
         glm::vec3 camForward = cam.getForward();
         glm::vec3 camRight = cam.getRight();
         glm::vec3 camUp = cam.getUp();
 
-        #pragma region input
-        int stateW = glfwGetKey(window, GLFW_KEY_W);
-        int stateA = glfwGetKey(window, GLFW_KEY_A);
-        int stateS = glfwGetKey(window, GLFW_KEY_S);
-        int stateD = glfwGetKey(window, GLFW_KEY_D);
-        int stateE = glfwGetKey(window, GLFW_KEY_E);
-        int stateQ = glfwGetKey(window, GLFW_KEY_Q);
-        int stateF = glfwGetKey(window, GLFW_KEY_F);
-
-        int stateShift = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT);
-        int stateCtrl = glfwGetKey(window, GLFW_KEY_LEFT_CONTROL);
-
-        int stateEsc = glfwGetKey(window, GLFW_KEY_ESCAPE);
-        if (stateEsc == GLFW_PRESS) {
-            break;
-        }
-
-        float speed = MOVE_SPEED;
-        glm::vec3 axis = glm::vec3(0., 0., 0.);
-        if (stateW == GLFW_PRESS) {
-            axis += camForward;
-        }
-        if (stateA == GLFW_PRESS) {
-            axis -= camRight;
-        }
-        if (stateS == GLFW_PRESS) {
-            axis -= camForward;
-        }
-        if (stateD == GLFW_PRESS) {
-            axis += camRight;
-        }
-        if (stateE == GLFW_PRESS) {
-            axis += camUp;
-        }
-        if (stateQ == GLFW_PRESS) {
-            axis -= camUp;
-        }
-        if (stateF == GLFW_PRESS) {
-            fov = DEFAULT_FOV;
-            glUniform1f(glGetUniformLocation(shaderProgram, "cam_fov"), fov);
-        }
-        if (stateShift == GLFW_PRESS) {
-            speed = MOVE_SPEED * 2.;
-        }
-        if (stateCtrl == GLFW_PRESS) {
-            speed = MOVE_SPEED / 2.;
-        }
-
-        float axisLength = glm::length(axis);
-        if (axisLength > 0.) axis /= axisLength;
-        camPos += axis * speed * (float)dt;
-        cam.setPos(camPos);
-
-        double mouseX, mouseY;
-        glfwGetCursorPos(window, &mouseX, &mouseY);
-        glm::vec2 mouse = glm::vec2(mouseX, mouseY);
-        glm::vec2 deltaMouse = mouse - prevMouse;
-        deltaMouse.x /= width;
-        deltaMouse.y /= height;
-
-        int stateMouseRight = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
-        int stateMouseLeft = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-        if (stateMouseRight == GLFW_PRESS) {
-            // rotation x-axis
-            camForward = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camForward, glm::vec3(0., 1., 0.));
-            camRight = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camRight, glm::vec3(0., 1., 0.));
-            camUp = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camUp, glm::vec3(0., 1., 0.));
-
-            // rotation y-axis FIXME: clamp this
-            camForward = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.y, camForward, camRight);
-            camUp = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.y, camUp, camRight);
-
-            cam.setForward(camForward);
-            cam.setRight(camRight);
-            cam.setUp(camUp);
-        }
-        else if (stateMouseLeft == GLFW_PRESS) {
-            fov += ZOOM_SENSITIVITY * (float)dt * deltaMouse.y;
-            if (fov < MIN_FOV) fov = MIN_FOV;
-            if (fov > MAX_FOV) fov = MAX_FOV;
-            glUniform1f(glGetUniformLocation(shaderProgram, "cam_fov"), fov);
-        }
-        #pragma endregion
+        #pragma region uniforms
+        glUniform1f(glGetUniformLocation(shaderProgram, "time"), (float)glfwGetTime());
+        glUniform2f(glGetUniformLocation(shaderProgram, "resolution"), width, height);
+        glUniform1f(glGetUniformLocation(shaderProgram, "cam_fov"), cam.getFov());
 
         glUniform3f(glGetUniformLocation(shaderProgram, "cam_pos"), camPos.x, camPos.y, camPos.z);
         glUniform3f(glGetUniformLocation(shaderProgram, "cam_forward"), camForward.x, camForward.y, camForward.z);
         glUniform3f(glGetUniformLocation(shaderProgram, "cam_right"), camRight.x, camRight.y, camRight.z);
         glUniform3f(glGetUniformLocation(shaderProgram, "cam_up"), camUp.x, camUp.y, camUp.z);
+        #pragma endregion
 
         glfwSwapBuffers(window);
-        prevTime = time;
+        prevTime = windowTime;
         prevMouse = mouse;
     }
 
