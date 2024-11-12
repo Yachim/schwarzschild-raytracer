@@ -15,6 +15,7 @@
 #include "lib/Material/material.h"
 #include "lib/Light/light.h"
 #include "lib/utils/utils.h"
+#include "lib/Input/input.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -72,95 +73,11 @@ GLuint compileShader(GLenum type, const char* source) {
 #pragma endregion
 
 #pragma region state
-bool wHolding = false;
-bool aHolding = false;
-bool sHolding = false;
-bool dHolding = false;
-bool eHolding = false;
-bool qHolding = false;
-bool shiftHolding = false;
-bool ctrlHolding = false;
-
-bool lHolding = false;
-bool rHolding = false;
-glm::vec2 mouse = glm::vec2(0.5, 0.5);
-
+Input* input = Input::GetInstance();
 Camera cam(glm::vec3(0., 1., 15.));
 
 int width = DEFAULT_WIDTH;
 int height = DEFAULT_HEIGHT;
-#pragma endregion
-
-#pragma region input handling
-void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (action == GLFW_PRESS) {
-        switch (key) {
-        case GLFW_KEY_W:
-            wHolding = true;
-            break;
-        case GLFW_KEY_A:
-            aHolding = true;
-            break;
-        case GLFW_KEY_S:
-            sHolding = true;
-            break;
-        case GLFW_KEY_D:
-            dHolding = true;
-            break;
-        case GLFW_KEY_E:
-            eHolding = true;
-            break;
-        case GLFW_KEY_Q:
-            qHolding = true;
-            break;
-        }
-
-        switch (mods) {
-        case GLFW_MOD_SHIFT:
-            shiftHolding = true;
-            break;
-        case GLFW_MOD_CONTROL:
-            ctrlHolding = true;
-            break;
-        }
-    }
-    else if (action == GLFW_RELEASE) {
-        wHolding = wHolding && key != GLFW_KEY_W;
-        aHolding = aHolding && key != GLFW_KEY_A;
-        sHolding = sHolding && key != GLFW_KEY_S;
-        dHolding = dHolding && key != GLFW_KEY_D;
-        eHolding = eHolding && key != GLFW_KEY_E;
-        qHolding = qHolding && key != GLFW_KEY_Q;
-        shiftHolding = shiftHolding && mods != GLFW_MOD_SHIFT;
-        ctrlHolding = ctrlHolding && mods != GLFW_MOD_CONTROL;
-    }
-
-    if (action != GLFW_PRESS) return;
-
-    if (key == GLFW_KEY_ESCAPE) {
-        glfwTerminate();
-        return;
-    }
-
-    if (key == GLFW_KEY_F) {
-        cam.setFov(DEFAULT_FOV);
-    }
-}
-
-void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
-    if (action == GLFW_PRESS) {
-        lHolding = button == GLFW_MOUSE_BUTTON_LEFT;
-        rHolding = button == GLFW_MOUSE_BUTTON_RIGHT;
-    }
-    else if (action == GLFW_RELEASE) {
-        lHolding = lHolding && button != GLFW_MOUSE_BUTTON_LEFT;
-        rHolding = rHolding && button != GLFW_MOUSE_BUTTON_RIGHT;
-    }
-}
-
-void cursorPositionCallback(GLFWwindow* window, double xpos, double ypos) {
-    mouse = glm::vec2(xpos / width, ypos / height);
-}
 #pragma endregion
 
 int main(int, char**) {
@@ -319,9 +236,9 @@ int main(int, char**) {
     #pragma endregion
 
     #pragma region input
-    glfwSetKeyCallback(window, keyCallback);
-    glfwSetMouseButtonCallback(window, mouseButtonCallback);
-    glfwSetCursorPosCallback(window, cursorPositionCallback);
+    glfwSetKeyCallback(window, Input::keyCallback);
+    glfwSetMouseButtonCallback(window, Input::mouseButtonCallback);
+    glfwSetCursorPosCallback(window, Input::cursorPosCallback);
     #pragma endregion
 
     double prevTime = 0.;
@@ -331,7 +248,6 @@ int main(int, char**) {
 
         double windowTime = glfwGetTime();
         double dt = windowTime - prevTime;
-        glm::vec2 deltaMouse = mouse - prevMouse;
 
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -351,31 +267,13 @@ int main(int, char**) {
         glm::vec3 camRight = cam.getRight();
         glm::vec3 camUp = cam.getUp();
 
-        glm::vec3 moveDirection = glm::vec3();
-        if (wHolding) {
-            moveDirection += camForward;
-        }
-        if (aHolding) {
-            moveDirection -= camRight;
-        }
-        if (sHolding) {
-            moveDirection -= camForward;
-        }
-        if (dHolding) {
-            moveDirection += camRight;
-        }
-        if (eHolding) {
-            moveDirection += camUp;
-        }
-        if (qHolding) {
-            moveDirection -= camUp;
-        }
-
+        glm::vec3 moveDirection = input->getAxis3D();
+        moveDirection = moveDirection.x * camRight + moveDirection.y * camUp + moveDirection.z * camForward;
         float speed = MOVE_SPEED;
-        if (shiftHolding) {
+        if (input->isPressed(GLFW_MOD_SHIFT)) {
             speed = MOVE_SPEED * 2.;
         }
-        else if (ctrlHolding) {
+        else if (input->isPressed(GLFW_MOD_CONTROL)) {
             speed = MOVE_SPEED / 2.;
         }
 
@@ -384,7 +282,9 @@ int main(int, char**) {
         camPos += moveDirection * speed * (float)dt;
         cam.setPos(camPos);
 
-        if (rHolding) {
+        if (input->isRClicked()) {
+            glm::vec2 deltaMouse = input->getMouseDelta();
+
             // rotation x-axis
             camForward = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camForward, glm::vec3(0., 1., 0.));
             camRight = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camRight, glm::vec3(0., 1., 0.));
@@ -398,7 +298,9 @@ int main(int, char**) {
             cam.setRight(camRight);
             cam.setUp(camUp);
         }
-        else if (lHolding) {
+        else if (input->isLClicked()) {
+            glm::vec2 deltaMouse = input->getMouseDelta();
+
             float fov = cam.getFov();
             fov += ZOOM_SENSITIVITY * (float)dt * deltaMouse.y;
             if (fov < MIN_FOV) fov = MIN_FOV;
@@ -420,7 +322,6 @@ int main(int, char**) {
 
         glfwSwapBuffers(window);
         prevTime = windowTime;
-        prevMouse = mouse;
     }
 
     glDeleteProgram(shaderProgram);
