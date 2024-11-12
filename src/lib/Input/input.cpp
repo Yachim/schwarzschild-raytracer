@@ -4,8 +4,7 @@
 Input *Input::m_instance(nullptr);
 std::mutex Input::m_mutex;
 
-Input *Input::GetInstance()
-{
+Input *Input::GetInstance() {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (m_instance == nullptr)
     {
@@ -14,8 +13,7 @@ Input *Input::GetInstance()
     return m_instance;
 }
 
-void Input::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
-{
+void Input::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     Input *instance = Input::GetInstance();
 
     if (action == GLFW_PRESS)
@@ -28,8 +26,7 @@ void Input::keyCallback(GLFWwindow *window, int key, int scancode, int action, i
     }
 }
 
-void Input::mouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
-{
+void Input::mouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
     Input *instance = Input::GetInstance();
 
     if (action == GLFW_PRESS)
@@ -44,8 +41,7 @@ void Input::mouseButtonCallback(GLFWwindow *window, int button, int action, int 
     }
 }
 
-void Input::cursorPosCallback(GLFWwindow *window, double xpos, double ypos)
-{
+void Input::cursorPosCallback(GLFWwindow *window, double xpos, double ypos) {
     Input *instance = Input::GetInstance();
 
     int width, height;
@@ -55,8 +51,7 @@ void Input::cursorPosCallback(GLFWwindow *window, double xpos, double ypos)
     instance->m_prevMouse = instance->m_mouse;
 }
 
-float Input::getSpecifiedAxis(int positive, int negative)
-{
+float Input::getSpecifiedAxis(int positive, int negative) {
     float axis = 0.;
     if (m_keymap[positive])
     {
@@ -69,42 +64,35 @@ float Input::getSpecifiedAxis(int positive, int negative)
     return axis;
 }
 
-float Input::getAxis()
-{
+float Input::getAxis() {
     return getSpecifiedAxis(m_forwardKey, m_backKey);
 }
 
-glm::vec2 Input::getAxis2D()
-{
+glm::vec2 Input::getAxis2D() {
     return glm::vec2(getAxis(), getSpecifiedAxis(m_rightKey, m_leftKey));
 }
 
-glm::vec3 Input::getAxis3D()
-{
-    return glm::vec3(getAxis2D(), getSpecifiedAxis(m_upKey, m_downKey));
+glm::vec3 Input::getAxis3D() {
+    glm::vec2 axis2d = getAxis2D();
+    return glm::vec3(axis2d.y, getSpecifiedAxis(m_upKey, m_downKey), axis2d.x);
 }
 
-bool Input::isPressed(int key)
-{
+bool Input::isPressed(int key) {
     return m_keymap[key];
 }
 
-bool Input::isLClicked()
-{
+bool Input::isLClicked() {
     return m_lClicked;
 }
 
-bool Input::isRClicked()
-{
+bool Input::isRClicked() {
     return m_rClicked;
 }
 
-glm::vec2 Input::getMouseDelta()
-{
+glm::vec2 Input::getMouseDelta() {
     return m_deltaMouse;
 }
 
-glm::vec2 Input::getMouse()
-{
+glm::vec2 Input::getMouse() {
     return m_mouse;
 }

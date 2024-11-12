@@ -9,8 +9,7 @@
 
 // thread safe
 // https://refactoring.guru/design-patterns/singleton/cpp/example#example-1
-class Input
-{
+class Input {
 private:
     static Input *m_instance;
     static std::mutex m_mutex;
@@ -50,12 +49,11 @@ public:
 
     float getAxis();         // forward/backward
     glm::vec2 getAxis2D();   // forward/backward, left/right
-    glm::vec3 getAxis3D();   // forward/backward, left/right, up/down
+    glm::vec3 getAxis3D();   // up/down, left/right, forward/backward
     bool isPressed(int key); // key or mod
     bool isLClicked();
     bool isRClicked();
     glm::vec2 getMouseDelta();
     glm::vec2 getMouse();
 };
-
 #endif
