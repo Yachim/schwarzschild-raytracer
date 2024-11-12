@@ -9,19 +9,20 @@
 
 // thread safe
 // https://refactoring.guru/design-patterns/singleton/cpp/example#example-1
-class Input {
+class Input
+{
 private:
-    static Input* m_instance;
+    static Input *m_instance;
     static std::mutex m_mutex;
 
-    #pragma region config
+#pragma region config
     int m_forwardKey = GLFW_KEY_W;
     int m_leftKey = GLFW_KEY_A;
     int m_backKey = GLFW_KEY_S;
     int m_rightKey = GLFW_KEY_D;
     int m_upKey = GLFW_KEY_E;
     int m_downKey = GLFW_KEY_Q;
-    #pragma endregion
+#pragma endregion
 
     // keycode, pressed
     std::map<int, bool> m_keymap;
@@ -43,20 +44,18 @@ public:
     void operator=(const Input &) = delete;
     static Input *GetInstance();
 
-    static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-    static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
-    static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos);
+    static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
+    static void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
+    static void cursorPosCallback(GLFWwindow *window, double xpos, double ypos);
 
-    float getAxis(); // forward/backward
-    glm::vec2 getAxis2D(); // forward/backward, left/right
-    glm::vec3 getAxis3D(); // forward/backward, left/right, up/down
+    float getAxis();         // forward/backward
+    glm::vec2 getAxis2D();   // forward/backward, left/right
+    glm::vec3 getAxis3D();   // forward/backward, left/right, up/down
     bool isPressed(int key); // key or mod
     bool isLClicked();
     bool isRClicked();
     glm::vec2 getMouseDelta();
     glm::vec2 getMouse();
 };
-    
-Input* Input::m_instance(nullptr);
-std::mutex Input::m_mutex;
+
 #endif
