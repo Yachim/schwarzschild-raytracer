@@ -27,9 +27,10 @@ const uint DEFAULT_HEIGHT = 720;
 // set <= 0 to deactivate
 const float CHECKERBOARD_DETAIL = 0.;
 
+const float MOVE_SPEED_INCREASE_SPEED = 0.25;
 const float MOVE_SPEED = 5.;
-const float SENSITIVITY = 300.;
-const float ZOOM_SENSITIVITY = 5000.;
+const float SENSITIVITY = 0.5;
+const float ZOOM_SENSITIVITY = 10.;
 
 const float MIN_FOV = 10.;
 const float MAX_FOV = 120.;
@@ -69,13 +70,6 @@ GLuint compileShader(GLenum type, const char* source) {
     }
     return shader;
 }
-#pragma endregion
-
-#pragma region state
-Camera cam(glm::vec3(0., 1., 15.));
-
-int width = DEFAULT_WIDTH;
-int height = DEFAULT_HEIGHT;
 #pragma endregion
 
 int main(int, char**) {
@@ -182,6 +176,7 @@ int main(int, char**) {
     stbi_image_free(data);
 #pragma endregion
 
+    Camera cam(glm::vec3(0., 1., 15.));
     Sphere sphere(glm::vec3(-10., 0., 0.));
     Material sphereMat = sphere.getMaterial();
     sphereMat.setColor(glm::vec4(1., 0., 0., 1.));
@@ -232,19 +227,25 @@ int main(int, char**) {
 #pragma endregion
 
 #pragma region input
-    Input* input = Input::GetInstance();
+    Input* input = Input::getInstance();
     glfwSetKeyCallback(window, Input::keyCallback);
     glfwSetMouseButtonCallback(window, Input::mouseButtonCallback);
     glfwSetCursorPosCallback(window, Input::cursorPosCallback);
+    glfwSetScrollCallback(window, Input::scrollCallback);
 #pragma endregion
 
+    float speed = MOVE_SPEED;
     double prevTime = 0.;
-    glm::vec2 prevMouse = glm::vec2(0.5, 0.5);
+    glm::vec2 prevMouse = input->getMouse();
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
+        if (input->isPressed(GLFW_KEY_ESCAPE)) break;
+
         double windowTime = glfwGetTime();
         double dt = windowTime - prevTime;
+        glm::vec2 mouse = input->getMouse();
+        glm::vec2 deltaMouse = mouse - prevMouse;
 
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -255,6 +256,7 @@ int main(int, char**) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, background_texture);
 
+        int height, width;
         glfwGetWindowSize(window, &width, &height);
         glViewport(0, 0, width, height);
 
@@ -266,22 +268,20 @@ int main(int, char**) {
 
         glm::vec3 moveDirection = input->getAxis3D();
         moveDirection = moveDirection.x * camRight + moveDirection.y * camUp + moveDirection.z * camForward;
-        float speed = MOVE_SPEED;
-        if (input->isPressed(GLFW_MOD_SHIFT)) {
-            speed = MOVE_SPEED * 2.;
-        }
-        else if (input->isPressed(GLFW_MOD_CONTROL)) {
-            speed = MOVE_SPEED / 2.;
-        }
 
         float moveAmount = glm::length(moveDirection);
         if (moveAmount > 0.) moveDirection /= moveAmount;
         camPos += moveDirection * speed * (float)dt;
         cam.setPos(camPos);
 
-        if (input->isRClicked()) {
-            glm::vec2 deltaMouse = input->getMouseDelta();
+        if (input->isPressed(GLFW_KEY_LEFT_SHIFT)) {
+            speed *= 1 + MOVE_SPEED_INCREASE_SPEED * (float)dt;
+        }
+        else if (input->isPressed(GLFW_KEY_LEFT_CONTROL)) {
+            speed *= 1 - MOVE_SPEED_INCREASE_SPEED * (float)dt;
+        }
 
+        if (input->isRClicked()) {
             // rotation x-axis
             camForward = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camForward, glm::vec3(0., 1., 0.));
             camRight = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camRight, glm::vec3(0., 1., 0.));
@@ -296,8 +296,6 @@ int main(int, char**) {
             cam.setUp(camUp);
         }
         else if (input->isLClicked()) {
-            glm::vec2 deltaMouse = input->getMouseDelta();
-
             float fov = cam.getFov();
             fov += ZOOM_SENSITIVITY * (float)dt * deltaMouse.y;
             if (fov < MIN_FOV) fov = MIN_FOV;
@@ -305,6 +303,8 @@ int main(int, char**) {
             cam.setFov(fov);
         }
 #pragma endregion
+
+        if (input->isPressed(GLFW_KEY_F)) cam.setFov(DEFAULT_FOV);
 
 #pragma region uniforms
         glUniform1f(glGetUniformLocation(shaderProgram, "time"), (float)glfwGetTime());
@@ -319,6 +319,7 @@ int main(int, char**) {
 
         glfwSwapBuffers(window);
         prevTime = windowTime;
+        prevMouse = mouse;
     }
 
     glDeleteProgram(shaderProgram);

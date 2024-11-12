@@ -1,10 +1,11 @@
 #include "input.h"
 #include "../Camera/camera.h"
+#include <glm/geometric.hpp>
 
 Input* Input::m_instance(nullptr);
 std::mutex Input::m_mutex;
 
-Input* Input::GetInstance() {
+Input* Input::getInstance() {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (m_instance == nullptr) {
         m_instance = new Input();
@@ -13,7 +14,7 @@ Input* Input::GetInstance() {
 }
 
 void Input::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    Input* instance = Input::GetInstance();
+    Input* instance = Input::getInstance();
 
     if (action == GLFW_PRESS) {
         instance->m_keymap[key] = true;
@@ -24,7 +25,7 @@ void Input::keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 }
 
 void Input::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
-    Input* instance = Input::GetInstance();
+    Input* instance = Input::getInstance();
 
     if (action == GLFW_PRESS) {
         instance->m_lClicked = button == GLFW_MOUSE_BUTTON_LEFT;
@@ -37,13 +38,15 @@ void Input::mouseButtonCallback(GLFWwindow* window, int button, int action, int 
 }
 
 void Input::cursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
-    Input* instance = Input::GetInstance();
+    Input* instance = Input::getInstance();
 
-    int width, height;
-    glfwGetWindowSize(window, &width, &height);
-    instance->m_mouse = glm::vec2(xpos / width, ypos / height);
-    instance->m_deltaMouse = instance->m_mouse - instance->m_prevMouse;
-    instance->m_prevMouse = instance->m_mouse;
+    instance->m_mouse = glm::vec2(xpos, ypos);
+}
+
+void Input::scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
+    Input* instance = Input::getInstance();
+
+    instance->m_scroll = glm::vec2(xoffset, yoffset);
 }
 
 float Input::getSpecifiedAxis(int positive, int negative) {
@@ -82,10 +85,10 @@ bool Input::isRClicked() {
     return m_rClicked;
 }
 
-glm::vec2 Input::getMouseDelta() {
-    return m_deltaMouse;
-}
-
 glm::vec2 Input::getMouse() {
     return m_mouse;
+}
+
+glm::vec2 Input::getScroll() {
+    return m_scroll;
 }

@@ -22,3 +22,9 @@ std::string vec3ToString(glm::vec3 vec) {
     oss << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
     return oss.str();
 }
+
+std::string vec2ToString(glm::vec2 vec) {
+    std::ostringstream oss;
+    oss << "(" << vec.x << ", " << vec.y << ")";
+    return oss.str();
+}
