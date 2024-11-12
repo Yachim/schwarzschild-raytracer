@@ -27,6 +27,9 @@ add_executable(schwarzschild_raytracer
 
     src/lib/utils/utils.cpp
     src/lib/utils/utils.h
+
+    src/lib/Input/input.cpp
+    src/lib/Input/input.h
 )
 
 add_custom_target(copy_assets ALL
