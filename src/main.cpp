@@ -2,7 +2,6 @@
 // TODO: loading
 // TODO: disk, hollow disk classes
 // TODO: clocks
-// TODO: input as class (singleton)
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -73,7 +72,6 @@ GLuint compileShader(GLenum type, const char* source) {
 #pragma endregion
 
 #pragma region state
-Input* input = Input::GetInstance();
 Camera cam(glm::vec3(0., 1., 15.));
 
 int width = DEFAULT_WIDTH;
@@ -236,6 +234,7 @@ int main(int, char**) {
     #pragma endregion
 
     #pragma region input
+    Input* input = Input::GetInstance();
     glfwSetKeyCallback(window, Input::keyCallback);
     glfwSetMouseButtonCallback(window, Input::mouseButtonCallback);
     glfwSetCursorPosCallback(window, Input::cursorPosCallback);
