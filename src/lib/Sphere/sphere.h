@@ -1,11 +1,11 @@
 #ifndef SPHERE_H
 #define SPHERE_H
 
-#include <glm/vec3.hpp>
-#include "../Object/object.h"
+#include "../MaterialObject/materialObject.h"
 #include "../Material/material.h"
+#include "../Transform/transform.h"
 
-class Sphere : public Object {
+class Sphere : public MaterialObject, public Transform {
 public:
     Sphere();
     Sphere(glm::vec3 pos);
@@ -15,15 +15,11 @@ public:
     float getRadius();
     void setRadius(float radius);
 
-    Material getMaterial();
-    void setMaterial(Material mat);
-
-    void setupShader(GLuint program, int i);
-    void loadShader();
+    void setupShader(GLuint program, std::string prefix) override;
+    void loadShader() override;
 
 private:
     float m_radius = 1.;
-    Material m_material = Material();
 
     GLint m_radiusLoc;
 };

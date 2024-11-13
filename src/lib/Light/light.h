@@ -1,10 +1,9 @@
 #ifndef LIGHT_H
 #define LIGHT_H
 
-#include <glm/vec2.hpp>
-#include "../Object/object.h"
+#include "../Transform/transform.h"
 
-class Light : public Object {
+class Light : public Transform {
 public:
     Light();
     Light(glm::vec3 pos, glm::vec3 color, float intensity,
@@ -27,14 +26,20 @@ public:
     float getAttenuationQuadratic();
     void setAttenuationQuadratic(float quadratic);
 
-    void setupShader(GLuint program, int i);
-    void loadShader();
+    void setupShader(GLuint program, std::string prefix) override;
+    void loadShader() override;
 
 private:
     glm::vec3 m_color;
     float m_intensity;
-    float m_attenuation_constant;
-    float m_attenuation_linear;
-    float m_attenuation_quadratic;
+    float m_attenuationConstant;
+    float m_attenuationLinear;
+    float m_attenuationQuadratic;
+
+    GLuint m_colorPos;
+    GLuint m_intensityPos;
+    GLuint m_attenuationConstantPos;
+    GLuint m_attenuationLinearPos;
+    GLuint m_attenuationQuadraticPos;
 };
 #endif

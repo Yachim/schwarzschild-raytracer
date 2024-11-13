@@ -3,9 +3,9 @@
 #include <iostream>
 #include "../utils/utils.h"
 
-Camera::Camera() : Object() {}
-Camera::Camera(glm::vec3 pos) : Object(pos) {}
-Camera::Camera(glm::vec3 pos, glm::vec3 forward, glm::vec3 right) : Object(pos) {
+Camera::Camera() : Transform() {}
+Camera::Camera(glm::vec3 pos) : Transform(pos) {}
+Camera::Camera(glm::vec3 pos, glm::vec3 forward, glm::vec3 right) : Transform(pos) {
     m_forward = glm::normalize(forward);
     m_right = glm::normalize(right);
     calculateUp();

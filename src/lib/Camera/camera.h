@@ -1,12 +1,11 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include <glm/vec3.hpp>
-#include "../Object/object.h"
+#include "../Transform/transform.h"
 
 const float DEFAULT_FOV = 90.;
 
-class Camera : public Object {
+class Camera : public Transform {
 public:
     Camera();
     Camera(glm::vec3 pos, glm::vec3 forward, glm::vec3 right);
