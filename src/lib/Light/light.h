@@ -27,6 +27,8 @@ public:
     float getAttenuationQuadratic();
     void setAttenuationQuadratic(float quadratic);
 
+    void setupShader(GLuint program, int i);
+    void loadShader();
 
 private:
     glm::vec3 m_color;

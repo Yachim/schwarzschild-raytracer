@@ -18,8 +18,13 @@ public:
     Material getMaterial();
     void setMaterial(Material mat);
 
+    void setupShader(GLuint program, int i);
+    void loadShader();
+
 private:
     float m_radius = 1.;
     Material m_material = Material();
+
+    GLint m_radiusLoc;
 };
 #endif

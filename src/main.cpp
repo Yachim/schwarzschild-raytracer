@@ -1,4 +1,3 @@
-// TODO: two sided normals
 // TODO: loading
 // TODO: disk, hollow disk classes
 // TODO: clocks
@@ -180,6 +179,7 @@ int main(int, char**) {
     Sphere sphere(glm::vec3(-10., 0., 0.));
     Material sphereMat = sphere.getMaterial();
     sphereMat.setColor(glm::vec4(1., 0., 0., 1.));
+    sphere.setMaterial(sphereMat);
     Light light{};
 
     glUseProgram(shaderProgram);
@@ -196,14 +196,8 @@ int main(int, char**) {
     glUniform1f(glGetUniformLocation(shaderProgram, ("lights[" + std::to_string(0) + "].attenuation_quadratic").c_str()), light.getAttenuationQuadratic());
 
     glUniform1i(glGetUniformLocation(shaderProgram, "num_spheres"), 1);
-    glUniform3f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].base.pos").c_str()), sphere.getPos().x, sphere.getPos().y, sphere.getPos().z);
-    glUniform1i(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].base.opaque").c_str()), 1); // TODO:  
-    glUniform4f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].base.material.color").c_str()), sphereMat.getColor().x, sphereMat.getColor().y, sphereMat.getColor().z, sphereMat.getColor().w);
-    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].base.material.ambient").c_str()), sphereMat.getAmbient());
-    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].base.material.diffuse").c_str()), sphereMat.getDiffuse());
-    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].base.material.specular").c_str()), sphereMat.getSpecular());
-    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].base.material.shininess").c_str()), sphereMat.getShininess());
-    glUniform1f(glGetUniformLocation(shaderProgram, ("spheres[" + std::to_string(0) + "].radius").c_str()), sphere.getRadius());
+    sphere.setupShader(shaderProgram, 0);
+    sphere.loadShader();
 
     glUniform1i(glGetUniformLocation(shaderProgram, "num_hollow_disks"), 1);
     glUniform3f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.base.pos").c_str()), 0., 0., 0.);

@@ -2,6 +2,7 @@
 // right-handed y-up coordinates
 // camera has left-handed y-up coordinates
 // TODO: raytrace towards light?
+// TODO: opaque inside material
 
 precision highp float;
 precision highp sampler2D;
