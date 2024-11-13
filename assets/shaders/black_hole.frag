@@ -2,7 +2,6 @@
 // right-handed y-up coordinates
 // camera has left-handed y-up coordinates
 // TODO: raytrace towards light?
-// TODO: opaque inside material
 
 precision highp float;
 precision highp sampler2D;
@@ -15,12 +14,6 @@ out vec4 FragColor;
 uniform vec2 resolution;
 uniform float time;
 uniform sampler2D background_texture;
-
-uniform vec3 cam_pos;
-uniform vec3 cam_forward;
-uniform vec3 cam_right;
-uniform vec3 cam_up;
-uniform float cam_fov = 90.; // degrees, horizontal fov
 
 uniform int max_steps = 1000;
 uniform int max_revolutions = 2;
@@ -35,6 +28,16 @@ struct Transform {
 struct BaseObject {
     Transform transform;
 };
+
+struct Camera{
+    BaseObject base;
+    vec3 forward;
+    vec3 right;
+    vec3 up;
+    float fov;
+};
+
+uniform Camera cam;
 
 // Lighting parameters
 struct Light {
@@ -353,17 +356,17 @@ uniform float checkerboard_detail;
 void main() {
     if (checkerboard_detail > 0. && mod(floor(uv.x * checkerboard_detail) + floor(uv.y * checkerboard_detail * resolution.y / resolution.x), 2.0) != 0.0) return;
 
-    float ray_forward = 1. / tan(cam_fov / 360. * PI);
+    float ray_forward = 1. / tan(cam.fov / 360. * PI);
     float max_angle = 2. * float(max_revolutions) * PI;
 
-    vec3 ray = normalize(cam_right * uv.x + cam_up * uv.y * resolution.y / resolution.x + ray_forward * cam_forward);
+    vec3 ray = normalize(cam.right * uv.x + cam.up * uv.y * resolution.y / resolution.x + ray_forward * cam.forward);
 
-    vec3 normal_vec = normalize(cam_pos);
+    vec3 normal_vec = normalize(cam.base.transform.pos);
     bool hit_opaque;
     FragColor = vec4(0., 0., 0., 0.);
     if (abs(dot(ray, normal_vec)) >= parallel_treshold) { // if radial trajectory
         vec4 intersection_color;
-        hit_opaque = intersect(cam_pos, ray, intersection_color);
+        hit_opaque = intersect(cam.base.transform.pos, ray, intersection_color);
         FragColor += intersection_color;
         if (!hit_opaque) FragColor += get_bg(ray);
         return;
@@ -372,8 +375,8 @@ void main() {
     vec3 tangent_vec = normalize(cross(cross(normal_vec, ray), normal_vec));
 
     vec3 prev_ray_pos;
-    vec3 ray_pos = cam_pos;
-    float u = 1. / length(cam_pos);
+    vec3 ray_pos = cam.base.transform.pos;
+    float u = 1. / length(cam.base.transform.pos);
     float du = -u * dot(ray, normal_vec) / dot(ray, tangent_vec);
 
     float phi = 0.;
@@ -398,7 +401,7 @@ void main() {
             normal_vec = normalize(u_f_intersection_point);
             if (abs(dot(ray, normal_vec)) >= parallel_treshold) { // if radial trajectory
                 vec4 intersection_color;
-                hit_opaque = intersect(cam_pos, ray, intersection_color);
+                hit_opaque = intersect(cam.base.transform.pos, ray, intersection_color);
                 FragColor += intersection_color;
                 if (!hit_opaque) FragColor += get_bg(ray);
                 return;

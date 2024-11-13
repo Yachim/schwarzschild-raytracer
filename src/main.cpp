@@ -182,9 +182,12 @@ int main(int, char**) {
     sphere.setMaterial(sphereMat);
     Light light{};
 
+#pragma region uniforms
     glUseProgram(shaderProgram);
 
-#pragma region uniforms
+    cam.setupShader(shaderProgram);
+    cam.loadShader();
+
     glUniform1i(glGetUniformLocation(shaderProgram, "background_texture"), 0);
 
     glUniform1i(glGetUniformLocation(shaderProgram, "num_lights"), 1);
@@ -240,7 +243,6 @@ int main(int, char**) {
 
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shaderProgram);
         glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
@@ -300,12 +302,8 @@ int main(int, char**) {
 #pragma region uniforms
         glUniform1f(glGetUniformLocation(shaderProgram, "time"), (float)glfwGetTime());
         glUniform2f(glGetUniformLocation(shaderProgram, "resolution"), width, height);
-        glUniform1f(glGetUniformLocation(shaderProgram, "cam_fov"), cam.getFov());
 
-        glUniform3f(glGetUniformLocation(shaderProgram, "cam_pos"), camPos.x, camPos.y, camPos.z);
-        glUniform3f(glGetUniformLocation(shaderProgram, "cam_forward"), camForward.x, camForward.y, camForward.z);
-        glUniform3f(glGetUniformLocation(shaderProgram, "cam_right"), camRight.x, camRight.y, camRight.z);
-        glUniform3f(glGetUniformLocation(shaderProgram, "cam_up"), camUp.x, camUp.y, camUp.z);
+        cam.loadShader();
 #pragma endregion
 
         glfwSwapBuffers(window);

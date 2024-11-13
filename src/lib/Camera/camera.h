@@ -28,10 +28,21 @@ public:
     void setFov(float fov);
     float getFov();
 
+    void setupShader(GLuint program);
+    void loadShader() override;
+
 private:
     glm::vec3 m_forward{ 0.f, 0.f, -1.f };
     glm::vec3 m_right{ 1.f, 0.f, 0.f };
     glm::vec3 m_up{ 0.f, 1.f, 0.f };
     float m_fov = DEFAULT_FOV;
+
+    // uniform locations
+    GLint m_forwardLoc;
+    GLint m_rightLoc;
+    GLint m_upLoc;
+    GLint m_fovLoc;
+
+    void setupShader(GLuint program, std::string prefix) override {};
 };
 #endif

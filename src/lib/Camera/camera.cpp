@@ -1,3 +1,4 @@
+#include <glad/glad.h>
 #include "camera.h"
 #include <glm/geometric.hpp>
 #include <iostream>
@@ -47,4 +48,22 @@ void Camera::setFov(float fov) {
 }
 float Camera::getFov() {
     return m_fov;
+}
+
+void Camera::setupShader(GLuint program) {
+    Transform::setupShader(program, "cam");
+
+    m_forwardLoc = glGetUniformLocation(program, "cam.forward");
+    m_rightLoc = glGetUniformLocation(program, "cam.right");
+    m_upLoc = glGetUniformLocation(program, "cam.up");
+    m_fovLoc = glGetUniformLocation(program, "cam.fov");
+}
+
+void Camera::loadShader() {
+    Transform::loadShader();
+
+    glUniform3f(m_forwardLoc, m_forward.x, m_forward.y, m_forward.z);
+    glUniform3f(m_rightLoc, m_right.x, m_right.y, m_right.z);
+    glUniform3f(m_upLoc, m_up.x, m_up.y, m_up.z);
+    glUniform1f(m_fovLoc, m_fov);
 }
