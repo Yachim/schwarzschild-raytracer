@@ -27,6 +27,7 @@ private:
 
     // keycode, pressed
     std::map<int, bool> m_keymap;
+    std::map<int, bool> m_modmap;
 
     bool m_lClicked = false;
     bool m_rClicked = false;
@@ -52,7 +53,8 @@ public:
     float getAxis();         // forward/backward
     glm::vec2 getAxis2D();   // forward/backward, left/right
     glm::vec3 getAxis3D();   // up/down, left/right, forward/backward
-    bool isPressed(int key); // key or mod
+    bool isPressed(int key);
+    bool isPressed(int key, int mod);
     bool isLClicked();
     bool isRClicked();
     glm::vec2 getMouse();

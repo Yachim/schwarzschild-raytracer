@@ -21,6 +21,8 @@ uniform int max_revolutions = 2;
 uniform float u_f = 0.01;
 uniform float parallel_treshold = 0.9999999; // minimum value of a dot product of two unit vectors a . b, when the vectors are considered parallel; perpendicular_treshold = 1 - parallel_treshold
 
+uniform bool flat_raytrace = false;
+
 struct Transform {
     vec3 pos;
 };
@@ -364,7 +366,7 @@ void main() {
     vec3 normal_vec = normalize(cam.base.transform.pos);
     bool hit_opaque;
     FragColor = vec4(0., 0., 0., 0.);
-    if (abs(dot(ray, normal_vec)) >= parallel_treshold) { // if radial trajectory
+    if (flat_raytrace || abs(dot(ray, normal_vec)) >= parallel_treshold) { // if radial trajectory or flat space
         vec4 intersection_color;
         hit_opaque = intersect(cam.base.transform.pos, ray, intersection_color);
         FragColor += intersection_color;

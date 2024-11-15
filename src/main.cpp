@@ -231,6 +231,7 @@ int main(int, char**) {
     float speed = MOVE_SPEED;
     double prevTime = 0.;
     glm::vec2 prevMouse = input->getMouse();
+    GLint flatRaytraceLoc = glGetUniformLocation(shaderProgram, "flat_raytrace");
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
@@ -252,6 +253,9 @@ int main(int, char**) {
         int height, width;
         glfwGetWindowSize(window, &width, &height);
         glViewport(0, 0, width, height);
+
+        if (input->isPressed(GLFW_KEY_F, GLFW_MOD_ALT)) glUniform1i(flatRaytraceLoc, 1);
+        else glUniform1i(flatRaytraceLoc, 0);
 
 #pragma region movement
         glm::vec3 camPos = cam.getPos();
@@ -297,7 +301,7 @@ int main(int, char**) {
         }
 #pragma endregion
 
-        if (input->isPressed(GLFW_KEY_F)) cam.setFov(DEFAULT_FOV);
+        if (input->isPressed(GLFW_KEY_F) && !input->isPressed(GLFW_KEY_F, GLFW_MOD_ALT)) cam.setFov(DEFAULT_FOV);
 
 #pragma region uniforms
         glUniform1f(glGetUniformLocation(shaderProgram, "time"), (float)glfwGetTime());

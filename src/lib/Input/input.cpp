@@ -1,6 +1,7 @@
 #include "input.h"
 #include "../Camera/camera.h"
 #include <glm/geometric.hpp>
+#include <iostream>
 
 Input* Input::m_instance(nullptr);
 std::mutex Input::m_mutex;
@@ -18,9 +19,11 @@ void Input::keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 
     if (action == GLFW_PRESS) {
         instance->m_keymap[key] = true;
+        instance->m_modmap[mods] = true;
     }
-    else if (action == GLFW_RELEASE && instance->m_keymap[key]) {
-        instance->m_keymap[key] = false;
+    else if (action == GLFW_RELEASE) {
+        if (instance->m_keymap[key]) instance->m_keymap[key] = false;
+        if (instance->m_modmap[mods]) instance->m_modmap[mods] = false;
     }
 }
 
@@ -75,6 +78,10 @@ glm::vec3 Input::getAxis3D() {
 
 bool Input::isPressed(int key) {
     return m_keymap[key];
+}
+
+bool Input::isPressed(int key, int mod) {
+    return m_keymap[key] && m_modmap[mod];
 }
 
 bool Input::isLClicked() {
