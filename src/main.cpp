@@ -228,6 +228,8 @@ int main(int, char**) {
     glfwSetScrollCallback(window, Input::scrollCallback);
 #pragma endregion
 
+    double hyperbolicTrajectoryStartTime = -(1. + HYPERBOLIC_TRAJECTORY_DURATION);
+
     float speed = MOVE_SPEED;
     double prevTime = 0.;
     glm::vec2 prevMouse = input->getMouse();
@@ -302,6 +304,14 @@ int main(int, char**) {
 #pragma endregion
 
         if (input->isPressed(GLFW_KEY_F) && !input->isPressed(GLFW_KEY_F, GLFW_MOD_ALT)) cam.setFov(DEFAULT_FOV);
+
+        double hyperbolicTrajectoryDt = windowTime - hyperbolicTrajectoryStartTime;
+        if (input->isPressed(GLFW_KEY_H) && (hyperbolicTrajectoryDt < 0. || hyperbolicTrajectoryDt > HYPERBOLIC_TRAJECTORY_DURATION)) {
+            hyperbolicTrajectoryStartTime = windowTime;
+        }
+        if (hyperbolicTrajectoryDt >= 0. && hyperbolicTrajectoryDt <= HYPERBOLIC_TRAJECTORY_DURATION) {
+            cam.hyperbolicTrajectory(30.f, 10.f, (float)hyperbolicTrajectoryDt / HYPERBOLIC_TRAJECTORY_DURATION);
+        }
 
 #pragma region uniforms
         glUniform1f(glGetUniformLocation(shaderProgram, "time"), (float)glfwGetTime());

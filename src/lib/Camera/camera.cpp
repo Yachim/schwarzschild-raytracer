@@ -1,7 +1,5 @@
 #include <glad/glad.h>
 #include "camera.h"
-#include <glm/geometric.hpp>
-#include <iostream>
 #include "../utils/utils.h"
 
 Camera::Camera() : Transform() {}
@@ -48,6 +46,23 @@ void Camera::setFov(float fov) {
 }
 float Camera::getFov() {
     return m_fov;
+}
+
+void Camera::hyperbolicTrajectory(float initialDistance, float closestDistance, float time) {
+    float closestDistanceSquared = pow(closestDistance, 2.);
+    float a = -closestDistanceSquared / (-initialDistance + 2 * closestDistance);
+    float c = closestDistance + a;
+    float b = sqrt(closestDistanceSquared + 2. * a * closestDistance);
+
+    float easedTime = (1. - cos(time * M_PI)) / 2.;
+
+    float x = -initialDistance + 2. * easedTime * initialDistance;
+    float y = c - a * sqrt(1 + pow(x / b, 2.));
+
+    m_pos = x * HYPERBOLIC_TRAJECTORY_BASE_X + y * HYPERBOLIC_TRAJECTORY_BASE_Y;
+    m_forward = -glm::normalize(m_pos);
+    m_right = glm::normalize(glm::cross(m_forward, glm::vec3(0., 1., 0.)));
+    calculateUp();
 }
 
 void Camera::setupShader(GLuint program) {
