@@ -32,12 +32,8 @@ struct Transform {
     vec3 pos;
 };
 
-struct BaseObject {
-    Transform transform;
-};
-
 struct Camera{
-    BaseObject base;
+    Transform transform;
     vec3 forward;
     vec3 right;
     vec3 up;
@@ -48,7 +44,7 @@ uniform Camera cam;
 
 // Lighting parameters
 struct Light {
-    BaseObject base;
+    Transform transform;
     vec3 color;
     float intensity;
     float attenuation_constant;
@@ -69,13 +65,9 @@ struct Material {
     bool opaque;
 };
 
-struct BaseMaterialObject {
-    Transform transform;
-    Material material;
-};
-
 struct Sphere {
-    BaseMaterialObject base; // pos - center
+    Transform transform; // pos - center
+    Material material;
     float radius;
 };
 
@@ -91,17 +83,15 @@ const Material BLANK_MAT = Material(
     32.0,
     true
 );
-const BaseMaterialObject BLACK_HOLE_BASE = BaseMaterialObject(
-    Transform(vec3(0., 0., 0.)),
-    BLANK_MAT
-);
 const Sphere BLACK_HOLE = Sphere(
-    BLACK_HOLE_BASE,
+    Transform(vec3(0., 0., 0.)),
+    BLANK_MAT,
     1.0
 );
 
 struct Plane {
-    BaseMaterialObject base; // pos - some point
+    Transform transform; // pos - some point
+    Material material;
     vec3 normal; // normalized
 };
 
@@ -184,8 +174,8 @@ vec3 calculate_lighting(vec3 point, vec3 normal, vec3 view_dir, Material materia
     
     for (int i = 0; i < num_lights; i++) {
         Light light = lights[i];
-        vec3 light_dir = normalize(light.base.transform.pos - point);
-        float distance = length(light.base.transform.pos - point);
+        vec3 light_dir = normalize(light.transform.pos - point);
+        float distance = length(light.transform.pos - point);
         
         // Attenuation
         float attenuation = 1.0 / (
@@ -227,13 +217,13 @@ float min_positive(float n1, float n2) {
 
 // #region intersections
 bool sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, out vec3 intersection_point, float max_lambda) {
-    float D = pow(dot(dir, origin - sphere.base.transform.pos), 2) - square_vector(origin - sphere.base.transform.pos) + sphere.radius * sphere.radius;
+    float D = pow(dot(dir, origin - sphere.transform.pos), 2) - square_vector(origin - sphere.transform.pos) + sphere.radius * sphere.radius;
     if (D < 0) {
         return false;
     }
 
     float sqrt_D = sqrt(D);
-    float first_term = -dot(dir, origin - sphere.base.transform.pos);
+    float first_term = -dot(dir, origin - sphere.transform.pos);
     float lambda1 = first_term - sqrt_D;
     float lambda2 = first_term + sqrt_D;
 
@@ -250,19 +240,19 @@ bool plane_intersect(vec3 origin, vec3 dir, Plane plane, out vec3 intersection_p
     float denom = dot(plane.normal, dir);
     if (abs(denom) < 1. - parallel_treshold) return false;
 
-    float lambda = dot(plane.normal, plane.base.transform.pos - origin) / denom;
+    float lambda = dot(plane.normal, plane.transform.pos - origin) / denom;
     intersection_point = origin + dir * lambda;
     return lambda >= 0. && (max_lambda < 0. || lambda <= max_lambda);
 }
 
 bool disk_intersect(vec3 origin, vec3 dir, Disk disk, out vec3 intersection_point, float max_lambda) {
     bool hit = plane_intersect(origin, dir, disk.plane, intersection_point, max_lambda);
-    return hit && square_vector(intersection_point - disk.plane.base.transform.pos) <= disk.radius * disk.radius;
+    return hit && square_vector(intersection_point - disk.plane.transform.pos) <= disk.radius * disk.radius;
 }
 
 bool hollow_disk_intersect(vec3 origin, vec3 dir, HollowDisk disk, out vec3 intersection_point, float max_lambda) {
     bool hit = plane_intersect(origin, dir, disk.plane, intersection_point, max_lambda);
-    float squared_dist = square_vector(intersection_point - disk.plane.base.transform.pos);
+    float squared_dist = square_vector(intersection_point - disk.plane.transform.pos);
     return hit && squared_dist >= disk.inner_radius * disk.inner_radius && squared_dist <= disk.outer_radius * disk.outer_radius;
 }
 
@@ -276,8 +266,8 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
     // black hole check
     vec3 intersection_point = vec3(0., 0., 0.);
     if (sphere_intersect(origin, dir, BLACK_HOLE, intersection_point, max_lambda)) {
-        material = BLACK_HOLE.base.material;
-        normal = normalize(intersection_point - BLACK_HOLE.base.transform.pos);
+        material = BLACK_HOLE.material;
+        normal = normalize(intersection_point - BLACK_HOLE.transform.pos);
         min_dist = distance(intersection_point, origin);
         hit = true;
         opaque = true;
@@ -296,30 +286,30 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
             case 0: // sphere
                 Sphere sphere = spheres[object_index];
                 current_hit = sphere_intersect(origin, dir, sphere, intersection_point, max_lambda);
-                current_material = sphere.base.material;
-                current_normal = normalize(intersection_point - sphere.base.transform.pos);
-                current_opaque = sphere.base.material.opaque;
+                current_material = sphere.material;
+                current_normal = normalize(intersection_point - sphere.transform.pos);
+                current_opaque = sphere.material.opaque;
                 break;
             case 1: // plane
                 Plane plane = planes[object_index];
                 current_hit = plane_intersect(origin, dir, plane, intersection_point, max_lambda);
-                current_material = plane.base.material;
+                current_material = plane.material;
                 current_normal = plane.normal;
-                current_opaque = plane.base.material.opaque;
+                current_opaque = plane.material.opaque;
                 break;
             case 2: // disk
                 Disk disk = disks[object_index];
                 current_hit = disk_intersect(origin, dir, disk, intersection_point, max_lambda);
-                current_material = disk.plane.base.material;
+                current_material = disk.plane.material;
                 current_normal = disk.plane.normal;
-                current_opaque = disk.plane.base.material.opaque;
+                current_opaque = disk.plane.material.opaque;
                 break;
             case 3: // hollow disk
                 HollowDisk hollow_disk = hollow_disks[object_index];
                 current_hit = hollow_disk_intersect(origin, dir, hollow_disk, intersection_point, max_lambda);
-                current_material = hollow_disk.plane.base.material;
+                current_material = hollow_disk.plane.material;
                 current_normal = hollow_disk.plane.normal;
-                current_opaque = hollow_disk.plane.base.material.opaque;
+                current_opaque = hollow_disk.plane.material.opaque;
                 break;
         }
 
@@ -368,7 +358,7 @@ void main() {
 
     vec3 ray = normalize(cam.right * uv.x + cam.up * uv.y * resolution.y / resolution.x + ray_forward * cam.forward);
 
-    vec3 normal_vec = normalize(cam.base.transform.pos);
+    vec3 normal_vec = normalize(cam.transform.pos);
     bool hit_opaque;
     FragColor = vec4(0., 0., 0., 0.);
     if (
@@ -376,7 +366,7 @@ void main() {
         abs(dot(ray, normal_vec)) >= parallel_treshold
     ) { // if radial trajectory or flat space
         vec4 intersection_color;
-        hit_opaque = intersect(cam.base.transform.pos, ray, intersection_color);
+        hit_opaque = intersect(cam.transform.pos, ray, intersection_color);
         FragColor += intersection_color;
         if (!hit_opaque) FragColor += get_bg(ray);
         return;
@@ -385,8 +375,8 @@ void main() {
     vec3 tangent_vec = normalize(cross(cross(normal_vec, ray), normal_vec));
 
     vec3 prev_ray_pos;
-    vec3 ray_pos = cam.base.transform.pos;
-    float u = 1. / length(cam.base.transform.pos);
+    vec3 ray_pos = cam.transform.pos;
+    float u = 1. / length(cam.transform.pos);
     float du = -u * dot(ray, normal_vec) / dot(ray, tangent_vec);
 
     float phi = 0.;
@@ -395,10 +385,8 @@ void main() {
             // flat space approximation
             vec3 u_f_intersection_point;
             if(!sphere_intersect(ray_pos, ray, Sphere(
-                BaseMaterialObject(
-                    Transform(vec3(0., 0., 0.)),
-                    BLANK_MAT
-                ),
+                Transform(vec3(0., 0., 0.)),
+                BLANK_MAT,
                 1./u_f
             ), u_f_intersection_point)) {
                 vec4 intersection_color;
@@ -411,7 +399,7 @@ void main() {
             normal_vec = normalize(u_f_intersection_point);
             if (abs(dot(ray, normal_vec)) >= parallel_treshold) { // if radial trajectory
                 vec4 intersection_color;
-                hit_opaque = intersect(cam.base.transform.pos, ray, intersection_color);
+                hit_opaque = intersect(cam.transform.pos, ray, intersection_color);
                 FragColor += intersection_color;
                 if (!hit_opaque) FragColor += get_bg(ray);
                 return;

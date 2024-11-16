@@ -16,7 +16,7 @@ void Transform::setPos(glm::vec3 newPos) {
 void Transform::setupShader(GLuint program, std::string prefix) {
     Object::setupShader(program, prefix);
 
-    m_posLoc = glGetUniformLocation(program, (prefix + ".base.transform.pos").c_str());
+    m_posLoc = glGetUniformLocation(program, (prefix + ".transform.pos").c_str());
 }
 void Transform::loadShader() {
     Object::loadShader();
