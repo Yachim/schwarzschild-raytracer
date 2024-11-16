@@ -60,7 +60,11 @@ void Camera::hyperbolicTrajectory(float initialDistance, float closestDistance, 
     float y = c - a * sqrt(1 + pow(x / b, 2.));
 
     m_pos = x * HYPERBOLIC_TRAJECTORY_BASE_X + y * HYPERBOLIC_TRAJECTORY_BASE_Y;
-    m_forward = -glm::normalize(m_pos);
+    lookAt();
+}
+
+void Camera::lookAt(glm::vec3 point) {
+    m_forward = -glm::normalize(m_pos - point);
     m_right = glm::normalize(glm::cross(m_forward, glm::vec3(0., 1., 0.)));
     calculateUp();
 }

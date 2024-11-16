@@ -34,6 +34,7 @@ public:
     float getFov();
 
     void hyperbolicTrajectory(float initialDistance, float closestDistance, float time);
+    void lookAt(glm::vec3 point = glm::vec3(0., 0., 0.));
 
     void setupShader(GLuint program);
     void loadShader() override;

@@ -324,6 +324,8 @@ int main(int, char**) {
             if (flatRaytrace == 3) glUniform1f(flatPercentage, 1. - mouse.y / height);
         }
 
+        if (input->isPressed(GLFW_KEY_L)) cam.lookAt();
+
 #pragma region uniforms
         glUniform1f(glGetUniformLocation(shaderProgram, "time"), (float)glfwGetTime());
         glUniform2f(glGetUniformLocation(shaderProgram, "resolution"), width, height);
