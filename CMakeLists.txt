@@ -34,6 +34,9 @@ add_executable(schwarzschild_raytracer
     src/lib/Disk/disk.cpp
     src/lib/Disk/disk.h
 
+    src/lib/HollowDisk/hollowDisk.cpp
+    src/lib/HollowDisk/hollowDisk.h
+
     src/lib/Light/light.cpp
     src/lib/Light/light.h
 
