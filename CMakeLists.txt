@@ -28,6 +28,9 @@ add_executable(schwarzschild_raytracer
     src/lib/Sphere/sphere.cpp
     src/lib/Sphere/sphere.h
 
+    src/lib/Plane/plane.cpp
+    src/lib/Plane/plane.h
+
     src/lib/Light/light.cpp
     src/lib/Light/light.h
 

@@ -14,6 +14,7 @@
 #include "lib/Light/light.h"
 #include "lib/utils/utils.h"
 #include "lib/Input/input.h"
+#include "lib/Plane/plane.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -197,7 +198,7 @@ int main(int, char**) {
     glUniform1i(glGetUniformLocation(shaderProgram, "num_spheres"), 1);
     sphere.setupShader(shaderProgram, "spheres[0]");
     sphere.loadShader();
-    glUniform1i(glGetUniformLocation(shaderProgram, "spheres[0].base.material.opaque"), 1); // TODO:  
+    glUniform1i(glGetUniformLocation(shaderProgram, "spheres[0].material.opaque"), 1); // TODO:  
 
     glUniform1i(glGetUniformLocation(shaderProgram, "num_hollow_disks"), 1);
     glUniform3f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.pos").c_str()), 0., 0., 0.);
