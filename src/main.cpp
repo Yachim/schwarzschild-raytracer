@@ -14,7 +14,7 @@
 #include "lib/Light/light.h"
 #include "lib/utils/utils.h"
 #include "lib/Input/input.h"
-#include "lib/Plane/plane.h"
+#include "lib/Disk/disk.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -213,10 +213,10 @@ int main(int, char**) {
     glUniform3f(glGetUniformLocation(shaderProgram, ("hollow_disks[" + std::to_string(0) + "].plane.normal").c_str()), 0., 1., 0.);
 
     glUniform1i(glGetUniformLocation(shaderProgram, "num_objects"), 2);
-    glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(0) + "].type").c_str()), 0);
-    glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(0) + "].index").c_str()), 0);
-    glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(1) + "].type").c_str()), 3);
-    glUniform1i(glGetUniformLocation(shaderProgram, ("objects[" + std::to_string(1) + "].index").c_str()), 0);
+    glUniform1i(glGetUniformLocation(shaderProgram, "objects[0].type"), 0);
+    glUniform1i(glGetUniformLocation(shaderProgram, "objects[0].index"), 0);
+    glUniform1i(glGetUniformLocation(shaderProgram, "objects[1].type"), 3);
+    glUniform1i(glGetUniformLocation(shaderProgram, "objects[1].index"), 0);
 
     glUniform1f(glGetUniformLocation(shaderProgram, "checkerboard_detail"), CHECKERBOARD_DETAIL);
 #pragma endregion
