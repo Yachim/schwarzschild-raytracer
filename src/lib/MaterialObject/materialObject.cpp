@@ -14,11 +14,11 @@ void MaterialObject::setMaterial(Material mat) {
 void MaterialObject::setupShader(GLuint program, std::string prefix) {
     Object::setupShader(program, prefix);
 
-    m_materialColorLoc = glGetUniformLocation(program, (prefix + ".material.color").c_str());
-    m_materialAmbientLoc = glGetUniformLocation(program, (prefix + ".material.ambient").c_str());
-    m_materialDiffuseLoc = glGetUniformLocation(program, (prefix + ".material.diffuse").c_str());
-    m_materialSpecularLoc = glGetUniformLocation(program, (prefix + ".material.specular").c_str());
-    m_materialShininessLoc = glGetUniformLocation(program, (prefix + ".material.shininess").c_str());
+    m_materialColorLoc = glGetUniformLocation(program, (prefix + ".color").c_str());
+    m_materialAmbientLoc = glGetUniformLocation(program, (prefix + ".ambient").c_str());
+    m_materialDiffuseLoc = glGetUniformLocation(program, (prefix + ".diffuse").c_str());
+    m_materialSpecularLoc = glGetUniformLocation(program, (prefix + ".specular").c_str());
+    m_materialShininessLoc = glGetUniformLocation(program, (prefix + ".shininess").c_str());
 }
 
 void MaterialObject::loadShader() {

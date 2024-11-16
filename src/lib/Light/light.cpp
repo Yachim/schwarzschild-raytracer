@@ -26,7 +26,7 @@ float Light::getAttenuationQuadratic() { return m_attenuationQuadratic; }
 void Light::setAttenuationQuadratic(float quadratic) { m_attenuationQuadratic = quadratic; }
 
 void Light::setupShader(GLuint program, std::string prefix) {
-    Transform::setupShader(program, prefix);
+    Transform::setupShader(program, prefix + ".transform");
 
     m_colorPos = glGetUniformLocation(program, (prefix + ".color").c_str());
     m_intensityPos = glGetUniformLocation(program, (prefix + ".intensity").c_str());

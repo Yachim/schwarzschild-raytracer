@@ -66,7 +66,7 @@ void Camera::hyperbolicTrajectory(float initialDistance, float closestDistance, 
 }
 
 void Camera::setupShader(GLuint program) {
-    Transform::setupShader(program, "cam");
+    Transform::setupShader(program, "cam.transform");
 
     m_forwardLoc = glGetUniformLocation(program, "cam.forward");
     m_rightLoc = glGetUniformLocation(program, "cam.right");

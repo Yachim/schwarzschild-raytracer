@@ -14,8 +14,8 @@ void Plane::setNormal(glm::vec3 normal) {
 }
 
 void Plane::setupShader(GLuint program, std::string prefix) {
-    MaterialObject::setupShader(program, prefix);
-    Transform::setupShader(program, prefix);
+    MaterialObject::setupShader(program, prefix + ".material");
+    Transform::setupShader(program, prefix + ".transform");
 
     m_normalLoc = glGetUniformLocation(program, (prefix + ".normal").c_str());
 }

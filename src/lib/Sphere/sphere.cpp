@@ -14,8 +14,8 @@ void Sphere::setRadius(float radius) {
 }
 
 void Sphere::setupShader(GLuint program, std::string prefix) {
-    MaterialObject::setupShader(program, prefix);
-    Transform::setupShader(program, prefix);
+    MaterialObject::setupShader(program, prefix + ".material");
+    Transform::setupShader(program, prefix + ".transform");
 
     m_radiusLoc = glGetUniformLocation(program, (prefix + ".radius").c_str());
 }
