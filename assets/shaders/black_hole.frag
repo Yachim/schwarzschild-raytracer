@@ -21,7 +21,12 @@ uniform int max_revolutions = 2;
 uniform float u_f = 0.01;
 uniform float parallel_treshold = 0.9999999; // minimum value of a dot product of two unit vectors a . b, when the vectors are considered parallel; perpendicular_treshold = 1 - parallel_treshold
 
-uniform bool flat_raytrace = false;
+// 0: false
+// 1: full screen
+// 2: right half flat
+// 3: up half flat
+uniform int flat_raytrace = 0;
+uniform float flat_percentage = 0.5;
 
 struct Transform {
     vec3 pos;
@@ -366,7 +371,10 @@ void main() {
     vec3 normal_vec = normalize(cam.base.transform.pos);
     bool hit_opaque;
     FragColor = vec4(0., 0., 0., 0.);
-    if (flat_raytrace || abs(dot(ray, normal_vec)) >= parallel_treshold) { // if radial trajectory or flat space
+    if (
+        (flat_raytrace == 1 || (flat_raytrace == 2 && uv.x > 2. * flat_percentage + -1.) || (flat_raytrace == 3 && uv.y > 2. * flat_percentage + -1.)) ||
+        abs(dot(ray, normal_vec)) >= parallel_treshold
+    ) { // if radial trajectory or flat space
         vec4 intersection_color;
         hit_opaque = intersect(cam.base.transform.pos, ray, intersection_color);
         FragColor += intersection_color;

@@ -175,7 +175,7 @@ int main(int, char**) {
     stbi_image_free(data);
 #pragma endregion
 
-    Camera cam(glm::vec3(0., 1., 15.));
+    Camera cam(glm::vec3(0., 2., 15.), -glm::normalize(glm::vec3(0., 2., 15.)), glm::vec3(1., 0., 0.));
     Sphere sphere(glm::vec3(-10., 0., 0.));
     Material sphereMat = sphere.getMaterial();
     sphereMat.setColor(glm::vec4(1., 0., 0., 1.));
@@ -234,6 +234,8 @@ int main(int, char**) {
     double prevTime = 0.;
     glm::vec2 prevMouse = input->getMouse();
     GLint flatRaytraceLoc = glGetUniformLocation(shaderProgram, "flat_raytrace");
+    GLint flatPercentage = glGetUniformLocation(shaderProgram, "flat_percentage");
+    int flatRaytrace = 0;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
@@ -255,9 +257,6 @@ int main(int, char**) {
         int height, width;
         glfwGetWindowSize(window, &width, &height);
         glViewport(0, 0, width, height);
-
-        if (input->isPressed(GLFW_KEY_F, GLFW_MOD_ALT)) glUniform1i(flatRaytraceLoc, 1);
-        else glUniform1i(flatRaytraceLoc, 0);
 
 #pragma region movement
         glm::vec3 camPos = cam.getPos();
@@ -294,7 +293,7 @@ int main(int, char**) {
             cam.setRight(camRight);
             cam.setUp(camUp);
         }
-        else if (input->isLClicked()) {
+        else if (!input->isPressed(GLFW_KEY_LEFT_ALT) && input->isLClicked()) {
             float fov = cam.getFov();
             fov += ZOOM_SENSITIVITY * (float)dt * deltaMouse.y;
             if (fov < MIN_FOV) fov = MIN_FOV;
@@ -303,7 +302,7 @@ int main(int, char**) {
         }
 #pragma endregion
 
-        if (input->isPressed(GLFW_KEY_F) && !input->isPressed(GLFW_KEY_F, GLFW_MOD_ALT)) cam.setFov(DEFAULT_FOV);
+        if (input->isPressed(GLFW_KEY_F) && !input->isPressed(GLFW_KEY_F, GLFW_MOD_ALT) && !input->isPressed(GLFW_KEY_F, GLFW_MOD_CAPS_LOCK)) cam.setFov(DEFAULT_FOV);
 
         double hyperbolicTrajectoryDt = windowTime - hyperbolicTrajectoryStartTime;
         if (input->isPressed(GLFW_KEY_H) && (hyperbolicTrajectoryDt < 0. || hyperbolicTrajectoryDt > HYPERBOLIC_TRAJECTORY_DURATION)) {
@@ -311,6 +310,17 @@ int main(int, char**) {
         }
         if (hyperbolicTrajectoryDt >= 0. && hyperbolicTrajectoryDt <= HYPERBOLIC_TRAJECTORY_DURATION) {
             cam.hyperbolicTrajectory(30.f, 10.f, (float)hyperbolicTrajectoryDt / HYPERBOLIC_TRAJECTORY_DURATION);
+        }
+
+        if (input->isPressed(GLFW_KEY_1)) flatRaytrace = 0;
+        else if (input->isPressed(GLFW_KEY_2)) flatRaytrace = 1;
+        else if (input->isPressed(GLFW_KEY_3)) flatRaytrace = 2;
+        else if (input->isPressed(GLFW_KEY_4)) flatRaytrace = 3;
+        glUniform1i(flatRaytraceLoc, flatRaytrace);
+
+        if (input->isPressed(GLFW_KEY_LEFT_ALT) && input->isLClicked()) {
+            if (flatRaytrace == 2) glUniform1f(flatPercentage, mouse.x / width);
+            if (flatRaytrace == 3) glUniform1f(flatPercentage, 1. - mouse.y / height);
         }
 
 #pragma region uniforms
