@@ -15,6 +15,21 @@ public:
     void setupShader(GLuint program, std::string prefix) override;
     void loadShader() override;
 
+    glm::vec4 getMaterialColor();
+    void setMaterialColor(glm::vec4 color);
+
+    float getMaterialAmbient();
+    void setMaterialAmbient(float ambient);
+
+    float getMaterialDiffuse();
+    void setMaterialDiffuse(float diffuse);
+
+    float getMaterialSpecular();
+    void setMaterialSpecular(float specular);
+
+    float getMaterialShininess();
+    void setMaterialShininess(float shininess);
+
 protected:
     Material m_material = Material();
 

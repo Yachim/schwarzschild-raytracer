@@ -179,14 +179,10 @@ int main(int, char**) {
     Camera cam(glm::vec3(0., 2., 15.), -glm::normalize(glm::vec3(0., 2., 15.)), glm::vec3(1., 0., 0.));
 
     Sphere sphere(glm::vec3(-10., 0., 0.));
-    Material sphereMat = sphere.getMaterial();
-    sphereMat.setColor(glm::vec4(1., 0., 0., 1.));
-    sphere.setMaterial(sphereMat);
+    sphere.setMaterialColor(glm::vec4(1., 0., 0., 1.));
 
     HollowDisk accretionDisk;
-    Material accretionDiskMat = accretionDisk.getMaterial();
-    accretionDiskMat.setColor(glm::vec4(1., 0.5, 0.1, 1.));
-    accretionDisk.setMaterial(accretionDiskMat);
+    accretionDisk.setMaterialColor(glm::vec4(1., 0.5, 0.1, 1.));
 
     Light light{};
 

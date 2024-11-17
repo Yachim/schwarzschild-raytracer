@@ -11,6 +11,41 @@ void MaterialObject::setMaterial(Material mat) {
     m_material = mat;
 }
 
+glm::vec4 MaterialObject::getMaterialColor() {
+    return m_material.getColor();
+}
+void MaterialObject::setMaterialColor(glm::vec4 color) {
+    m_material.setColor(color);
+}
+
+float MaterialObject::getMaterialAmbient() {
+    return m_material.getAmbient();
+}
+void MaterialObject::setMaterialAmbient(float ambient) {
+    m_material.setAmbient(ambient);
+}
+
+float MaterialObject::getMaterialDiffuse() {
+    return m_material.getDiffuse();
+}
+void MaterialObject::setMaterialDiffuse(float diffuse) {
+    m_material.setDiffuse(diffuse);
+}
+
+float MaterialObject::getMaterialSpecular() {
+    return m_material.getSpecular();
+}
+void MaterialObject::setMaterialSpecular(float specular) {
+    m_material.setSpecular(specular);
+}
+
+float MaterialObject::getMaterialShininess() {
+    return m_material.getShininess();
+}
+void MaterialObject::setMaterialShininess(float shininess) {
+    m_material.setShininess(shininess);
+}
+
 void MaterialObject::setupShader(GLuint program, std::string prefix) {
     Object::setupShader(program, prefix);
 
