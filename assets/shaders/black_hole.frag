@@ -100,7 +100,7 @@ uniform int num_planes;
 uniform Plane planes[MAX_PLANES];
 
 struct Disk {
-    Plane plane; // base.pos - center
+    Plane plane; // pos - center
     float radius;
 };
 
@@ -109,7 +109,7 @@ uniform int num_disks;
 uniform Disk disks[MAX_DISKS];
 
 struct HollowDisk {
-    Plane plane; // base.pos - center
+    Plane plane; // pos - center
     float inner_radius;
     float outer_radius;
 };
@@ -118,11 +118,24 @@ struct HollowDisk {
 uniform int num_hollow_disks;
 uniform HollowDisk hollow_disks[MAX_HOLLOW_DISKS];
 
+// only lateral cylinders, bases have to be provided manually as disks
+struct Cylinder {
+    Transform transform; // pos - base center
+    Material material;
+    vec3 height;
+    float radius;
+};
+
+#define MAX_CYLINDERS 3
+uniform int num_cylinders;
+uniform Cylinder cylinders[MAX_CYLINDERS];
+
 // types:
 // 0: sphere
 // 1: plane
 // 2: disk
 // 3: hollow disk
+// 4: cylinder
 struct Object {
     int type;
     int index; // indexing respective arrays
@@ -256,6 +269,42 @@ bool hollow_disk_intersect(vec3 origin, vec3 dir, HollowDisk disk, out vec3 inte
     return hit && squared_dist >= disk.inner_radius * disk.inner_radius && squared_dist <= disk.outer_radius * disk.outer_radius;
 }
 
+bool isInRange(float n, float minimum, float maximum) {
+    return n >= minimum && n <= maximum;
+}
+
+bool cylinder_intersect(vec3 origin, vec3 dir, Cylinder cylinder, out vec3 intersection_point, float max_lambda) {
+    vec3 height = cylinder.height;
+    float heightSquared = square_vector(height);
+
+    vec3 dir_parallel = dot(dir, height) / heightSquared * height;
+    vec3 dir_perp = dir - dir_parallel;
+
+    vec3 l = cylinder.transform.pos - origin;
+    float lambda_C = dot(l, dir_perp) / length(dir_perp);
+    vec3 P = origin + lambda_C * dir_perp;
+    vec3 PC = P - cylinder.transform.pos;
+    float d = length(PC - dot(PC, height) / heightSquared * height);
+    if (d > cylinder.radius) return false;
+    float lambda_0C = sqrt(cylinder.radius * cylinder.radius - d * d);
+
+    float lambda1 = lambda_C - lambda_0C;
+    float lambda2 = lambda_C + lambda_0C;
+    vec3 intersection_point1 = origin + dir * lambda1;
+    vec3 intersection_point2 = origin + dir * lambda2;
+    bool inCylinder1 = isInRange(dot(intersection_point1 - cylinder.transform.pos, height) / heightSquared, 0., 1.);
+    bool inCylinder2 = isInRange(dot(intersection_point2 - cylinder.transform.pos, height) / heightSquared, 0., 1.);
+
+    if (!inCylinder1 && !inCylinder2) return false;
+    float lambda;
+    if (inCylinder1 && inCylinder2) lambda = min_positive(lambda1, lambda2);
+    else if (inCylinder1) lambda = lambda1;
+    else lambda = lambda2;
+
+    intersection_point = origin + dir * lambda;
+    return lambda >= 0. && (max_lambda < 0. || lambda <= max_lambda);
+}
+
 bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
     float min_dist = -1.;
     bool hit = false;
@@ -310,6 +359,13 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
                 current_material = hollow_disk.plane.material;
                 current_normal = hollow_disk.plane.normal;
                 current_opaque = hollow_disk.plane.material.opaque;
+                break;
+            case 4: // cylinder
+                Cylinder cylinder = cylinders[object_index];
+                current_hit = cylinder_intersect(origin, dir, cylinder, intersection_point, max_lambda);
+                current_material = cylinder.material;
+                current_normal = normalize(intersection_point - dot(intersection_point, cylinder.height) / square_vector(cylinder.height) * cylinder.height);
+                current_opaque = cylinder.material.opaque;
                 break;
         }
 
