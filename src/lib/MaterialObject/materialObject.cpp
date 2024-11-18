@@ -46,6 +46,14 @@ void MaterialObject::setMaterialShininess(float shininess) {
     m_material.setShininess(shininess);
 }
 
+int MaterialObject::getMaterialTextureIndex() {
+    return m_material.getTextureIndex();
+}
+void MaterialObject::setMaterialTextureIndex(int index) {
+    m_material.setTextureIndex(index);
+}
+
+
 void MaterialObject::setupShader(GLuint program, std::string prefix) {
     Object::setupShader(program, prefix);
 
@@ -54,6 +62,7 @@ void MaterialObject::setupShader(GLuint program, std::string prefix) {
     m_materialDiffuseLoc = glGetUniformLocation(program, (prefix + ".diffuse").c_str());
     m_materialSpecularLoc = glGetUniformLocation(program, (prefix + ".specular").c_str());
     m_materialShininessLoc = glGetUniformLocation(program, (prefix + ".shininess").c_str());
+    m_materialTextureIndex = glGetUniformLocation(program, (prefix + ".texture_index").c_str());
 }
 
 void MaterialObject::loadShader() {
@@ -65,4 +74,5 @@ void MaterialObject::loadShader() {
     glUniform1f(m_materialDiffuseLoc, m_material.getDiffuse());
     glUniform1f(m_materialSpecularLoc, m_material.getSpecular());
     glUniform1f(m_materialShininessLoc, m_material.getShininess());
+    glUniform1i(m_materialTextureIndex, m_material.getTextureIndex());
 }

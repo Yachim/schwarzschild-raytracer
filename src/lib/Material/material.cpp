@@ -39,3 +39,10 @@ float Material::getShininess() {
 void Material::setShininess(float shininess) {
     m_shininess = shininess;
 }
+
+int Material::getTextureIndex() {
+    return m_textureIndex;
+}
+void Material::setTextureIndex(int index) {
+    m_textureIndex = index;
+}

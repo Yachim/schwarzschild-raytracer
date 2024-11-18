@@ -30,6 +30,9 @@ public:
     float getMaterialShininess();
     void setMaterialShininess(float shininess);
 
+    int getMaterialTextureIndex();
+    void setMaterialTextureIndex(int index);
+
 protected:
     Material m_material = Material();
 
@@ -39,5 +42,6 @@ protected:
     GLint m_materialDiffuseLoc;
     GLint m_materialSpecularLoc;
     GLint m_materialShininessLoc;
+    GLint m_materialTextureIndex;
 };
 #endif

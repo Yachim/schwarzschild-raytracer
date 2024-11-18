@@ -5,6 +5,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <vector>
 #include <fstream>
 #include <sstream>
 #include <glm/vec3.hpp>
@@ -108,6 +109,46 @@ GLuint loadTexture(const char* texturePath) {
 
     return textureID;
 }
+
+GLuint loadTextureArray(const std::vector<std::string>& texturePaths) {
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, textureID);
+
+    // Load the first texture to determine the dimensions
+    int width, height, nrChannels;
+    unsigned char* data = stbi_load(texturePaths[0].c_str(), &width, &height, &nrChannels, 0);
+    if (!data) {
+        std::cerr << "Failed to load texture: " << texturePaths[0] << std::endl;
+        return 0;
+    }
+
+    // Determine the format based on the number of channels
+    GLenum format = (nrChannels == 4) ? GL_RGBA : GL_RGB;
+
+    // Allocate storage for the texture array
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, format, width, height, texturePaths.size(), 0, format, GL_UNSIGNED_BYTE, nullptr);
+
+    // Load each texture into the appropriate layer
+    for (size_t i = 0; i < texturePaths.size(); ++i) {
+        data = stbi_load(texturePaths[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data) {
+            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, width, height, 1, format, GL_UNSIGNED_BYTE, data);
+            stbi_image_free(data);
+        }
+        else {
+            std::cerr << "Failed to load texture: " << texturePaths[i] << std::endl;
+        }
+    }
+
+    // Set texture wrapping/filtering options
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    return textureID;
+}
 #pragma endregion
 
 int main(int, char**) {
@@ -192,6 +233,18 @@ int main(int, char**) {
 #pragma region texture
     loadTexture(BACKGROUND_TEXTURE_PATH);
     glUniform1i(glGetUniformLocation(shaderProgram, "background_texture"), 0);
+
+    // Load texture array
+    std::vector<std::string> texturePaths = {
+        "assets/textures/2k_moon.jpg",
+        "assets/textures/2k_sun.jpg"
+    };
+
+    GLuint textureArrayID = loadTextureArray(texturePaths);
+    glUseProgram(shaderProgram);
+    glActiveTexture(GL_TEXTURE0); // Activate texture unit 0
+    glBindTexture(GL_TEXTURE_2D_ARRAY, textureArrayID);
+    glUniform1i(glGetUniformLocation(shaderProgram, "textures"), 0);
 #pragma endregion
 
 #pragma region objects
@@ -199,6 +252,7 @@ int main(int, char**) {
 
     Sphere sphere(glm::vec3(-10., 0., 0.));
     sphere.setMaterialColor(glm::vec4(1., 0., 0., 1.));
+    sphere.setMaterialTextureIndex(0);
 
     HollowDisk accretionDisk;
     accretionDisk.setMaterialColor(glm::vec4(1., 0.5, 0.1, 1.));

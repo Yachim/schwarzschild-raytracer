@@ -24,11 +24,15 @@ public:
     float getShininess();
     void setShininess(float shininess);
 
+    int getTextureIndex();
+    void setTextureIndex(int index);
+
 private:
     glm::vec4 m_color{ 0.5, 0., 0.5, 1. };
     float m_ambient = 0.1;
     float m_diffuse = 0.9;
     float m_specular = 0.5;
     float m_shininess = 32.;
+    int m_textureIndex = -1;
 };
 #endif

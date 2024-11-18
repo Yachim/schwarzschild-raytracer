@@ -2,6 +2,7 @@
 // right-handed y-up coordinates
 // camera has left-handed y-up coordinates
 // TODO: raytrace towards light?
+// FIXME: make materials not unique (materials array + index)
 
 precision highp float;
 precision highp sampler2D;
@@ -56,12 +57,15 @@ struct Light {
 uniform int num_lights;
 uniform Light lights[MAX_LIGHTS];
 
+uniform sampler2DArray textures;
+
 struct Material {
     vec4 color;
     float ambient;
     float diffuse;
     float specular;
     float shininess;
+    int texture_index; // < 0 to disable
 };
 
 struct Sphere {
@@ -74,7 +78,7 @@ struct Sphere {
 uniform int num_spheres;
 uniform Sphere spheres[MAX_SPHERES];
 
-const Material BLANK_MAT = Material(vec4(0.0, 0.0, 0.0, 1.0), 0.1, 0.0, 0.0, 32.0);
+const Material BLANK_MAT = Material(vec4(0.0, 0.0, 0.0, 1.0), 0.1, 0.0, 0.0, 32.0, -1);
 const Sphere BLACK_HOLE = Sphere(Transform(vec3(0., 0., 0.)), BLANK_MAT, 1.0);
 
 struct Plane {
@@ -167,8 +171,12 @@ float square_vector(vec3 v) {
     return dot(v, v);
 }
 
-vec4 calculate_lighting(vec3 point, vec3 normal, vec3 view_dir, Material material) {
+vec4 calculate_lighting(vec3 point, vec3 normal, vec3 view_dir, Material material, vec2 object_uv) {
     vec4 base_color = material.color;
+    if (material.texture_index >= 0) {
+        base_color = texture(textures, vec3(object_uv, material.texture_index));
+        return vec4(0., object_uv, 1.);
+    }
     vec3 final_color = material.ambient * base_color.rgb; // Ambient component
 
     for(int i = 0; i < num_lights; i++) {
@@ -299,6 +307,7 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
     float min_dist = -1.;
     bool hit = false;
     Material material;
+    vec2 object_uv;
     vec3 normal;
 
     // black hole check
@@ -308,6 +317,7 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
         normal = normalize(intersection_point - BLACK_HOLE.transform.pos);
         min_dist = distance(intersection_point, origin);
         hit = true;
+        object_uv = sphere_map(normalize(intersection_point - BLACK_HOLE.transform.pos));
     }
 
     for(int i = 0; i < num_objects; i++) {
@@ -317,6 +327,7 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
 
         bool current_hit = false;
         Material current_material;
+        vec2 current_uv;
         vec3 current_normal;
         switch(object_type) {
             case 0: // sphere
@@ -324,30 +335,35 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
                 current_hit = sphere_intersect(origin, dir, sphere, intersection_point, max_lambda);
                 current_material = sphere.material;
                 current_normal = normalize(intersection_point - sphere.transform.pos);
+                current_uv = sphere_map(normalize(intersection_point - sphere.transform.pos));
                 break;
             case 1: // plane
                 Plane plane = planes[object_index];
                 current_hit = plane_intersect(origin, dir, plane, intersection_point, max_lambda);
                 current_material = plane.material;
                 current_normal = plane.normal;
+                current_uv = vec2(0.);
                 break;
             case 2: // disk
                 Disk disk = disks[object_index];
                 current_hit = disk_intersect(origin, dir, disk, intersection_point, max_lambda);
                 current_material = disk.plane.material;
                 current_normal = disk.plane.normal;
+                current_uv = vec2(0.);
                 break;
             case 3: // hollow disk
                 HollowDisk hollow_disk = hollow_disks[object_index];
                 current_hit = hollow_disk_intersect(origin, dir, hollow_disk, intersection_point, max_lambda);
                 current_material = hollow_disk.plane.material;
                 current_normal = hollow_disk.plane.normal;
+                current_uv = vec2(0.);
                 break;
             case 4: // cylinder
                 Cylinder cylinder = cylinders[object_index];
                 current_hit = cylinder_intersect(origin, dir, cylinder, intersection_point, max_lambda);
                 current_material = cylinder.material;
                 current_normal = normalize(intersection_point - dot(intersection_point, cylinder.height) / square_vector(cylinder.height) * cylinder.height);
+                current_uv = vec2(0.);
                 break;
         }
 
@@ -358,13 +374,14 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
                 hit = true;
                 material = current_material;
                 normal = current_normal;
+                object_uv = current_uv;
             }
         }
     }
 
     color = vec4(0., 0., 0., 0.);
     if(hit) {
-        color = calculate_lighting(intersection_point, normal, -dir, material);
+        color = calculate_lighting(intersection_point, normal, -dir, material, object_uv);
     }
 
     return color.a == 1.;
@@ -383,6 +400,9 @@ vec4 get_bg(vec3 dir) {
 // renders only half with checkerboard pattern
 uniform float checkerboard_detail;
 void main() {
+    //FragColor = texture(textures, vec3(uv, 0));
+    //return;
+
     if(checkerboard_detail > 0. && mod(floor(uv.x * checkerboard_detail) + floor(uv.y * checkerboard_detail * resolution.y / resolution.x), 2.0) != 0.0)
         return;
 
