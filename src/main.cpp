@@ -37,11 +37,11 @@ const float MIN_FOV = 10.;
 const float MAX_FOV = 120.;
 
 // 0 for 2k, 1 for 8k
-#define TEXTURE_QUALITY 0
-#if TEXTURE_QUALITY == 0
-#define TEXTURE_PATH "assets/textures/background_2k.jpg"
-#elif TEXTURE_QUALITY == 1
-#define TEXTURE_PATH "assets/textures/background_8k.jpg"
+#define BACKGROUND_TEXTURE_QUALITY 0
+#if BACKGROUND_TEXTURE_QUALITY == 0
+#define BACKGROUND_TEXTURE_PATH "assets/textures/background/2k.jpg"
+#elif BACKGROUND_TEXTURE_QUALITY == 1
+#define BACKGROUND_TEXTURE_PATH "assets/textures/background/8k.jpg"
 #endif
 
 #pragma region shader utils
@@ -70,6 +70,43 @@ GLuint compileShader(GLenum type, const char* source) {
         return 0;
     }
     return shader;
+}
+#pragma endregion
+
+#pragma region texture utils
+GLuint loadTexture(const char* texturePath) {
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    // Set texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    // Set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Load image, create texture, and generate mipmaps
+    int textureWidth, textureHeight, nrChannels;
+    stbi_set_flip_vertically_on_load(true); // Flip the image on the y-axis
+    unsigned char* data = stbi_load(texturePath, &textureWidth, &textureHeight, &nrChannels, 0);
+
+    if (data) {
+        // Determine the format based on the number of channels
+        GLenum format = (nrChannels == 4) ? GL_RGBA : GL_RGB;
+
+        // Create the texture
+        glTexImage2D(GL_TEXTURE_2D, 0, format, textureWidth, textureHeight, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else {
+        std::cerr << "Failed to load texture: " << texturePath << std::endl;
+    }
+
+    stbi_image_free(data);
+
+    return textureID;
 }
 #pragma endregion
 
@@ -153,30 +190,11 @@ int main(int, char**) {
 #pragma endregion
 
 #pragma region texture
-    unsigned int background_texture;
-    glGenTextures(1, &background_texture);
-    glBindTexture(GL_TEXTURE_2D, background_texture);
-    // set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // load image, create texture and generate mipmaps
-    int textureWidth, textureHeight, nrChannels;
-    stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
-    // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
-    unsigned char* data = stbi_load(TEXTURE_PATH, &textureWidth, &textureHeight, &nrChannels, 0);
-    if (data) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-    stbi_image_free(data);
+    loadTexture(BACKGROUND_TEXTURE_PATH);
+    glUniform1i(glGetUniformLocation(shaderProgram, "background_texture"), 0);
 #pragma endregion
 
+#pragma region objects
     Camera cam(glm::vec3(0., 2., 15.), -glm::normalize(glm::vec3(0., 2., 15.)), glm::vec3(1., 0., 0.));
 
     Sphere sphere(glm::vec3(-10., 0., 0.));
@@ -186,14 +204,13 @@ int main(int, char**) {
     accretionDisk.setMaterialColor(glm::vec4(1., 0.5, 0.1, 1.));
 
     Light light{};
+#pragma endregion
 
 #pragma region uniforms
     glUseProgram(shaderProgram);
 
     cam.setupShader(shaderProgram);
     cam.loadShader();
-
-    glUniform1i(glGetUniformLocation(shaderProgram, "background_texture"), 0);
 
     glUniform1i(glGetUniformLocation(shaderProgram, "num_lights"), 1);
     light.setupShader(shaderProgram, "lights[0]");
@@ -246,9 +263,6 @@ int main(int, char**) {
 
         glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, background_texture);
 
         int height, width;
         glfwGetWindowSize(window, &width, &height);
