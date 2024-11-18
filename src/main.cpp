@@ -231,20 +231,19 @@ int main(int, char**) {
 #pragma endregion
 
 #pragma region texture
+    glUseProgram(shaderProgram);
     loadTexture(BACKGROUND_TEXTURE_PATH);
     glUniform1i(glGetUniformLocation(shaderProgram, "background_texture"), 0);
 
-    // Load texture array
     std::vector<std::string> texturePaths = {
         "assets/textures/2k_moon.jpg",
         "assets/textures/2k_sun.jpg"
     };
 
     GLuint textureArrayID = loadTextureArray(texturePaths);
-    glUseProgram(shaderProgram);
-    glActiveTexture(GL_TEXTURE0); // Activate texture unit 0
+    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D_ARRAY, textureArrayID);
-    glUniform1i(glGetUniformLocation(shaderProgram, "textures"), 0);
+    glUniform1i(glGetUniformLocation(shaderProgram, "textures"), 1);
 #pragma endregion
 
 #pragma region objects

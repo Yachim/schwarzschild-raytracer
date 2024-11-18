@@ -175,7 +175,6 @@ vec4 calculate_lighting(vec3 point, vec3 normal, vec3 view_dir, Material materia
     vec4 base_color = material.color;
     if (material.texture_index >= 0) {
         base_color = texture(textures, vec3(object_uv, material.texture_index));
-        return vec4(0., object_uv, 1.);
     }
     vec3 final_color = material.ambient * base_color.rgb; // Ambient component
 
@@ -400,9 +399,6 @@ vec4 get_bg(vec3 dir) {
 // renders only half with checkerboard pattern
 uniform float checkerboard_detail;
 void main() {
-    //FragColor = texture(textures, vec3(uv, 0));
-    //return;
-
     if(checkerboard_detail > 0. && mod(floor(uv.x * checkerboard_detail) + floor(uv.y * checkerboard_detail * resolution.y / resolution.x), 2.0) != 0.0)
         return;
 
