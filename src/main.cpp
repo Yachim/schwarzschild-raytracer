@@ -15,7 +15,6 @@
 #include "lib/utils/utils.h"
 #include "lib/Input/input.h"
 #include "lib/HollowDisk/hollowDisk.h"
-#include "lib/LateralCylinder/lateralCylinder.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -209,20 +208,11 @@ int main(int, char**) {
     accretionDisk.loadShader();
     glUniform1i(glGetUniformLocation(shaderProgram, "hollow_disks[0].plane.material.opaque"), 1); // TODO:  
 
-    glUniform1i(glGetUniformLocation(shaderProgram, "num_cylinders"), 1);
-    LateralCylinder cylinder;
-    cylinder.setPos(glm::vec3(10., 0., 0.));
-    cylinder.setupShader(shaderProgram, "cylinders[0]");
-    cylinder.loadShader();
-    glUniform1i(glGetUniformLocation(shaderProgram, "cylinders[0].material.opaque"), 1); // TODO:  
-
-    glUniform1i(glGetUniformLocation(shaderProgram, "num_objects"), 3);
+    glUniform1i(glGetUniformLocation(shaderProgram, "num_objects"), 2);
     glUniform1i(glGetUniformLocation(shaderProgram, "objects[0].type"), 0);
     glUniform1i(glGetUniformLocation(shaderProgram, "objects[0].index"), 0);
     glUniform1i(glGetUniformLocation(shaderProgram, "objects[1].type"), 3);
     glUniform1i(glGetUniformLocation(shaderProgram, "objects[1].index"), 0);
-    glUniform1i(glGetUniformLocation(shaderProgram, "objects[2].type"), 4);
-    glUniform1i(glGetUniformLocation(shaderProgram, "objects[2].index"), 0);
 
     glUniform1f(glGetUniformLocation(shaderProgram, "checkerboard_detail"), CHECKERBOARD_DETAIL);
 #pragma endregion
