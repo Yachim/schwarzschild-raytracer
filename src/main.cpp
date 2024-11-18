@@ -1,6 +1,7 @@
 // TODO: loading
 // TODO: disk, hollow disk classes
 // TODO: clocks
+// FIXME: lateral cylinder casting shadow (e.g. on accretion disk) from below
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
