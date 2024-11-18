@@ -62,7 +62,6 @@ struct Material {
     float diffuse;
     float specular;
     float shininess;
-    bool opaque;
 };
 
 struct Sphere {
@@ -75,7 +74,7 @@ struct Sphere {
 uniform int num_spheres;
 uniform Sphere spheres[MAX_SPHERES];
 
-const Material BLANK_MAT = Material(vec4(0.0, 0.0, 0.0, 1.0), 0.1, 0.0, 0.0, 32.0, true);
+const Material BLANK_MAT = Material(vec4(0.0, 0.0, 0.0, 1.0), 0.1, 0.0, 0.0, 32.0);
 const Sphere BLACK_HOLE = Sphere(Transform(vec3(0., 0., 0.)), BLANK_MAT, 1.0);
 
 struct Plane {
@@ -168,9 +167,9 @@ float square_vector(vec3 v) {
     return dot(v, v);
 }
 
-vec3 calculate_lighting(vec3 point, vec3 normal, vec3 view_dir, Material material) {
-    vec3 base_color = material.color.rgb;
-    vec3 final_color = material.ambient * base_color; // Ambient component
+vec4 calculate_lighting(vec3 point, vec3 normal, vec3 view_dir, Material material) {
+    vec4 base_color = material.color;
+    vec3 final_color = material.ambient * base_color.rgb; // Ambient component
 
     for(int i = 0; i < num_lights; i++) {
         Light light = lights[i];
@@ -184,7 +183,7 @@ vec3 calculate_lighting(vec3 point, vec3 normal, vec3 view_dir, Material materia
 
         // Diffuse
         float diff = max(dot(normal, light_dir), 0.0);
-        vec3 diffuse = material.diffuse * diff * light.color * base_color;
+        vec3 diffuse = material.diffuse * diff * light.color * base_color.rgb;
 
         // Specular
         vec3 reflect_dir = reflect(-light_dir, normal);
@@ -194,7 +193,7 @@ vec3 calculate_lighting(vec3 point, vec3 normal, vec3 view_dir, Material materia
         final_color += (diffuse + specular) * attenuation * light.intensity;
     }
 
-    return final_color;
+    return vec4(final_color, base_color.a);
 }
 
 // return -1 if not neither positive
@@ -301,7 +300,6 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
     bool hit = false;
     Material material;
     vec3 normal;
-    bool opaque = false;
 
     // black hole check
     vec3 intersection_point = vec3(0., 0., 0.);
@@ -310,7 +308,6 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
         normal = normalize(intersection_point - BLACK_HOLE.transform.pos);
         min_dist = distance(intersection_point, origin);
         hit = true;
-        opaque = true;
     }
 
     for(int i = 0; i < num_objects; i++) {
@@ -321,42 +318,36 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
         bool current_hit = false;
         Material current_material;
         vec3 current_normal;
-        bool current_opaque;
         switch(object_type) {
             case 0: // sphere
                 Sphere sphere = spheres[object_index];
                 current_hit = sphere_intersect(origin, dir, sphere, intersection_point, max_lambda);
                 current_material = sphere.material;
                 current_normal = normalize(intersection_point - sphere.transform.pos);
-                current_opaque = sphere.material.opaque;
                 break;
             case 1: // plane
                 Plane plane = planes[object_index];
                 current_hit = plane_intersect(origin, dir, plane, intersection_point, max_lambda);
                 current_material = plane.material;
                 current_normal = plane.normal;
-                current_opaque = plane.material.opaque;
                 break;
             case 2: // disk
                 Disk disk = disks[object_index];
                 current_hit = disk_intersect(origin, dir, disk, intersection_point, max_lambda);
                 current_material = disk.plane.material;
                 current_normal = disk.plane.normal;
-                current_opaque = disk.plane.material.opaque;
                 break;
             case 3: // hollow disk
                 HollowDisk hollow_disk = hollow_disks[object_index];
                 current_hit = hollow_disk_intersect(origin, dir, hollow_disk, intersection_point, max_lambda);
                 current_material = hollow_disk.plane.material;
                 current_normal = hollow_disk.plane.normal;
-                current_opaque = hollow_disk.plane.material.opaque;
                 break;
             case 4: // cylinder
                 Cylinder cylinder = cylinders[object_index];
                 current_hit = cylinder_intersect(origin, dir, cylinder, intersection_point, max_lambda);
                 current_material = cylinder.material;
                 current_normal = normalize(intersection_point - dot(intersection_point, cylinder.height) / square_vector(cylinder.height) * cylinder.height);
-                current_opaque = cylinder.material.opaque;
                 break;
         }
 
@@ -367,23 +358,22 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
                 hit = true;
                 material = current_material;
                 normal = current_normal;
-                opaque = current_opaque;
             }
         }
     }
 
     color = vec4(0., 0., 0., 0.);
     if(hit) {
-        vec3 lit_color = calculate_lighting(intersection_point, normal, -dir, material);
-        color = vec4(lit_color, material.color.a);
+        color = calculate_lighting(intersection_point, normal, -dir, material);
     }
 
-    return opaque;
+    return color.a == 1.;
 }
 
 bool intersect(vec3 origin, vec3 dir, out vec4 color) {
     return intersect(origin, dir, color, -1.);
 }
+// #endregion
 
 vec4 get_bg(vec3 dir) {
     vec2 tex_coords = sphere_map(dir);

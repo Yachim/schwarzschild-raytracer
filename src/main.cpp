@@ -202,12 +202,10 @@ int main(int, char**) {
     glUniform1i(glGetUniformLocation(shaderProgram, "num_spheres"), 1);
     sphere.setupShader(shaderProgram, "spheres[0]");
     sphere.loadShader();
-    glUniform1i(glGetUniformLocation(shaderProgram, "spheres[0].material.opaque"), 1); // TODO:  
 
     glUniform1i(glGetUniformLocation(shaderProgram, "num_hollow_disks"), 1);
     accretionDisk.setupShader(shaderProgram, "hollow_disks[0]");
     accretionDisk.loadShader();
-    glUniform1i(glGetUniformLocation(shaderProgram, "hollow_disks[0].plane.material.opaque"), 1); // TODO:  
 
     glUniform1i(glGetUniformLocation(shaderProgram, "num_objects"), 2);
     glUniform1i(glGetUniformLocation(shaderProgram, "objects[0].type"), 0);
