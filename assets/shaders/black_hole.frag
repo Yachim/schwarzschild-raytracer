@@ -57,6 +57,10 @@ struct Light {
 uniform int num_lights;
 uniform Light lights[MAX_LIGHTS];
 
+#define MAX_TEXTURES 10
+uniform int num_textures;
+uniform vec2 texture_sizes[MAX_TEXTURES];
+uniform vec2 max_texture_size;
 uniform sampler2DArray textures;
 
 struct Material {
@@ -155,6 +159,10 @@ vec2 tangent_basis(vec3 v, vec3 normal, out vec3 tangent, out vec3 bitangent) {
 
     return vec2(dot(v, tangent), dot(v, bitangent));
 }
+vec2 tangent_basis(vec3 v, vec3 normal) {
+    vec3 tangent, bitangent;
+    return tangent_basis(v, normal, tangent, bitangent);
+}
 
 // returns (u, v), where u, v in [0, 1]
 // #region uv mapping
@@ -169,8 +177,7 @@ vec2 sphere_map(vec3 p) {
 vec2 disk_map(vec3 point, Disk disk) {
     vec3 local_point = point - disk.plane.transform.pos;
 
-    vec3 tangent, bitangent;
-    vec2 tangent_vec = tangent_basis(local_point, disk.plane.normal, tangent, bitangent);
+    vec2 tangent_vec = tangent_basis(local_point, disk.plane.normal);
 
     float u = length(tangent_vec) / disk.radius;
     float v = atan(tangent_vec.y, tangent_vec.x) / (2. * PI) + 0.5;
@@ -181,8 +188,7 @@ vec2 disk_map(vec3 point, Disk disk) {
 vec2 hollow_disk_map(vec3 point, HollowDisk disk) {
     vec3 local_point = point - disk.plane.transform.pos;
 
-    vec3 tangent, bitangent;
-    vec2 tangent_vec = tangent_basis(local_point, disk.plane.normal, tangent, bitangent);
+    vec2 tangent_vec = tangent_basis(local_point, disk.plane.normal);
 
     float u = (length(tangent_vec) - disk.inner_radius) / (disk.outer_radius - disk.inner_radius);
     float v = atan(tangent_vec.y, tangent_vec.x) / (2. * PI) + 0.5;
@@ -219,7 +225,8 @@ float square_vector(vec3 v) {
 vec4 calculate_lighting(vec3 point, vec3 normal, vec3 view_dir, Material material, vec2 object_uv) {
     vec4 base_color = material.color;
     if(material.texture_index >= 0) {
-        base_color = texture(textures, vec3(object_uv, material.texture_index));
+        vec2 rescaled_uv = object_uv * texture_sizes[material.texture_index] / max_texture_size;
+        base_color = texture(textures, vec3(rescaled_uv, material.texture_index));
     }
     vec3 final_color = material.ambient * base_color.rgb; // Ambient component
 
