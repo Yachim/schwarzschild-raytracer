@@ -236,8 +236,9 @@ int main(int, char**) {
     glUniform1i(glGetUniformLocation(shaderProgram, "background_texture"), 0);
 
     std::vector<std::string> texturePaths = {
-        "assets/textures/2k_moon.jpg",
-        "assets/textures/2k_sun.jpg"
+        //"assets/textures/2k_moon.jpg",
+        //"assets/textures/2k_sun.jpg",
+        "assets/textures/2k_saturn_ring_alpha.png"
     };
 
     GLuint textureArrayID = loadTextureArray(texturePaths);
@@ -255,6 +256,8 @@ int main(int, char**) {
 
     HollowDisk accretionDisk;
     accretionDisk.setMaterialColor(glm::vec4(1., 0.5, 0.1, 1.));
+    accretionDisk.setMaterialTextureIndex(0);
+    accretionDisk.setMaterialInvertUvX(true);
 
     Light light{};
 #pragma endregion

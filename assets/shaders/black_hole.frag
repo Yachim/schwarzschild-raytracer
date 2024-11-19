@@ -66,6 +66,10 @@ struct Material {
     float specular;
     float shininess;
     int texture_index; // < 0 to disable
+    // first swapped, then inverted
+    bool invert_uv_x;
+    bool invert_uv_y;
+    bool swap_uvs;
 };
 
 struct Sphere {
@@ -78,7 +82,7 @@ struct Sphere {
 uniform int num_spheres;
 uniform Sphere spheres[MAX_SPHERES];
 
-const Material BLANK_MAT = Material(vec4(0.0, 0.0, 0.0, 1.0), 0.1, 0.0, 0.0, 32.0, -1);
+const Material BLANK_MAT = Material(vec4(0.0, 0.0, 0.0, 1.0), 0.1, 0.0, 0.0, 32.0, -1, false, false, false);
 const Sphere BLACK_HOLE = Sphere(Transform(vec3(0., 0., 0.)), BLANK_MAT, 1.0);
 
 struct Plane {
@@ -137,14 +141,55 @@ struct Object {
 uniform int num_objects;
 uniform Object objects[MAX_OBJECTS];
 
-// assuming normalized p
+vec2 tangent_basis(vec3 v, vec3 normal, out vec3 tangent, out vec3 bitangent) {
+    tangent = cross(vec3(0., 0.0, 1.0), normal);
+    float tangent_length = length(tangent);
+    if(tangent_length < 1e-6) {
+        tangent = cross(vec3(1., 0., 0.), normal);
+    }
+    if(tangent_length < 1e-6) {
+        tangent = cross(vec3(0., 1., 0.), normal);
+    }
+    tangent = normalize(tangent);
+    bitangent = normalize(cross(normal, tangent));
+
+    return vec2(dot(v, tangent), dot(v, bitangent));
+}
+
 // returns (u, v), where u, v in [0, 1]
+// #region uv mapping
+// assuming normalized p
 vec2 sphere_map(vec3 p) {
     float u = atan(p.z, p.x) / PI;
     if(u < 0.)
         u += 2.;
     return vec2(u * 0.5, asin(p.y) / PI + 0.5);
 }
+
+vec2 disk_map(vec3 point, Disk disk) {
+    vec3 local_point = point - disk.plane.transform.pos;
+
+    vec3 tangent, bitangent;
+    vec2 tangent_vec = tangent_basis(local_point, disk.plane.normal, tangent, bitangent);
+
+    float u = length(tangent_vec) / disk.radius;
+    float v = atan(tangent_vec.y, tangent_vec.x) / (2. * PI) + 0.5;
+
+    return vec2(u, v);
+}
+
+vec2 hollow_disk_map(vec3 point, HollowDisk disk) {
+    vec3 local_point = point - disk.plane.transform.pos;
+
+    vec3 tangent, bitangent;
+    vec2 tangent_vec = tangent_basis(local_point, disk.plane.normal, tangent, bitangent);
+
+    float u = (length(tangent_vec) - disk.inner_radius) / (disk.outer_radius - disk.inner_radius);
+    float v = atan(tangent_vec.y, tangent_vec.x) / (2. * PI) + 0.5;
+
+    return vec2(u, v);
+}
+// #endregion
 
 float ddu(float u) {
     return -u * (1. - 1.5 * u);
@@ -173,7 +218,7 @@ float square_vector(vec3 v) {
 
 vec4 calculate_lighting(vec3 point, vec3 normal, vec3 view_dir, Material material, vec2 object_uv) {
     vec4 base_color = material.color;
-    if (material.texture_index >= 0) {
+    if(material.texture_index >= 0) {
         base_color = texture(textures, vec3(object_uv, material.texture_index));
     }
     vec3 final_color = material.ambient * base_color.rgb; // Ambient component
@@ -348,14 +393,14 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
                 current_hit = disk_intersect(origin, dir, disk, intersection_point, max_lambda);
                 current_material = disk.plane.material;
                 current_normal = disk.plane.normal;
-                current_uv = vec2(0.);
+                current_uv = disk_map(intersection_point, disk);
                 break;
             case 3: // hollow disk
                 HollowDisk hollow_disk = hollow_disks[object_index];
                 current_hit = hollow_disk_intersect(origin, dir, hollow_disk, intersection_point, max_lambda);
                 current_material = hollow_disk.plane.material;
                 current_normal = hollow_disk.plane.normal;
-                current_uv = vec2(0.);
+                current_uv = hollow_disk_map(intersection_point, hollow_disk);
                 break;
             case 4: // cylinder
                 Cylinder cylinder = cylinders[object_index];
@@ -378,6 +423,12 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
         }
     }
 
+    if(material.swap_uvs)
+        object_uv = vec2(object_uv.y, object_uv.x);
+    if(material.invert_uv_x)
+        object_uv.x = 1. - object_uv.x;
+    if(material.invert_uv_y)
+        object_uv.y = 1. - object_uv.y;
     color = vec4(0., 0., 0., 0.);
     if(hit) {
         color = calculate_lighting(intersection_point, normal, -dir, material, object_uv);

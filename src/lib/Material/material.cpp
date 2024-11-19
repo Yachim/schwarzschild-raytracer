@@ -46,3 +46,24 @@ int Material::getTextureIndex() {
 void Material::setTextureIndex(int index) {
     m_textureIndex = index;
 }
+
+bool Material::getInvertUvX() {
+    return m_invertUvX;
+}
+void Material::setInvertUvX(bool invertUvX) {
+    m_invertUvX = invertUvX;
+}
+
+bool Material::getInvertUvY() {
+    return m_invertUvY;
+}
+void Material::setInvertUvY(bool invertUvY) {
+    m_invertUvY = invertUvY;
+}
+
+bool Material::getSwapUvs() {
+    return m_swapUvs;
+}
+void Material::setSwapUvs(bool swapUvs) {
+    m_swapUvs = swapUvs;
+}

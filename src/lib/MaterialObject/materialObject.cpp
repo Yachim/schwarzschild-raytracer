@@ -53,6 +53,27 @@ void MaterialObject::setMaterialTextureIndex(int index) {
     m_material.setTextureIndex(index);
 }
 
+bool MaterialObject::getMaterialInvertUvX() {
+    return m_material.getInvertUvX();
+}
+void MaterialObject::setMaterialInvertUvX(bool invertUvX) {
+    m_material.setInvertUvX(invertUvX);
+}
+
+bool MaterialObject::getMaterialInvertUvY() {
+    return m_material.getInvertUvY();
+}
+void MaterialObject::setMaterialInvertUvY(bool invertUvY) {
+    m_material.setInvertUvY(invertUvY);
+}
+
+bool MaterialObject::getMaterialSwapUvs() {
+    return m_material.getSwapUvs();
+}
+void MaterialObject::setMaterialSwapUvs(bool swapUvs) {
+    m_material.setSwapUvs(swapUvs);
+}
+
 
 void MaterialObject::setupShader(GLuint program, std::string prefix) {
     Object::setupShader(program, prefix);
@@ -62,7 +83,10 @@ void MaterialObject::setupShader(GLuint program, std::string prefix) {
     m_materialDiffuseLoc = glGetUniformLocation(program, (prefix + ".diffuse").c_str());
     m_materialSpecularLoc = glGetUniformLocation(program, (prefix + ".specular").c_str());
     m_materialShininessLoc = glGetUniformLocation(program, (prefix + ".shininess").c_str());
-    m_materialTextureIndex = glGetUniformLocation(program, (prefix + ".texture_index").c_str());
+    m_materialTextureIndexLoc = glGetUniformLocation(program, (prefix + ".texture_index").c_str());
+    m_materialInvertUvXLoc = glGetUniformLocation(program, (prefix + ".invert_uv_x").c_str());
+    m_materialInvertUvYLoc = glGetUniformLocation(program, (prefix + ".invert_uv_y").c_str());
+    m_materialSwapUvsLoc = glGetUniformLocation(program, (prefix + ".swap_uvs").c_str());
 }
 
 void MaterialObject::loadShader() {
@@ -74,5 +98,8 @@ void MaterialObject::loadShader() {
     glUniform1f(m_materialDiffuseLoc, m_material.getDiffuse());
     glUniform1f(m_materialSpecularLoc, m_material.getSpecular());
     glUniform1f(m_materialShininessLoc, m_material.getShininess());
-    glUniform1i(m_materialTextureIndex, m_material.getTextureIndex());
+    glUniform1i(m_materialTextureIndexLoc, m_material.getTextureIndex());
+    glUniform1i(m_materialInvertUvXLoc, m_material.getInvertUvX());
+    glUniform1i(m_materialInvertUvYLoc, m_material.getInvertUvY());
+    glUniform1i(m_materialSwapUvsLoc, m_material.getSwapUvs());
 }
