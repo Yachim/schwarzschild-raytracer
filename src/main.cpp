@@ -296,7 +296,6 @@ int main(int, char**) {
     HollowDisk accretionDisk;
     accretionDisk.setMaterialColor(glm::vec4(1., 0.5, 0.1, 1.));
     accretionDisk.setMaterialTextureIndex(2);
-    accretionDisk.setMaterialInvertUvX(false);
 
     Light light{};
 #pragma endregion
@@ -325,6 +324,15 @@ int main(int, char**) {
     glUniform1i(glGetUniformLocation(shaderProgram, "objects[1].type"), 3);
     glUniform1i(glGetUniformLocation(shaderProgram, "objects[1].index"), 0);
 
+    Plane plane;
+    plane.setMaterialTextureIndex(1);
+    glUniform1i(glGetUniformLocation(shaderProgram, "num_planes"), 1);
+    plane.setupShader(shaderProgram, "planes[0]");
+    plane.loadShader();
+    glUniform1i(glGetUniformLocation(shaderProgram, "num_objects"), 3);
+    glUniform1i(glGetUniformLocation(shaderProgram, "objects[2].type"), 1);
+    glUniform1i(glGetUniformLocation(shaderProgram, "objects[2].index"), 0);
+
     glUniform1f(glGetUniformLocation(shaderProgram, "checkerboard_detail"), CHECKERBOARD_DETAIL);
 #pragma endregion
 
@@ -343,7 +351,7 @@ int main(int, char**) {
     glm::vec2 prevMouse = input->getMouse();
     GLint flatRaytraceLoc = glGetUniformLocation(shaderProgram, "flat_raytrace");
     GLint flatPercentage = glGetUniformLocation(shaderProgram, "flat_percentage");
-    int flatRaytrace = 0;
+    int flatRaytrace = 1;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 

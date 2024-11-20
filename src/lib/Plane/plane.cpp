@@ -13,11 +13,19 @@ void Plane::setNormal(glm::vec3 normal) {
     m_normal = normal;
 }
 
+glm::vec2 Plane::getTextureSize() {
+    return m_textureSize;
+}
+void Plane::setTextureSize(glm::vec2 size) {
+    m_textureSize = size;
+}
+
 void Plane::setupShader(GLuint program, std::string prefix) {
     MaterialObject::setupShader(program, prefix + ".material");
     Transform::setupShader(program, prefix + ".transform");
 
     m_normalLoc = glGetUniformLocation(program, (prefix + ".normal").c_str());
+    m_textureSizeLoc = glGetUniformLocation(program, (prefix + ".texture_size").c_str());
 }
 
 void Plane::loadShader() {
@@ -25,4 +33,5 @@ void Plane::loadShader() {
     Transform::loadShader();
 
     glUniform3f(m_normalLoc, m_normal.x, m_normal.y, m_normal.z);
+    glUniform2f(m_textureSizeLoc, m_textureSize.x, m_textureSize.y);
 }

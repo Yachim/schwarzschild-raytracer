@@ -93,6 +93,7 @@ struct Plane {
     Transform transform; // pos - some point
     Material material;
     vec3 normal; // normalized
+    vec2 texture_size;
 };
 
 #define MAX_PLANES 3
@@ -145,7 +146,7 @@ struct Object {
 uniform int num_objects;
 uniform Object objects[MAX_OBJECTS];
 
-vec2 tangent_basis(vec3 v, vec3 normal, out vec3 tangent, out vec3 bitangent) {
+vec3 tangent_basis(vec3 v, vec3 normal, out vec3 tangent, out vec3 bitangent) {
     tangent = cross(vec3(0., 0.0, 1.0), normal);
     float tangent_length = length(tangent);
     if(tangent_length < 1e-6) {
@@ -157,9 +158,9 @@ vec2 tangent_basis(vec3 v, vec3 normal, out vec3 tangent, out vec3 bitangent) {
     tangent = normalize(tangent);
     bitangent = normalize(cross(normal, tangent));
 
-    return vec2(dot(v, tangent), dot(v, bitangent));
+    return vec3(dot(v, tangent), dot(v, normal), dot(v, bitangent));
 }
-vec2 tangent_basis(vec3 v, vec3 normal) {
+vec3 tangent_basis(vec3 v, vec3 normal) {
     vec3 tangent, bitangent;
     return tangent_basis(v, normal, tangent, bitangent);
 }
@@ -167,20 +168,30 @@ vec2 tangent_basis(vec3 v, vec3 normal) {
 // returns (u, v), where u, v in [0, 1]
 // #region uv mapping
 // assuming normalized p
-vec2 sphere_map(vec3 p) {
-    float u = atan(p.z, p.x) / PI;
+vec2 sphere_map(vec3 local_point) {
+    float u = atan(local_point.z, local_point.x) / PI;
     if(u < 0.)
         u += 2.;
-    return vec2(u * 0.5, asin(p.y) / PI + 0.5);
+    return vec2(u * 0.5, asin(local_point.y) / PI + 0.5);
+}
+
+vec2 plane_map(vec3 point, Plane plane) {
+    vec3 local_point = point - plane.transform.pos;
+    vec2 tangent_vec = tangent_basis(local_point, plane.normal).xz;
+    tangent_vec.x = mod(tangent_vec.x, plane.texture_size.x);
+    tangent_vec.y = mod(tangent_vec.y, plane.texture_size.y);
+    tangent_vec /= plane.texture_size;
+
+    return tangent_vec;
 }
 
 vec2 disk_map(vec3 point, Disk disk) {
     vec3 local_point = point - disk.plane.transform.pos;
 
-    vec2 tangent_vec = tangent_basis(local_point, disk.plane.normal);
+    vec3 tangent_vec = tangent_basis(local_point, disk.plane.normal);
 
     float u = length(tangent_vec) / disk.radius;
-    float v = atan(tangent_vec.y, tangent_vec.x) / (2. * PI) + 0.5;
+    float v = atan(tangent_vec.z, tangent_vec.x) / (2. * PI) + 0.5;
 
     return vec2(u, v);
 }
@@ -188,10 +199,10 @@ vec2 disk_map(vec3 point, Disk disk) {
 vec2 hollow_disk_map(vec3 point, HollowDisk disk) {
     vec3 local_point = point - disk.plane.transform.pos;
 
-    vec2 tangent_vec = tangent_basis(local_point, disk.plane.normal);
+    vec3 tangent_vec = tangent_basis(local_point, disk.plane.normal);
 
     float u = (length(tangent_vec) - disk.inner_radius) / (disk.outer_radius - disk.inner_radius);
-    float v = atan(tangent_vec.y, tangent_vec.x) / (2. * PI) + 0.5;
+    float v = atan(tangent_vec.z, tangent_vec.x) / (2. * PI) + 0.5;
 
     return vec2(u, v);
 }
@@ -393,7 +404,7 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
                 current_hit = plane_intersect(origin, dir, plane, intersection_point, max_lambda);
                 current_material = plane.material;
                 current_normal = plane.normal;
-                current_uv = vec2(0.);
+                current_uv = plane_map(intersection_point, plane);
                 break;
             case 2: // disk
                 Disk disk = disks[object_index];
