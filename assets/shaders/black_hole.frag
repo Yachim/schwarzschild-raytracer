@@ -206,6 +206,16 @@ vec2 hollow_disk_map(vec3 point, HollowDisk disk) {
 
     return vec2(u, v);
 }
+
+vec2 cylinder_map(vec3 point, Cylinder cylinder) {
+    vec3 local_point = point - cylinder.transform.pos;
+    float height = length(cylinder.height);
+    vec3 height_normalized = cylinder.height / height;
+    float v = dot(local_point, height_normalized) / height;
+    vec3 radial_vec = local_point - v * height_normalized;
+    float u = atan(radial_vec.z, radial_vec.x) / (2.0 * PI) + 0.5;
+    return vec2(u, v);
+}
 // #endregion
 
 float ddu(float u) {
@@ -425,7 +435,7 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
                 current_hit = cylinder_intersect(origin, dir, cylinder, intersection_point, max_lambda);
                 current_material = cylinder.material;
                 current_normal = normalize(intersection_point - dot(intersection_point, cylinder.height) / square_vector(cylinder.height) * cylinder.height);
-                current_uv = vec2(0.);
+                current_uv = cylinder_map(intersection_point, cylinder);
                 break;
         }
 

@@ -1,8 +1,8 @@
 // TODO: loading
-// TODO: disk, hollow disk classes
 // TODO: clocks
 // FIXME: accretion disk casts shadow on the moon even if moon is in front of the accretion disk
 // FIXME: accretion disc texture seam
+// FIXME: cylinder visual bug (look from above when close)
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -324,15 +324,6 @@ int main(int, char**) {
     glUniform1i(glGetUniformLocation(shaderProgram, "objects[1].type"), 3);
     glUniform1i(glGetUniformLocation(shaderProgram, "objects[1].index"), 0);
 
-    Plane plane;
-    plane.setMaterialTextureIndex(1);
-    glUniform1i(glGetUniformLocation(shaderProgram, "num_planes"), 1);
-    plane.setupShader(shaderProgram, "planes[0]");
-    plane.loadShader();
-    glUniform1i(glGetUniformLocation(shaderProgram, "num_objects"), 3);
-    glUniform1i(glGetUniformLocation(shaderProgram, "objects[2].type"), 1);
-    glUniform1i(glGetUniformLocation(shaderProgram, "objects[2].index"), 0);
-
     glUniform1f(glGetUniformLocation(shaderProgram, "checkerboard_detail"), CHECKERBOARD_DETAIL);
 #pragma endregion
 
@@ -351,7 +342,7 @@ int main(int, char**) {
     glm::vec2 prevMouse = input->getMouse();
     GLint flatRaytraceLoc = glGetUniformLocation(shaderProgram, "flat_raytrace");
     GLint flatPercentage = glGetUniformLocation(shaderProgram, "flat_percentage");
-    int flatRaytrace = 1;
+    int flatRaytrace = 0;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
