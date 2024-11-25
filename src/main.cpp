@@ -38,6 +38,10 @@ const float ZOOM_SENSITIVITY = 10.;
 const float MIN_FOV = 10.;
 const float MAX_FOV = 120.;
 
+// used for clamping
+const float MIN_ANGLE = 10. * M_PI / 180.;
+const float MAX_ANGLE = 170. * M_PI / 180.;
+
 // 0 for 2k, 1 for 8k
 #define BACKGROUND_TEXTURE_QUALITY 0
 #if BACKGROUND_TEXTURE_QUALITY == 0
@@ -384,14 +388,20 @@ int main(int, char**) {
         }
 
         if (input->isRClicked()) {
-            // rotation x-axis
-            camForward = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camForward, glm::vec3(0., 1., 0.));
-            camRight = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camRight, glm::vec3(0., 1., 0.));
-            camUp = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.x, camUp, glm::vec3(0., 1., 0.));
+            glm::vec2 rotation = -SENSITIVITY * (float)dt * deltaMouse;
 
-            // rotation y-axis FIXME: clamp this
-            camForward = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.y, camForward, camRight);
-            camUp = rotateVector(-SENSITIVITY * (float)dt * deltaMouse.y, camUp, camRight);
+            // rotation x-axis
+            camForward = rotateVector(rotation.x, camForward);
+            camRight = rotateVector(rotation.x, camRight);
+            camUp = rotateVector(rotation.x, camUp);
+
+            float angle = acos(-camForward.y);
+            float newAngle = glm::clamp(angle + rotation.y, MIN_ANGLE, MAX_ANGLE);
+            float dAngle = newAngle - angle;
+
+            // rotation y-axis
+            camForward = rotateVector(dAngle, camForward, camRight);
+            camUp = rotateVector(dAngle, camUp, camRight);
 
             cam.setForward(camForward);
             cam.setRight(camRight);
