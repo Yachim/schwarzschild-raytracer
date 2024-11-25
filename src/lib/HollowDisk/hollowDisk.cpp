@@ -3,7 +3,6 @@
 
 HollowDisk::HollowDisk() : Plane() {}
 HollowDisk::HollowDisk(glm::vec3 pos) : Plane(pos) {}
-HollowDisk::HollowDisk(glm::vec3 pos, glm::vec3 normal, Material mat) : Plane(pos, normal, mat) {}
 
 float HollowDisk::getInnerRadius() {
     return m_innerRadius;

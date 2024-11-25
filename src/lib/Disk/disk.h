@@ -9,7 +9,6 @@ class Disk : public Plane {
 public:
     Disk();
     Disk(glm::vec3 pos);
-    Disk(glm::vec3 pos, glm::vec3 normal, Material mat);
 
     float getRadius();
     void setRadius(float radius);

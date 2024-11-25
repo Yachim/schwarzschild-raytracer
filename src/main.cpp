@@ -113,7 +113,7 @@ GLuint loadTexture(const char* texturePath) {
 
 GLuint loadTextureArray(const std::vector<std::string>& texturePaths, GLuint program) {
     GLuint textureID;
-    glGenTextures(1, &textureID);
+    glGenTextures(texturePaths.size(), &textureID);
     glBindTexture(GL_TEXTURE_2D_ARRAY, textureID);
 
     int maxWidth = 0, maxHeight = 0, maxChannels = 0;
@@ -127,12 +127,12 @@ GLuint loadTextureArray(const std::vector<std::string>& texturePaths, GLuint pro
             maxHeight = std::max(maxHeight, height);
             maxChannels = std::max(maxChannels, channels);
             stbi_image_free(data);
-            glUniform2f(glGetUniformLocation(program, "max_texture_size"), maxWidth, maxHeight);
         }
         else {
             std::cerr << "Failed to load texture: " << path << std::endl;
         }
     }
+    glUniform2f(glGetUniformLocation(program, "max_texture_size"), maxWidth, maxHeight);
 
     if (maxWidth == 0 || maxHeight == 0 || maxChannels == 0) {
         std::cerr << "Error: No valid textures loaded!" << std::endl;
@@ -140,10 +140,9 @@ GLuint loadTextureArray(const std::vector<std::string>& texturePaths, GLuint pro
     }
 
     GLenum internalFormat = (maxChannels == 4) ? GL_RGBA : GL_RGB;
-    GLenum format = (maxChannels == 4) ? GL_RGBA : GL_RGB;
 
     // Allocate storage for the texture array
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, maxWidth, maxHeight, texturePaths.size(), 0, format, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, maxWidth, maxHeight, texturePaths.size(), 0, internalFormat, GL_UNSIGNED_BYTE, nullptr);
 
     glUniform1i(glGetUniformLocation(program, "num_textures"), texturePaths.size());
     // Second pass: load and resize textures
@@ -170,8 +169,8 @@ GLuint loadTextureArray(const std::vector<std::string>& texturePaths, GLuint pro
                 }
             }
 
+            GLenum format = (maxChannels == 4) ? GL_RGBA : GL_RGB;
             glUniform2f(glGetUniformLocation(program, ("texture_sizes[" + std::to_string(i) + "]").c_str()), width, height);
-            glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, maxWidth, maxHeight, texturePaths.size(), 0, format, GL_UNSIGNED_BYTE, nullptr);
             glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, maxWidth, maxHeight, 1, format, GL_UNSIGNED_BYTE, resizedData.data());
             stbi_image_free(data);
         }
@@ -275,9 +274,9 @@ int main(int, char**) {
     glUniform1i(glGetUniformLocation(shaderProgram, "background_texture"), 0);
 
     std::vector<std::string> texturePaths = {
-        "assets/textures/2k_moon.jpg",
-        "assets/textures/2k_sun.jpg",
-        "assets/textures/2k_saturn_ring_alpha.png"
+        "assets/textures/2k_earth_daymap.jpg",
+        "assets/textures/2k_saturn_ring_alpha.png",
+        "assets/textures/2k_earth_normal_map.jpg"
     };
 
     GLuint textureArrayID = loadTextureArray(texturePaths, shaderProgram);
@@ -292,12 +291,13 @@ int main(int, char**) {
     Sphere sphere(glm::vec3(-10., 0., 0.));
     sphere.setMaterialColor(glm::vec4(1., 0., 0., 1.));
     sphere.setMaterialTextureIndex(0);
+    sphere.setMaterialNormalMapIndex(2);
 
     HollowDisk accretionDisk;
     accretionDisk.setMaterialColor(glm::vec4(1., 0.5, 0.1, 1.));
-    accretionDisk.setMaterialTextureIndex(2);
+    accretionDisk.setMaterialTextureIndex(1);
 
-    Light light{};
+    Light light;
 #pragma endregion
 
 #pragma region uniforms

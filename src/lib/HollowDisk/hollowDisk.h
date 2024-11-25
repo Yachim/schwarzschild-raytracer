@@ -9,7 +9,6 @@ class HollowDisk : public Plane {
 public:
     HollowDisk();
     HollowDisk(glm::vec3 pos);
-    HollowDisk(glm::vec3 pos, glm::vec3 normal, Material mat);
 
     float getInnerRadius();
     void setInnerRadius(float innerRadius);

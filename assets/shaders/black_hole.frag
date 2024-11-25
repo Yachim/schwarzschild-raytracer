@@ -1,6 +1,7 @@
 #version 330 core
 // right-handed y-up coordinates
 // camera has left-handed y-up coordinates
+// matrix columns represent the x, y, z axes respectively (right, up, forward)
 // TODO: raytrace towards light?
 // FIXME: make materials not unique (materials array + index)
 
@@ -31,13 +32,11 @@ uniform float flat_percentage = 0.5;
 
 struct Transform {
     vec3 pos;
+    mat3 axes;
 };
 
 struct Camera {
     Transform transform;
-    vec3 forward;
-    vec3 right;
-    vec3 up;
     float fov;
 };
 
@@ -70,6 +69,7 @@ struct Material {
     float specular;
     float shininess;
     int texture_index; // < 0 to disable
+    int normal_map_index; // < 0 to disable
     // first swapped, then inverted
     bool invert_uv_x;
     bool invert_uv_y;
@@ -86,13 +86,19 @@ struct Sphere {
 uniform int num_spheres;
 uniform Sphere spheres[MAX_SPHERES];
 
-const Material BLANK_MAT = Material(vec4(0.0, 0.0, 0.0, 1.0), 0.1, 0.0, 0.0, 32.0, -1, false, false, false);
-const Sphere BLACK_HOLE = Sphere(Transform(vec3(0., 0., 0.)), BLANK_MAT, 1.0);
+const mat3 DEFAULT_AXES = mat3(
+    vec3(1., 0., 0.),
+    vec3(0., 1., 0.),
+    vec3(0., 0., 1.)
+);
+const Material BLANK_MAT = Material(vec4(0.0, 0.0, 0.0, 1.0), 0.1, 0.0, 0.0, 32.0, -1, -1, false, false, false);
+const Sphere BLACK_HOLE = Sphere(Transform(vec3(0., 0., 0.), DEFAULT_AXES), BLANK_MAT, 1.0);
 
 struct Plane {
     Transform transform; // pos - some point
     Material material;
-    vec3 normal; // normalized
+    vec2 texture_offset; // TODO:
+    bool repeat_texture; // TODO:
     vec2 texture_size;
 };
 
@@ -123,7 +129,7 @@ uniform HollowDisk hollow_disks[MAX_HOLLOW_DISKS];
 struct Cylinder {
     Transform transform; // pos - base center
     Material material;
-    vec3 height;
+    float height;
     float radius;
 };
 
@@ -142,79 +148,156 @@ struct Object {
     int index; // indexing respective arrays
 };
 
-#define MAX_OBJECTS MAX_SPHERES + MAX_PLANES + MAX_DISKS + MAX_HOLLOW_DISKS
-uniform int num_objects;
+#define MAX_OBJECTS MAX_SPHERES + MAX_PLANES + MAX_DISKS + MAX_HOLLOW_DISKS + MAX_CYLINDERS
 uniform Object objects[MAX_OBJECTS];
 
-vec3 tangent_basis(vec3 v, vec3 normal, out vec3 tangent, out vec3 bitangent) {
-    tangent = cross(vec3(0., 0.0, 1.0), normal);
-    float tangent_length = length(tangent);
-    if(tangent_length < 1e-6) {
-        tangent = cross(vec3(1., 0., 0.), normal);
+Material get_object_material(Object object) {
+    int index = object.index;
+    switch (object.type) {
+        case 0: // sphere
+            return spheres[index].material;
+        case 1: // plane
+            return planes[index].material;
+        case 2: // disk
+            return disks[index].plane.material;
+        case 3: // hollow disk
+            return hollow_disks[index].plane.material;
+        case 4: // cylinder
+            return cylinders[index].material;
     }
-    if(tangent_length < 1e-6) {
-        tangent = cross(vec3(0., 1., 0.), normal);
+}
+
+// returns matrix: [tangent, bitangent, normal]
+// coordinates: uv
+// u: tangent direction
+// v: bitangent direction
+// every coordinates except plane are normalized
+// #region tangent_space
+mat3 sphere_tangent_space(vec3 intersection_point, Sphere sphere, out vec2 coordinates) {
+    Transform transform = sphere.transform;
+    vec3 displacement = intersection_point - transform.pos;
+    vec3 normal = normalize(displacement);
+
+    vec3 local_displacement = transpose(transform.axes) * displacement;
+    float phi = atan(local_displacement.z, local_displacement.x);
+    if (phi < 0.) phi += 2.* PI;
+    float theta = asin(local_displacement.y / sphere.radius);
+
+    coordinates = vec2(phi / (2. * PI), theta / PI + 0.5);
+
+    vec3 tangent = vec3(sin(phi), 0.0, -cos(phi));
+    vec3 bitangent = normalize(vec3(-cos(phi) * cos(theta), sin(theta), -sin(phi) * cos(theta)));
+
+    tangent = transform.axes * tangent;
+    bitangent = transform.axes * bitangent;
+
+    return mat3(
+        tangent,
+        bitangent,
+        normal
+    );
+}
+
+mat3 plane_tangent_space(vec3 intersection_point, Plane plane, out vec2 coordinates) {
+    Transform transform = plane.transform;
+    vec3 displacement = intersection_point - transform.pos;
+
+    vec3 local_displacement = transpose(transform.axes) * displacement;
+    coordinates = local_displacement.xz;
+
+    return mat3(
+        transform.axes[0],
+        transform.axes[2],
+        transform.axes[1]
+    );
+}
+
+mat3 disk_tangent_space(vec3 intersection_point, Disk disk, out vec2 coordinates) {
+    Transform transform = disk.plane.transform;
+    vec3 displacement = intersection_point - transform.pos;
+
+    vec3 local_displacement = transpose(transform.axes) * displacement;
+    float phi = atan(local_displacement.z, local_displacement.x);
+    if (phi < 0.) phi += 2.* PI;
+
+    coordinates = vec2(
+        length(local_displacement) / disk.radius,
+        phi / (2. * PI)
+    );
+
+    vec3 tangent = normalize(displacement);
+    vec3 bitangent = normalize(vec3(sin(phi), 0., -cos(phi)));
+    bitangent = transform.axes * bitangent;
+
+    return mat3(
+        tangent,
+        bitangent,
+        transform.axes[1]
+    );
+}
+
+mat3 hollow_disk_tangent_space(vec3 intersection_point, HollowDisk disk, out vec2 coordinates) {
+    Transform transform = disk.plane.transform;
+    vec3 displacement = intersection_point - transform.pos;
+
+    vec3 local_displacement = transpose(transform.axes) * displacement;
+    float phi = atan(local_displacement.z, local_displacement.x);
+    if (phi < 0.) phi += 2.* PI;
+
+    coordinates = vec2(
+        (length(local_displacement) - disk.inner_radius) / (disk.outer_radius - disk.inner_radius),
+        phi / (2. * PI)
+    );
+
+    vec3 tangent = normalize(displacement);
+    vec3 bitangent = normalize(vec3(sin(phi), 0., -cos(phi)));
+    bitangent = transform.axes * bitangent;
+
+    return mat3(
+        tangent,
+        bitangent,
+        transform.axes[1]
+    );
+}
+
+mat3 cylinder_tangent_space(vec3 intersection_point, Cylinder cylinder, out vec2 coordinates) {
+    Transform transform = cylinder.transform;
+    vec3 displacement = intersection_point - transform.pos;
+    vec3 normal = normalize(displacement);
+    vec3 bitangent = transform.axes[1];
+
+    vec3 local_displacement = transpose(transform.axes) * displacement;
+    float phi = atan(local_displacement.z, local_displacement.x);
+    if (phi < 0.) phi += 2.* PI;
+
+    coordinates = vec2(
+        local_displacement.y / cylinder.height,
+        phi / (2. * PI)
+    );
+
+    vec3 tangent = normalize(vec3(sin(phi), 0.0, -cos(phi)));
+    return mat3(
+        tangent,
+        bitangent,
+        normal
+    );
+}
+
+// coordinates are uv coordinates
+mat3 tangent_space(vec3 intersection_point, Object object, out vec2 coordinates) {
+    int index = object.index;
+    switch (object.type) {
+        case 0: // sphere
+            return sphere_tangent_space(intersection_point, spheres[index], coordinates);
+        case 1: // plane
+            return plane_tangent_space(intersection_point, planes[index], coordinates);
+        case 2: // disk
+            return disk_tangent_space(intersection_point, disks[index], coordinates);
+        case 3: // hollow disk
+            return hollow_disk_tangent_space(intersection_point, hollow_disks[index], coordinates);
+        case 4: // cylinder
+            return cylinder_tangent_space(intersection_point, cylinders[index], coordinates);
     }
-    tangent = normalize(tangent);
-    bitangent = normalize(cross(normal, tangent));
-
-    return vec3(dot(v, tangent), dot(v, normal), dot(v, bitangent));
-}
-vec3 tangent_basis(vec3 v, vec3 normal) {
-    vec3 tangent, bitangent;
-    return tangent_basis(v, normal, tangent, bitangent);
-}
-
-// returns (u, v), where u, v in [0, 1]
-// #region uv mapping
-// assuming normalized p
-vec2 sphere_map(vec3 local_point) {
-    float u = atan(local_point.z, local_point.x) / PI;
-    if(u < 0.)
-        u += 2.;
-    return vec2(u * 0.5, asin(local_point.y) / PI + 0.5);
-}
-
-vec2 plane_map(vec3 point, Plane plane) {
-    vec3 local_point = point - plane.transform.pos;
-    vec2 tangent_vec = tangent_basis(local_point, plane.normal).xz;
-    tangent_vec.x = mod(tangent_vec.x, plane.texture_size.x);
-    tangent_vec.y = mod(tangent_vec.y, plane.texture_size.y);
-    tangent_vec /= plane.texture_size;
-
-    return tangent_vec;
-}
-
-vec2 disk_map(vec3 point, Disk disk) {
-    vec3 local_point = point - disk.plane.transform.pos;
-
-    vec3 tangent_vec = tangent_basis(local_point, disk.plane.normal);
-
-    float u = length(tangent_vec) / disk.radius;
-    float v = atan(tangent_vec.z, tangent_vec.x) / (2. * PI) + 0.5;
-
-    return vec2(u, v);
-}
-
-vec2 hollow_disk_map(vec3 point, HollowDisk disk) {
-    vec3 local_point = point - disk.plane.transform.pos;
-
-    vec3 tangent_vec = tangent_basis(local_point, disk.plane.normal);
-
-    float u = (length(tangent_vec) - disk.inner_radius) / (disk.outer_radius - disk.inner_radius);
-    float v = atan(tangent_vec.z, tangent_vec.x) / (2. * PI) + 0.5;
-
-    return vec2(u, v);
-}
-
-vec2 cylinder_map(vec3 point, Cylinder cylinder) {
-    vec3 local_point = point - cylinder.transform.pos;
-    float height = length(cylinder.height);
-    vec3 height_normalized = cylinder.height / height;
-    float v = dot(local_point, height_normalized) / height;
-    vec3 radial_vec = local_point - v * height_normalized;
-    float u = atan(radial_vec.z, radial_vec.x) / (2.0 * PI) + 0.5;
-    return vec2(u, v);
 }
 // #endregion
 
@@ -243,13 +326,33 @@ float square_vector(vec3 v) {
     return dot(v, v);
 }
 
-vec4 calculate_lighting(vec3 point, vec3 normal, vec3 view_dir, Material material, vec2 object_uv) {
+vec4 calculate_lighting(vec3 point, vec3 view_dir, Object object) {
+    if (object.type == -42) return vec4(0., 0., 0., 1.); // black hole
+
+    Material material = get_object_material(object);
+    vec2 object_uv;
+    mat3 tangent_basis = tangent_space(point, object, object_uv);
+
+    if (material.swap_uvs)
+        object_uv = vec2(object_uv.y, object_uv.x);
+    if (material.invert_uv_x)
+        object_uv.x = (object.type == 1 ? planes[object.index].texture_size.x : 1.) - object_uv.x;
+    if (material.invert_uv_y)
+        object_uv.y = (object.type == 1 ? planes[object.index].texture_size.y : 1.) - object_uv.y;
+
     vec4 base_color = material.color;
-    if(material.texture_index >= 0) {
+    if (material.texture_index >= 0) {
         vec2 rescaled_uv = object_uv * texture_sizes[material.texture_index] / max_texture_size;
         base_color = texture(textures, vec3(rescaled_uv, material.texture_index));
     }
     vec3 final_color = material.ambient * base_color.rgb; // Ambient component
+
+    vec3 normal = tangent_basis[2];
+    if (material.normal_map_index >= 0) {
+        vec2 rescaled_uv = object_uv * texture_sizes[material.normal_map_index] / max_texture_size;
+        vec3 normal_map = texture(textures, vec3(rescaled_uv, material.normal_map_index)).rgb;
+        normal = normalize(tangent_basis * normal_map);
+    }
 
     for(int i = 0; i < num_lights; i++) {
         Light light = lights[i];
@@ -266,7 +369,7 @@ vec4 calculate_lighting(vec3 point, vec3 normal, vec3 view_dir, Material materia
         vec3 diffuse = material.diffuse * diff * light.color * base_color.rgb;
 
         // Specular
-        vec3 reflect_dir = reflect(-light_dir, normal);
+        vec3 reflect_dir = reflect(-light_dir, tangent_basis[1]);
         float spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
         vec3 specular = material.specular * spec * light.color;
 
@@ -281,9 +384,11 @@ float min_positive(float n1, float n2) {
     float n = -1.;
     if(n1 > 0 && n2 > 0) {
         n = min(n1, n2);
-    } else if(n1 > 0) {
+    }
+    else if(n1 > 0) {
         n = n1;
-    } else if(n2 > 0) {
+    }
+    else if(n2 > 0) {
         n = n2;
     }
 
@@ -312,11 +417,12 @@ bool sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, out vec3 intersectio
 }
 
 bool plane_intersect(vec3 origin, vec3 dir, Plane plane, out vec3 intersection_point, float max_lambda) {
-    float denom = dot(plane.normal, dir);
+    vec3 normal = plane.transform.axes[1];
+    float denom = dot(normal, dir);
     if(abs(denom) < 1. - parallel_treshold)
         return false;
 
-    float lambda = dot(plane.normal, plane.transform.pos - origin) / denom;
+    float lambda = dot(normal, plane.transform.pos - origin) / denom;
     intersection_point = origin + dir * lambda;
     return lambda >= 0. && (max_lambda < 0. || lambda <= max_lambda);
 }
@@ -337,7 +443,7 @@ bool isInRange(float n, float minimum, float maximum) {
 }
 
 bool cylinder_intersect(vec3 origin, vec3 dir, Cylinder cylinder, out vec3 intersection_point, float max_lambda) {
-    vec3 height = cylinder.height;
+    vec3 height = cylinder.height * cylinder.transform.axes[1];
     float heightSquared = square_vector(height);
 
     vec3 dir_parallel = dot(dir, height) / heightSquared * height;
@@ -375,91 +481,63 @@ bool cylinder_intersect(vec3 origin, vec3 dir, Cylinder cylinder, out vec3 inter
     return lambda >= 0. && (max_lambda < 0. || lambda <= max_lambda);
 }
 
+bool intersect_object(vec3 origin, vec3 dir, Object object, out vec3 intersection_point, float max_lambda) {
+    int object_type = object.type;
+    int object_index = object.index;
+
+    switch(object_type) {
+        case 0: // sphere
+            Sphere sphere = spheres[object_index];
+            return sphere_intersect(origin, dir, sphere, intersection_point, max_lambda);
+        case 1: // plane
+            Plane plane = planes[object_index];
+            return plane_intersect(origin, dir, plane, intersection_point, max_lambda);
+        case 2: // disk
+            Disk disk = disks[object_index];
+            return disk_intersect(origin, dir, disk, intersection_point, max_lambda);
+        case 3: // hollow disk
+            HollowDisk hollow_disk = hollow_disks[object_index];
+            return hollow_disk_intersect(origin, dir, hollow_disk, intersection_point, max_lambda);
+        case 4: // cylinder
+            Cylinder cylinder = cylinders[object_index];
+            return cylinder_intersect(origin, dir, cylinder, intersection_point, max_lambda);
+    }
+
+    return false;
+}
+
 bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
     float min_dist = -1.;
     bool hit = false;
-    Material material;
-    vec2 object_uv;
-    vec3 normal;
+    Object object;
 
     // black hole check
     vec3 intersection_point = vec3(0., 0., 0.);
     if(sphere_intersect(origin, dir, BLACK_HOLE, intersection_point, max_lambda)) {
-        material = BLACK_HOLE.material;
-        normal = normalize(intersection_point - BLACK_HOLE.transform.pos);
         min_dist = distance(intersection_point, origin);
         hit = true;
-        object_uv = sphere_map(normalize(intersection_point - BLACK_HOLE.transform.pos));
+        object = Object(-42, -1);
     }
 
+    int num_objects = num_spheres + num_planes + num_disks + num_hollow_disks + num_cylinders;
     for(int i = 0; i < num_objects; i++) {
-        Object object = objects[i];
-        int object_type = object.type;
-        int object_index = object.index;
+        Object current_object = objects[i];
 
-        bool current_hit = false;
-        Material current_material;
-        vec2 current_uv;
-        vec3 current_normal;
-        switch(object_type) {
-            case 0: // sphere
-                Sphere sphere = spheres[object_index];
-                current_hit = sphere_intersect(origin, dir, sphere, intersection_point, max_lambda);
-                current_material = sphere.material;
-                current_normal = normalize(intersection_point - sphere.transform.pos);
-                current_uv = sphere_map(normalize(intersection_point - sphere.transform.pos));
-                break;
-            case 1: // plane
-                Plane plane = planes[object_index];
-                current_hit = plane_intersect(origin, dir, plane, intersection_point, max_lambda);
-                current_material = plane.material;
-                current_normal = plane.normal;
-                current_uv = plane_map(intersection_point, plane);
-                break;
-            case 2: // disk
-                Disk disk = disks[object_index];
-                current_hit = disk_intersect(origin, dir, disk, intersection_point, max_lambda);
-                current_material = disk.plane.material;
-                current_normal = disk.plane.normal;
-                current_uv = disk_map(intersection_point, disk);
-                break;
-            case 3: // hollow disk
-                HollowDisk hollow_disk = hollow_disks[object_index];
-                current_hit = hollow_disk_intersect(origin, dir, hollow_disk, intersection_point, max_lambda);
-                current_material = hollow_disk.plane.material;
-                current_normal = hollow_disk.plane.normal;
-                current_uv = hollow_disk_map(intersection_point, hollow_disk);
-                break;
-            case 4: // cylinder
-                Cylinder cylinder = cylinders[object_index];
-                current_hit = cylinder_intersect(origin, dir, cylinder, intersection_point, max_lambda);
-                current_material = cylinder.material;
-                current_normal = normalize(intersection_point - dot(intersection_point, cylinder.height) / square_vector(cylinder.height) * cylinder.height);
-                current_uv = cylinder_map(intersection_point, cylinder);
-                break;
-        }
-
-        if(current_hit) {
-            float dist = distance(intersection_point, origin);
+        vec3 current_intersection_point;
+        if (intersect_object(origin, dir, current_object, current_intersection_point, max_lambda)) {
+            float dist = distance(current_intersection_point, origin);
             if(!hit || dist < min_dist) {
                 min_dist = dist;
                 hit = true;
-                material = current_material;
-                normal = current_normal;
-                object_uv = current_uv;
+                intersection_point = current_intersection_point;
+                object = current_object;
             }
         }
     }
 
-    if(material.swap_uvs)
-        object_uv = vec2(object_uv.y, object_uv.x);
-    if(material.invert_uv_x)
-        object_uv.x = 1. - object_uv.x;
-    if(material.invert_uv_y)
-        object_uv.y = 1. - object_uv.y;
     color = vec4(0., 0., 0., 0.);
     if(hit) {
-        color = calculate_lighting(intersection_point, normal, -dir, material, object_uv);
+        color = calculate_lighting(intersection_point, -dir, object);
     }
 
     return color.a == 1.;
@@ -471,7 +549,9 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color) {
 // #endregion
 
 vec4 get_bg(vec3 dir) {
-    vec2 tex_coords = sphere_map(dir);
+    float u = atan(dir.z, dir.x) / PI;
+    if(u < 0.) u += 2.;
+    vec2 tex_coords = vec2(u * 0.5, asin(dir.y) / PI + 0.5);;
     return texture(background_texture, tex_coords);
 }
 
@@ -484,7 +564,7 @@ void main() {
     float ray_forward = 1. / tan(cam.fov / 360. * PI);
     float max_angle = 2. * float(max_revolutions) * PI;
 
-    vec3 ray = normalize(cam.right * uv.x + cam.up * uv.y * resolution.y / resolution.x + ray_forward * cam.forward);
+    vec3 ray = normalize(cam.transform.axes * vec3(uv.x, uv.y * resolution.y / resolution.x, ray_forward));
 
     vec3 normal_vec = normalize(cam.transform.pos);
     bool hit_opaque;
@@ -511,7 +591,7 @@ void main() {
         if(u < u_f) {
             // flat space approximation
             vec3 u_f_intersection_point;
-            if(!sphere_intersect(ray_pos, ray, Sphere(Transform(vec3(0., 0., 0.)), BLANK_MAT, 1. / u_f), u_f_intersection_point)) {
+            if(!sphere_intersect(ray_pos, ray, Sphere(Transform(vec3(0., 0., 0.), DEFAULT_AXES), BLANK_MAT, 1. / u_f), u_f_intersection_point)) {
                 vec4 intersection_color;
                 hit_opaque = intersect(ray_pos, ray, intersection_color);
                 FragColor += intersection_color;

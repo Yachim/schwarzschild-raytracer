@@ -53,6 +53,13 @@ void MaterialObject::setMaterialTextureIndex(int index) {
     m_material.setTextureIndex(index);
 }
 
+int MaterialObject::getMaterialNormalMapIndex() {
+    return m_material.getNormalMapIndex();
+}
+void MaterialObject::setMaterialNormalMapIndex(int index) {
+    m_material.setNormalMapIndex(index);
+}
+
 bool MaterialObject::getMaterialInvertUvX() {
     return m_material.getInvertUvX();
 }
@@ -84,6 +91,7 @@ void MaterialObject::setupShader(GLuint program, std::string prefix) {
     m_materialSpecularLoc = glGetUniformLocation(program, (prefix + ".specular").c_str());
     m_materialShininessLoc = glGetUniformLocation(program, (prefix + ".shininess").c_str());
     m_materialTextureIndexLoc = glGetUniformLocation(program, (prefix + ".texture_index").c_str());
+    m_materialNormalMapIndexLoc = glGetUniformLocation(program, (prefix + ".normal_map_index").c_str());
     m_materialInvertUvXLoc = glGetUniformLocation(program, (prefix + ".invert_uv_x").c_str());
     m_materialInvertUvYLoc = glGetUniformLocation(program, (prefix + ".invert_uv_y").c_str());
     m_materialSwapUvsLoc = glGetUniformLocation(program, (prefix + ".swap_uvs").c_str());
@@ -99,6 +107,7 @@ void MaterialObject::loadShader() {
     glUniform1f(m_materialSpecularLoc, m_material.getSpecular());
     glUniform1f(m_materialShininessLoc, m_material.getShininess());
     glUniform1i(m_materialTextureIndexLoc, m_material.getTextureIndex());
+    glUniform1i(m_materialNormalMapIndexLoc, m_material.getNormalMapIndex());
     glUniform1i(m_materialInvertUvXLoc, m_material.getInvertUvX());
     glUniform1i(m_materialInvertUvYLoc, m_material.getInvertUvY());
     glUniform1i(m_materialSwapUvsLoc, m_material.getSwapUvs());

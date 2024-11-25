@@ -27,6 +27,9 @@ public:
     int getTextureIndex();
     void setTextureIndex(int index);
 
+    int getNormalMapIndex();
+    void setNormalMapIndex(int index);
+
     bool getInvertUvX();
     void setInvertUvX(bool invertUvX);
 
@@ -43,6 +46,7 @@ private:
     float m_specular = 0.5;
     float m_shininess = 32.;
     int m_textureIndex = -1;
+    int m_normalMapIndex = -1;
     bool m_invertUvX = false;
     bool m_invertUvY = false;
     bool m_swapUvs = false;

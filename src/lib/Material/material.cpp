@@ -47,6 +47,13 @@ void Material::setTextureIndex(int index) {
     m_textureIndex = index;
 }
 
+int Material::getNormalMapIndex() {
+    return m_normalMapIndex;
+}
+void Material::setNormalMapIndex(int index) {
+    m_normalMapIndex = index;
+}
+
 bool Material::getInvertUvX() {
     return m_invertUvX;
 }

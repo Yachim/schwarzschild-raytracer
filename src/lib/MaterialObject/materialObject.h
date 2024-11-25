@@ -33,6 +33,9 @@ public:
     int getMaterialTextureIndex();
     void setMaterialTextureIndex(int index);
 
+    int getMaterialNormalMapIndex();
+    void setMaterialNormalMapIndex(int index);
+
     bool getMaterialInvertUvX();
     void setMaterialInvertUvX(bool invertUvX);
 
@@ -52,6 +55,7 @@ protected:
     GLint m_materialSpecularLoc;
     GLint m_materialShininessLoc;
     GLint m_materialTextureIndexLoc;
+    GLint m_materialNormalMapIndexLoc;
     GLint m_materialInvertUvXLoc;
     GLint m_materialInvertUvYLoc;
     GLint m_materialSwapUvsLoc;
