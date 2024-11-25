@@ -97,8 +97,8 @@ const Sphere BLACK_HOLE = Sphere(Transform(vec3(0., 0., 0.), DEFAULT_AXES), BLAN
 struct Plane {
     Transform transform; // pos - some point
     Material material;
-    vec2 texture_offset; // TODO:
-    bool repeat_texture; // TODO:
+    vec2 texture_offset;
+    bool repeat_texture;
     vec2 texture_size;
 };
 
@@ -343,7 +343,26 @@ vec4 calculate_lighting(vec3 point, vec3 view_dir, Object object) {
     vec4 base_color = material.color;
     if (material.texture_index >= 0) {
         vec2 rescaled_uv = object_uv * texture_sizes[material.texture_index] / max_texture_size;
-        base_color = texture(textures, vec3(rescaled_uv, material.texture_index));
+
+        bool render_color = true;
+        if (object.type == 1) {
+            Plane plane = planes[object.index];
+            rescaled_uv -= plane.texture_offset;
+            vec2 plane_uv = rescaled_uv / plane.texture_size;
+
+            rescaled_uv.x = mod(rescaled_uv.x, plane.texture_size.x);
+            rescaled_uv.y = mod(rescaled_uv.y, plane.texture_size.y);
+            rescaled_uv = rescaled_uv / plane.texture_size;
+
+            render_color = plane.repeat_texture || (
+                (plane_uv.x >= 0. && plane_uv.x <= 1.) &&
+                (plane_uv.y >= 0. && plane_uv.y <= 1.)
+            );
+        }
+
+        if (render_color) {
+            base_color = texture(textures, vec3(rescaled_uv, material.texture_index));
+        }
     }
     vec3 final_color = material.ambient * base_color.rgb; // Ambient component
 
