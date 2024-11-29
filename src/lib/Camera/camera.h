@@ -11,6 +11,13 @@ const float HYPERBOLIC_TRAJECTORY_DURATION = 5.;
 const glm::vec3 HYPERBOLIC_TRAJECTORY_BASE_X = glm::vec3(0., 0., -1.);
 const glm::vec3 HYPERBOLIC_TRAJECTORY_BASE_Y = glm::vec3(cos(M_PI / 10.), sin(M_PI / 10.), 0.);
 
+enum RaytraceType {
+    CURVED,
+    FLAT,
+    HALF_WIDTH,
+    HALF_HEIGHT
+};
+
 class Camera : public Transform {
 public:
     Camera();

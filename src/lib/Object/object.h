@@ -5,6 +5,14 @@
 
 #include <string>
 
+enum ObjectType {
+    SPHERE,
+    PLANE,
+    DISK,
+    HOLLOW_DISK,
+    CYLINDER
+};
+
 class Object {
 public:
     Object();

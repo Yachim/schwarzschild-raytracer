@@ -198,9 +198,9 @@ int main(int, char**) {
     accretionDisk.loadShader();
 
     glUniform1i(glGetUniformLocation(shaderProgram, "num_objects"), 2);
-    glUniform1i(glGetUniformLocation(shaderProgram, "objects[0].type"), 0);
+    glUniform1i(glGetUniformLocation(shaderProgram, "objects[0].type"), ObjectType::SPHERE);
     glUniform1i(glGetUniformLocation(shaderProgram, "objects[0].index"), 0);
-    glUniform1i(glGetUniformLocation(shaderProgram, "objects[1].type"), 3);
+    glUniform1i(glGetUniformLocation(shaderProgram, "objects[1].type"), ObjectType::HOLLOW_DISK);
     glUniform1i(glGetUniformLocation(shaderProgram, "objects[1].index"), 0);
 #pragma endregion
 
@@ -217,9 +217,9 @@ int main(int, char**) {
     float speed = MOVE_SPEED;
     double prevTime = 0.;
     glm::vec2 prevMouse = input->getMouse();
-    GLint flatRaytraceLoc = glGetUniformLocation(shaderProgram, "flat_raytrace");
-    GLint flatPercentage = glGetUniformLocation(shaderProgram, "flat_percentage");
-    int flatRaytrace = 0;
+    GLint raytraceTypeLoc = glGetUniformLocation(shaderProgram, "raytrace_type");
+    GLint curvedPercentageLoc = glGetUniformLocation(shaderProgram, "curved_percentage");
+    int raytraceType = 0;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
@@ -323,15 +323,15 @@ int main(int, char**) {
             cam.hyperbolicTrajectory(30.f, 10.f, (float)hyperbolicTrajectoryDt / HYPERBOLIC_TRAJECTORY_DURATION);
         }
 
-        if (input->isPressed(GLFW_KEY_1)) flatRaytrace = 0;
-        else if (input->isPressed(GLFW_KEY_2)) flatRaytrace = 1;
-        else if (input->isPressed(GLFW_KEY_3)) flatRaytrace = 2;
-        else if (input->isPressed(GLFW_KEY_4)) flatRaytrace = 3;
-        glUniform1i(flatRaytraceLoc, flatRaytrace);
+        if (input->isPressed(GLFW_KEY_1)) raytraceType = RaytraceType::CURVED;
+        else if (input->isPressed(GLFW_KEY_2)) raytraceType = RaytraceType::FLAT;
+        else if (input->isPressed(GLFW_KEY_3)) raytraceType = RaytraceType::HALF_WIDTH;
+        else if (input->isPressed(GLFW_KEY_4)) raytraceType = RaytraceType::HALF_HEIGHT;
+        glUniform1i(raytraceTypeLoc, raytraceType);
 
         if (input->isPressed(GLFW_KEY_LEFT_ALT) && input->isLClicked()) {
-            if (flatRaytrace == 2) glUniform1f(flatPercentage, mouse.x / width);
-            if (flatRaytrace == 3) glUniform1f(flatPercentage, 1. - mouse.y / height);
+            if (raytraceType == RaytraceType::HALF_WIDTH) glUniform1f(curvedPercentageLoc, mouse.x / width);
+            if (raytraceType == RaytraceType::HALF_HEIGHT) glUniform1f(curvedPercentageLoc, 1. - mouse.y / height);
         }
 
         if (input->isPressed(GLFW_KEY_L)) cam.lookAt();

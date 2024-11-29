@@ -23,12 +23,12 @@ uniform int max_revolutions = 2;
 uniform float u_f = 0.01;
 uniform float parallel_treshold = 0.9999999; // minimum value of a dot product of two unit vectors a . b, when the vectors are considered parallel; perpendicular_treshold = 1 - parallel_treshold
 
-// 0: false
-// 1: full screen
-// 2: right half flat
-// 3: up half flat
-uniform int flat_raytrace = 0;
-uniform float flat_percentage = 0.5;
+const int RAYTRACE_TYPE_CURVED      = 0;
+const int RAYTRACE_TYPE_FLAT        = 1;
+const int RAYTRACE_TYPE_HALF_WIDTH  = 2;
+const int RAYTRACE_TYPE_HALF_HEIGHT = 3;
+uniform int raytrace_type = 0;
+uniform float curved_percentage = 0.5;
 
 struct Transform {
     vec3 pos;
@@ -139,12 +139,12 @@ struct Cylinder {
 uniform int num_cylinders;
 uniform Cylinder cylinders[MAX_CYLINDERS];
 
-// types:
-// 0: sphere
-// 1: plane
-// 2: disk
-// 3: hollow disk
-// 4: cylinder
+const int OBJECT_TYPE_SPECIAL     = -42;
+const int OBJECT_TYPE_SPHERE      = 0;
+const int OBJECT_TYPE_PLANE       = 1;
+const int OBJECT_TYPE_DISK        = 2;
+const int OBJECT_TYPE_HOLLOW_DISK = 3;
+const int OBJECT_TYPE_CYLINDER    = 4;
 struct Object {
     int type;
     int index; // indexing respective arrays
@@ -156,15 +156,15 @@ uniform Object objects[MAX_OBJECTS];
 Material get_object_material(Object object) {
     int index = object.index;
     switch (object.type) {
-        case 0: // sphere
+        case OBJECT_TYPE_SPHERE:
             return spheres[index].material;
-        case 1: // plane
+        case OBJECT_TYPE_PLANE:
             return planes[index].material;
-        case 2: // disk
+        case OBJECT_TYPE_DISK:
             return disks[index].plane.material;
-        case 3: // hollow disk
+        case OBJECT_TYPE_HOLLOW_DISK:
             return hollow_disks[index].plane.material;
-        case 4: // cylinder
+        case OBJECT_TYPE_CYLINDER:
             return cylinders[index].material;
     }
 }
@@ -289,15 +289,15 @@ mat3 cylinder_tangent_space(vec3 intersection_point, Cylinder cylinder, out vec2
 mat3 tangent_space(vec3 intersection_point, Object object, out vec2 coordinates) {
     int index = object.index;
     switch (object.type) {
-        case 0: // sphere
+        case OBJECT_TYPE_SPHERE:
             return sphere_tangent_space(intersection_point, spheres[index], coordinates);
-        case 1: // plane
+        case OBJECT_TYPE_PLANE:
             return plane_tangent_space(intersection_point, planes[index], coordinates);
-        case 2: // disk
+        case OBJECT_TYPE_DISK:
             return disk_tangent_space(intersection_point, disks[index], coordinates);
-        case 3: // hollow disk
+        case OBJECT_TYPE_HOLLOW_DISK:
             return hollow_disk_tangent_space(intersection_point, hollow_disks[index], coordinates);
-        case 4: // cylinder
+        case OBJECT_TYPE_CYLINDER:
             return cylinder_tangent_space(intersection_point, cylinders[index], coordinates);
     }
 }
@@ -329,7 +329,7 @@ float square_vector(vec3 v) {
 }
 
 vec4 calculate_lighting(vec3 point, vec3 view_dir, Object object) {
-    if (object.type == -42) return vec4(0., 0., 0., 1.); // black hole
+    if (object.type == OBJECT_TYPE_SPECIAL) return vec4(0., 0., 0., 1.); // black hole
 
     Material material = get_object_material(object);
     vec2 object_uv;
@@ -338,16 +338,16 @@ vec4 calculate_lighting(vec3 point, vec3 view_dir, Object object) {
     if (material.swap_uvs)
         object_uv = vec2(object_uv.y, object_uv.x);
     if (material.invert_uv_x)
-        object_uv.x = (object.type == 1 ? planes[object.index].texture_size.x : 1.) - object_uv.x;
+        object_uv.x = (object.type == OBJECT_TYPE_PLANE ? planes[object.index].texture_size.x : 1.) - object_uv.x;
     if (material.invert_uv_y)
-        object_uv.y = (object.type == 1 ? planes[object.index].texture_size.y : 1.) - object_uv.y;
+        object_uv.y = (object.type == OBJECT_TYPE_PLANE ? planes[object.index].texture_size.y : 1.) - object_uv.y;
 
     vec4 base_color = material.color;
     if (material.texture_index >= 0) {
         vec2 rescaled_uv = object_uv * texture_sizes[material.texture_index] / max_texture_size;
 
         bool render_color = true;
-        if (object.type == 1) {
+        if (object.type == OBJECT_TYPE_PLANE) {
             Plane plane = planes[object.index];
             rescaled_uv -= plane.texture_offset;
             vec2 plane_uv = rescaled_uv / plane.texture_size;
@@ -507,19 +507,19 @@ bool intersect_object(vec3 origin, vec3 dir, Object object, out vec3 intersectio
     int object_index = object.index;
 
     switch(object_type) {
-        case 0: // sphere
+        case OBJECT_TYPE_SPHERE:
             Sphere sphere = spheres[object_index];
             return sphere_intersect(origin, dir, sphere, intersection_point, max_lambda);
-        case 1: // plane
+        case OBJECT_TYPE_PLANE:
             Plane plane = planes[object_index];
             return plane_intersect(origin, dir, plane, intersection_point, max_lambda);
-        case 2: // disk
+        case OBJECT_TYPE_DISK:
             Disk disk = disks[object_index];
             return disk_intersect(origin, dir, disk, intersection_point, max_lambda);
-        case 3: // hollow disk
+        case OBJECT_TYPE_HOLLOW_DISK:
             HollowDisk hollow_disk = hollow_disks[object_index];
             return hollow_disk_intersect(origin, dir, hollow_disk, intersection_point, max_lambda);
-        case 4: // cylinder
+        case OBJECT_TYPE_CYLINDER:
             Cylinder cylinder = cylinders[object_index];
             return cylinder_intersect(origin, dir, cylinder, intersection_point, max_lambda);
     }
@@ -594,8 +594,14 @@ void main() {
     vec3 normal_vec = normalize(ray_pos);
     bool hit_opaque;
     FragColor = vec4(0., 0., 0., 0.);
-    if((flat_raytrace == 1 || (flat_raytrace == 2 && uv.x > 2. * flat_percentage + -1.) || (flat_raytrace == 3 && uv.y > 2. * flat_percentage + -1.)) ||
-        abs(dot(ray, normal_vec)) >= parallel_treshold) { // if radial trajectory or flat space preview
+    if(
+        (
+            raytrace_type == RAYTRACE_TYPE_FLAT ||
+            (raytrace_type == RAYTRACE_TYPE_HALF_WIDTH && uv.x > 2. * curved_percentage + -1.) ||
+            (raytrace_type == RAYTRACE_TYPE_HALF_HEIGHT && uv.y > 2. * curved_percentage + -1.)
+        ) || // flat space
+        abs(dot(ray, normal_vec)) >= parallel_treshold // radial trajectory
+    ) {
         vec4 intersection_color;
         hit_opaque = intersect(ray_pos, ray, intersection_color);
         FragColor += intersection_color;
