@@ -6,7 +6,6 @@ find_package(OpenGL REQUIRED)
 
 add_executable(schwarzschild_raytracer
     src/main.cpp
-    src/stb_image.h
     src/glad.c
 
 
@@ -45,6 +44,10 @@ add_executable(schwarzschild_raytracer
 
     src/lib/utils/utils.cpp
     src/lib/utils/utils.h
+
+    src/lib/image_utils/image_utils.cpp
+    src/lib/image_utils/image_utils.h
+    src/lib/image_utils/stb_image.h
 
     src/lib/Input/input.cpp
     src/lib/Input/input.h
