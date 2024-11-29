@@ -9,8 +9,8 @@ class LateralCylinder : public MaterialObject, public Transform {
 public:
     LateralCylinder();
 
-    glm::vec3 getHeight();
-    void setHeight(glm::vec3 height);
+    float getHeight();
+    void setHeight(float height);
 
     float getRadius();
     void setRadius(float radius);
@@ -19,7 +19,7 @@ public:
     void loadShader() override;
 
 private:
-    glm::vec3 m_height{ 0., 5., 0. };
+    float m_height = 5.;
     float m_radius = 1.;
 
     GLint m_heightLoc;
