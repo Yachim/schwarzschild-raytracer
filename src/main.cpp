@@ -179,9 +179,7 @@ int main(int, char**) {
     accretionDisk.setMaterialTextureIndex(1);
 
     Light light;
-#pragma endregion
 
-#pragma region uniforms
     glUseProgram(shaderProgram);
 
     cam.setupShader(shaderProgram);
