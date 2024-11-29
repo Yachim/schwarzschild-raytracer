@@ -579,12 +579,7 @@ vec4 get_bg(vec3 dir) {
     return texture(background_texture, vec2(u, v));
 }
 
-// renders only half with checkerboard pattern
-uniform float checkerboard_detail;
 void main() {
-    if(checkerboard_detail > 0. && mod(floor(uv.x * checkerboard_detail) + floor(uv.y * checkerboard_detail * resolution.y / resolution.x), 2.0) != 0.0)
-        return;
-
     float ray_forward = 1. / tan(cam.fov / 360. * PI);
     float max_angle = 2. * float(max_revolutions) * PI;
 

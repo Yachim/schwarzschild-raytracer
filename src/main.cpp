@@ -21,11 +21,6 @@
 const uint DEFAULT_WIDTH = 1280;
 const uint DEFAULT_HEIGHT = 720;
 
-// the higher, the more fields
-// renders only half
-// set <= 0 to deactivate
-const float CHECKERBOARD_DETAIL = 0.;
-
 const float MOVE_SPEED_INCREASE_SPEED = 0.25;
 const float MOVE_SPEED = 5.;
 const float SENSITIVITY = 0.5;
@@ -209,8 +204,6 @@ int main(int, char**) {
     glUniform1i(glGetUniformLocation(shaderProgram, "objects[0].index"), 0);
     glUniform1i(glGetUniformLocation(shaderProgram, "objects[1].type"), 3);
     glUniform1i(glGetUniformLocation(shaderProgram, "objects[1].index"), 0);
-
-    glUniform1f(glGetUniformLocation(shaderProgram, "checkerboard_detail"), CHECKERBOARD_DETAIL);
 #pragma endregion
 
 #pragma region input
