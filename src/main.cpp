@@ -3,6 +3,7 @@
 // FIXME: accretion disk casts shadow on the moon even if moon is in front of the accretion disk
 // FIXME: accretion disc texture seam
 // FIXME: cylinder visual bug (look from above when close)
+// FIXME: orthographic camera background
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -366,6 +367,15 @@ int main(int, char**) {
         glfwGetWindowSize(window, &width, &height);
         glViewport(0, 0, width, height);
 
+        if (input->isPressed(GLFW_KEY_P)) {
+            cam.setOrthographic(false);
+            cam.loadShader();
+        }
+        else if (input->isPressed(GLFW_KEY_O)) {
+            cam.setOrthographic(true);
+            cam.loadShader();
+        }
+
 #pragma region movement
         glm::vec3 camPos = cam.getPos();
         glm::vec3 camForward = cam.getForward();
@@ -408,15 +418,30 @@ int main(int, char**) {
             cam.setUp(camUp);
         }
         else if (!input->isPressed(GLFW_KEY_LEFT_ALT) && input->isLClicked()) {
-            float fov = cam.getFov();
-            fov += ZOOM_SENSITIVITY * (float)dt * deltaMouse.y;
-            if (fov < MIN_FOV) fov = MIN_FOV;
-            if (fov > MAX_FOV) fov = MAX_FOV;
-            cam.setFov(fov);
+            if (cam.getOrthographic()) {
+                float orthographicWidth = cam.getOrthographicWidth();
+                orthographicWidth += ZOOM_SENSITIVITY * (float)dt * deltaMouse.y;
+                if (orthographicWidth < 0.) orthographicWidth = 0.;
+                cam.setOrthographicWidth(orthographicWidth);
+            }
+            else {
+                float fov = cam.getFov();
+                fov += ZOOM_SENSITIVITY * (float)dt * deltaMouse.y;
+                if (fov < MIN_FOV) fov = MIN_FOV;
+                if (fov > MAX_FOV) fov = MAX_FOV;
+                cam.setFov(fov);
+            }
         }
 #pragma endregion
 
-        if (input->isPressed(GLFW_KEY_F) && !input->isPressed(GLFW_KEY_F, GLFW_MOD_ALT) && !input->isPressed(GLFW_KEY_F, GLFW_MOD_CAPS_LOCK)) cam.setFov(DEFAULT_FOV);
+        if (input->isPressed(GLFW_KEY_F) && !input->isPressed(GLFW_KEY_F, GLFW_MOD_ALT) && !input->isPressed(GLFW_KEY_F, GLFW_MOD_CAPS_LOCK)) {
+            if (cam.getOrthographic()) {
+                cam.setOrthographicWidth(DEFAULT_ORTHOGRAPHIC_WIDTH);
+            }
+            else {
+                cam.setFov(DEFAULT_FOV);
+            }
+        }
 
         double hyperbolicTrajectoryDt = windowTime - hyperbolicTrajectoryStartTime;
         if (input->isPressed(GLFW_KEY_H) && (hyperbolicTrajectoryDt < 0. || hyperbolicTrajectoryDt > HYPERBOLIC_TRAJECTORY_DURATION)) {
