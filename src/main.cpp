@@ -179,6 +179,7 @@ int main(int, char**) {
     accretionDisk.setMaterialTextureIndex(1);
 
     Light light;
+    light.setIntensity(8.);
 
     glUseProgram(shaderProgram);
 

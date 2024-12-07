@@ -464,19 +464,20 @@ bool isInRange(float n, float minimum, float maximum) {
 }
 
 bool cylinder_intersect(vec3 origin, vec3 dir, Cylinder cylinder, out vec3 intersection_point, float max_lambda) {
-    vec3 height = cylinder.height * cylinder.transform.axes[1];
-    float heightSquared = square_vector(height);
+    vec3 pos = cylinder.transform.pos;
+    vec3 axis = cylinder.transform.axes[1];
+    float height = cylinder.height;
 
-    vec3 dir_parallel = dot(dir, height) / heightSquared * height;
+    vec3 dir_parallel = dot(dir, axis) * axis;
     vec3 dir_perp = dir - dir_parallel;
 
     float radiusSquared = cylinder.radius * cylinder.radius;
 
-    vec3 l = cylinder.transform.pos - origin;
+    vec3 l = pos - origin;
     float lambda_C = dot(l, dir_perp) / square_vector(dir_perp);
     vec3 P = origin + lambda_C * dir_perp;
-    vec3 PC = P - cylinder.transform.pos;
-    float dSquared = square_vector(PC - dot(PC, height) / heightSquared * height);
+    vec3 PC = P - pos;
+    float dSquared = square_vector(PC - dot(PC, axis) * axis);
     if(dSquared > radiusSquared)
         return false;
     float lambda_0C = sqrt(radiusSquared - dSquared);
@@ -485,17 +486,17 @@ bool cylinder_intersect(vec3 origin, vec3 dir, Cylinder cylinder, out vec3 inter
     float lambda2 = lambda_C + lambda_0C;
     vec3 intersection_point1 = origin + dir * lambda1;
     vec3 intersection_point2 = origin + dir * lambda2;
-    bool inCylinder1 = isInRange(dot(intersection_point1 - cylinder.transform.pos, height) / heightSquared, 0., 1.);
-    bool inCylinder2 = isInRange(dot(intersection_point2 - cylinder.transform.pos, height) / heightSquared, 0., 1.);
+    bool inCylinder1 = isInRange(dot(intersection_point1 - pos, axis), 0., height);
+    bool inCylinder2 = isInRange(dot(intersection_point2 - pos, axis), 0., height);
 
-    if(!inCylinder1 && !inCylinder2)
+    if (!inCylinder1 && !inCylinder2)
         return false;
-    float lambda;
-    if(inCylinder1 && inCylinder2)
+    float lambda = -1.;
+    if (inCylinder1 && inCylinder2)
         lambda = min_positive(lambda1, lambda2);
-    else if(inCylinder1)
+    else if (inCylinder1)
         lambda = lambda1;
-    else
+    else if (inCylinder2)
         lambda = lambda2;
 
     intersection_point = origin + dir * lambda;
