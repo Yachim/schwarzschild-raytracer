@@ -21,7 +21,7 @@ uniform int max_steps = 1000;
 uniform int max_revolutions = 2;
 
 uniform float u_f = 0.01;
-uniform float parallel_treshold = 0.9999999; // minimum value of a dot product of two unit vectors a . b, when the vectors are considered parallel; perpendicular_treshold = 1 - parallel_treshold
+uniform float parallel_threshold = 0.9999999; // minimum value of a dot product of two unit vectors a . b, when the vectors are considered parallel; perpendicular_threshold = 1 - parallel_threshold
 
 const int RAYTRACE_TYPE_CURVED      = 0;
 const int RAYTRACE_TYPE_FLAT        = 1;
@@ -440,7 +440,7 @@ bool sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, out vec3 intersectio
 bool plane_intersect(vec3 origin, vec3 dir, Plane plane, out vec3 intersection_point, float max_lambda) {
     vec3 normal = plane.transform.axes[1];
     float denom = dot(normal, dir);
-    if(abs(denom) < 1. - parallel_treshold)
+    if(abs(denom) < 1. - parallel_threshold)
         return false;
 
     float lambda = dot(normal, plane.transform.pos - origin) / denom;
@@ -601,7 +601,7 @@ void main() {
             (raytrace_type == RAYTRACE_TYPE_HALF_WIDTH && uv.x > 2. * curved_percentage + -1.) ||
             (raytrace_type == RAYTRACE_TYPE_HALF_HEIGHT && uv.y > 2. * curved_percentage + -1.)
         ) || // flat space
-        abs(dot(ray, normal_vec)) >= parallel_treshold // radial trajectory
+        abs(dot(ray, normal_vec)) >= parallel_threshold // radial trajectory
     ) {
         vec4 intersection_color;
         hit_opaque = intersect(ray_pos, ray, intersection_color);
@@ -632,7 +632,7 @@ void main() {
             }
 
             normal_vec = normalize(u_f_intersection_point);
-            if(abs(dot(ray, normal_vec)) >= parallel_treshold) { // if radial trajectory
+            if(abs(dot(ray, normal_vec)) >= parallel_threshold) { // if radial trajectory
                 vec4 intersection_color;
                 hit_opaque = intersect(ray_pos, ray, intersection_color);
                 FragColor += intersection_color;
