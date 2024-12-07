@@ -7,7 +7,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
-#include <fstream>
 #include <glm/vec3.hpp>
 #include <glm/geometric.hpp>
 #include "lib/Camera/camera.h"
@@ -17,6 +16,7 @@
 #include "lib/image_utils/image_utils.h"
 #include "lib/Input/input.h"
 #include "lib/HollowDisk/hollowDisk.h"
+#include "lib/shader_utils/shader_utils.h"
 
 const uint DEFAULT_WIDTH = 1280;
 const uint DEFAULT_HEIGHT = 720;
@@ -40,35 +40,6 @@ const float MAX_ANGLE = 170. * M_PI / 180.;
 #elif BACKGROUND_TEXTURE_QUALITY == 1
 #define BACKGROUND_TEXTURE_PATH "assets/textures/background/8k.jpg"
 #endif
-
-#pragma region shader utils
-std::string loadShaderSource(const char* filePath) {
-    std::ifstream file(filePath);
-    if (!file.is_open()) {
-        std::cerr << "Failed to open shader file: " << filePath << std::endl;
-        return "";
-    }
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
-}
-
-GLuint compileShader(GLenum type, const char* source) {
-    GLuint shader = glCreateShader(type);
-    glShaderSource(shader, 1, &source, nullptr);
-    glCompileShader(shader);
-
-    int success;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        char infoLog[512];
-        glGetShaderInfoLog(shader, 512, NULL, infoLog);
-        std::cerr << "Shader compilation error:\n" << infoLog << std::endl;
-        return 0;
-    }
-    return shader;
-}
-#pragma endregion
 
 int main(int, char**) {
     if (!glfwInit()) {

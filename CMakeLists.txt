@@ -49,6 +49,9 @@ add_executable(schwarzschild_raytracer
     src/lib/image_utils/image_utils.h
     src/lib/image_utils/stb_image.h
 
+    src/lib/shader_utils/shader_utils.cpp
+    src/lib/shader_utils/shader_utils.h
+
     src/lib/Input/input.cpp
     src/lib/Input/input.h
 )
