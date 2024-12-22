@@ -169,7 +169,6 @@ int main(int, char**) {
     accretionDisk.setupShader(shaderProgram, "hollow_disks[0]");
     accretionDisk.loadShader();
 
-    glUniform1i(glGetUniformLocation(shaderProgram, "num_objects"), 2);
     glUniform1i(glGetUniformLocation(shaderProgram, "objects[0].type"), ObjectType::SPHERE);
     glUniform1i(glGetUniformLocation(shaderProgram, "objects[0].index"), 0);
     glUniform1i(glGetUniformLocation(shaderProgram, "objects[1].type"), ObjectType::HOLLOW_DISK);

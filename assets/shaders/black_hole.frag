@@ -470,17 +470,17 @@ bool cylinder_intersect(vec3 origin, vec3 dir, Cylinder cylinder, out vec3 inter
 
     vec3 dir_parallel = dot(dir, axis) * axis;
     vec3 dir_perp = dir - dir_parallel;
+    float dir_perp_length_squared = square_vector(dir_perp);
 
     float radiusSquared = cylinder.radius * cylinder.radius;
 
-    vec3 l = pos - origin;
-    float lambda_C = dot(l, dir_perp) / square_vector(dir_perp);
-    vec3 P = origin + lambda_C * dir_perp;
-    vec3 PC = P - pos;
-    float dSquared = square_vector(PC - dot(PC, axis) * axis);
+    vec3 l_ = pos - origin;
+    vec3 l = l_ - dot(l_, axis) * axis;
+    float lambda_C = dot(l, dir_perp) / dir_perp_length_squared;
+    float dSquared = square_vector(lambda_C * dir_perp - l);
     if(dSquared > radiusSquared)
         return false;
-    float lambda_0C = sqrt(radiusSquared - dSquared);
+    float lambda_0C = sqrt((radiusSquared - dSquared) / dir_perp_length_squared);
 
     float lambda1 = lambda_C - lambda_0C;
     float lambda2 = lambda_C + lambda_0C;
