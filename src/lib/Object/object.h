@@ -10,7 +10,7 @@ enum ObjectType {
     PLANE,
     DISK,
     HOLLOW_DISK,
-    CYLINDER
+    LATERAL_CYLINDER
 };
 
 class Object {

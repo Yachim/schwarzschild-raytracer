@@ -17,6 +17,7 @@
 #include "lib/Input/input.h"
 #include "lib/HollowDisk/hollowDisk.h"
 #include "lib/shader_utils/shader_utils.h"
+#include "lib/ObjectLoader/objectLoader.h"
 
 const uint DEFAULT_WIDTH = 1280;
 const uint DEFAULT_HEIGHT = 720;
@@ -140,39 +141,29 @@ int main(int, char**) {
 #pragma region objects
     Camera cam(glm::vec3(0., 2., 15.), -glm::normalize(glm::vec3(0., 2., 15.)), glm::vec3(1., 0., 0.));
 
+    ObjectLoader* objectLoader = ObjectLoader::getInstance();
+
     Sphere sphere(glm::vec3(-10., 0., 0.));
     sphere.setMaterialColor(glm::vec4(1., 0., 0., 1.));
     sphere.setMaterialTextureIndex(0);
     sphere.setMaterialNormalMapIndex(2);
+    objectLoader->addSphere(&sphere);
 
     HollowDisk accretionDisk;
     accretionDisk.setMaterialColor(glm::vec4(1., 0.5, 0.1, 1.));
     accretionDisk.setMaterialTextureIndex(1);
+    objectLoader->addHollowDisk(&accretionDisk);
 
     Light light;
     light.setIntensity(8.);
+    objectLoader->addLight(&light);
 
     glUseProgram(shaderProgram);
 
     cam.setupShader(shaderProgram);
     cam.loadShader();
 
-    glUniform1i(glGetUniformLocation(shaderProgram, "num_lights"), 1);
-    light.setupShader(shaderProgram, "lights[0]");
-    light.loadShader();
-
-    glUniform1i(glGetUniformLocation(shaderProgram, "num_spheres"), 1);
-    sphere.setupShader(shaderProgram, "spheres[0]");
-    sphere.loadShader();
-
-    glUniform1i(glGetUniformLocation(shaderProgram, "num_hollow_disks"), 1);
-    accretionDisk.setupShader(shaderProgram, "hollow_disks[0]");
-    accretionDisk.loadShader();
-
-    glUniform1i(glGetUniformLocation(shaderProgram, "objects[0].type"), ObjectType::SPHERE);
-    glUniform1i(glGetUniformLocation(shaderProgram, "objects[0].index"), 0);
-    glUniform1i(glGetUniformLocation(shaderProgram, "objects[1].type"), ObjectType::HOLLOW_DISK);
-    glUniform1i(glGetUniformLocation(shaderProgram, "objects[1].index"), 0);
+    objectLoader->load(shaderProgram);
 #pragma endregion
 
 #pragma region input

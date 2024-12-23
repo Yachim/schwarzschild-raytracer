@@ -5,7 +5,7 @@
 #include <glm/mat3x3.hpp>
 #include "../Object/object.h"
 
-class Transform : public Object {
+class Transform : public virtual Object {
 public:
     Transform();
     Transform(glm::vec3 pos);

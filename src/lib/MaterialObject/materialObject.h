@@ -4,7 +4,7 @@
 #include "../Object/object.h"
 #include "../Material/material.h"
 
-class MaterialObject : public Object {
+class MaterialObject : public virtual Object {
 public:
     MaterialObject();
     MaterialObject(Material mat);
