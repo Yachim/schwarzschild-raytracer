@@ -2,7 +2,6 @@
 #define LATERAL_CYLINDER_H
 
 #include "../MaterialObject/materialObject.h"
-#include "../Material/material.h"
 #include "../Transform/transform.h"
 
 class LateralCylinder : public MaterialObject, public Transform {

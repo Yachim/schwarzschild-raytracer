@@ -2,7 +2,7 @@
 #define MATERIAL_OBJECT_H
 
 #include "../Object/object.h"
-#include "../Material/material.h"
+#include "../../Material/material.h"
 
 class MaterialObject : public virtual Object {
 public:

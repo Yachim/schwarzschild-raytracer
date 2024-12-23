@@ -2,7 +2,6 @@
 #define SPHERE_H
 
 #include "../MaterialObject/materialObject.h"
-#include "../Material/material.h"
 #include "../Transform/transform.h"
 
 class Sphere : public MaterialObject, public Transform {

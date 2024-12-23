@@ -1,7 +1,6 @@
 #ifndef HOLLOW_DISK_H
 #define HOLLOW_DISK_H
 
-#include "../Material/material.h"
 #include "../Plane/plane.h"
 #include <glm/vec3.hpp>
 

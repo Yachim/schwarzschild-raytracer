@@ -9,13 +9,13 @@
 #include <iostream>
 #include <glm/vec3.hpp>
 #include <glm/geometric.hpp>
-#include "lib/Camera/camera.h"
-#include "lib/Sphere/sphere.h"
-#include "lib/Light/light.h"
+#include "lib/Objects/Camera/camera.h"
+#include "lib/Objects/Sphere/sphere.h"
+#include "lib/Objects/Light/light.h"
+#include "lib/Objects/HollowDisk/hollowDisk.h"
 #include "lib/utils/utils.h"
 #include "lib/image_utils/image_utils.h"
 #include "lib/Input/input.h"
-#include "lib/HollowDisk/hollowDisk.h"
 #include "lib/shader_utils/shader_utils.h"
 #include "lib/ObjectLoader/objectLoader.h"
 

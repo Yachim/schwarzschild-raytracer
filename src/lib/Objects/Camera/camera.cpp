@@ -1,6 +1,6 @@
 #include <glad/glad.h>
 #include "camera.h"
-#include "../utils/utils.h"
+#include "../../utils/utils.h"
 
 Camera::Camera() : Transform() {}
 Camera::Camera(glm::vec3 pos) : Transform(pos) {}

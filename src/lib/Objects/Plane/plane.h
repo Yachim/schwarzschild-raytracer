@@ -2,7 +2,6 @@
 #define PLANE_H
 
 #include "../MaterialObject/materialObject.h"
-#include "../Material/material.h"
 #include "../Transform/transform.h"
 #include <glm/vec2.hpp>
 

@@ -1,5 +1,5 @@
 #include "input.h"
-#include "../Camera/camera.h"
+#include "../Objects/Camera/camera.h"
 #include <glm/geometric.hpp>
 #include <iostream>
 

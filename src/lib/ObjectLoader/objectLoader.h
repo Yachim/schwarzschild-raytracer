@@ -3,12 +3,12 @@
 
 #include <vector>
 #include <mutex>
-#include "../Light/light.h"
-#include "../Sphere/sphere.h"
-#include "../Plane/plane.h"
-#include "../Disk/disk.h"
-#include "../HollowDisk/hollowDisk.h"
-#include "../LateralCylinder/lateralCylinder.h"
+#include "../Objects/Light/light.h"
+#include "../Objects/Sphere/sphere.h"
+#include "../Objects/Plane/plane.h"
+#include "../Objects/Disk/disk.h"
+#include "../Objects/HollowDisk/hollowDisk.h"
+#include "../Objects/LateralCylinder/lateralCylinder.h"
 
 class ObjectLoader {
 private:

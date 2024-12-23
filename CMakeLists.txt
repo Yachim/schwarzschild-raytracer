@@ -9,38 +9,38 @@ add_executable(schwarzschild_raytracer
     src/glad.c
 
 
-    src/lib/Camera/camera.cpp
-    src/lib/Camera/camera.h
+    src/lib/Objects/Camera/camera.cpp
+    src/lib/Objects/Camera/camera.h
 
-    src/lib/Object/object.cpp
-    src/lib/Object/object.h
+    src/lib/Objects/Object/object.cpp
+    src/lib/Objects/Object/object.h
 
     src/lib/Material/material.cpp
     src/lib/Material/material.h
 
-    src/lib/MaterialObject/materialObject.cpp
-    src/lib/MaterialObject/materialObject.h
+    src/lib/Objects/MaterialObject/materialObject.cpp
+    src/lib/Objects/MaterialObject/materialObject.h
 
-    src/lib/Transform/transform.cpp
-    src/lib/Transform/transform.h
+    src/lib/Objects/Transform/transform.cpp
+    src/lib/Objects/Transform/transform.h
 
-    src/lib/Sphere/sphere.cpp
-    src/lib/Sphere/sphere.h
+    src/lib/Objects/Sphere/sphere.cpp
+    src/lib/Objects/Sphere/sphere.h
 
-    src/lib/Plane/plane.cpp
-    src/lib/Plane/plane.h
+    src/lib/Objects/Plane/plane.cpp
+    src/lib/Objects/Plane/plane.h
 
-    src/lib/Disk/disk.cpp
-    src/lib/Disk/disk.h
+    src/lib/Objects/Disk/disk.cpp
+    src/lib/Objects/Disk/disk.h
 
-    src/lib/HollowDisk/hollowDisk.cpp
-    src/lib/HollowDisk/hollowDisk.h
+    src/lib/Objects/HollowDisk/hollowDisk.cpp
+    src/lib/Objects/HollowDisk/hollowDisk.h
 
-    src/lib/LateralCylinder/lateralCylinder.cpp
-    src/lib/LateralCylinder/lateralCylinder.h
+    src/lib/Objects/LateralCylinder/lateralCylinder.cpp
+    src/lib/Objects/LateralCylinder/lateralCylinder.h
 
-    src/lib/Light/light.cpp
-    src/lib/Light/light.h
+    src/lib/Objects/Light/light.cpp
+    src/lib/Objects/Light/light.h
 
     src/lib/utils/utils.cpp
     src/lib/utils/utils.h

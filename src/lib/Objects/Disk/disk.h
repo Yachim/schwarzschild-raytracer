@@ -1,7 +1,6 @@
 #ifndef DISK_H
 #define DISK_H
 
-#include "../Material/material.h"
 #include "../Plane/plane.h"
 #include <glm/vec3.hpp>
 
