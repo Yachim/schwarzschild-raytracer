@@ -188,7 +188,7 @@ mat3 sphere_tangent_space(vec3 intersection_point, Sphere sphere, out vec2 coord
     coordinates = vec2(phi / (2. * PI), theta / PI + 0.5);
 
     vec3 tangent = vec3(sin(phi), 0.0, -cos(phi));
-    vec3 bitangent = normalize(vec3(-cos(phi) * cos(theta), sin(theta), -sin(phi) * cos(theta)));
+    vec3 bitangent = vec3(-cos(phi) * cos(theta), sin(theta), -sin(phi) * cos(theta));
 
     tangent = transform.axes * tangent;
     bitangent = transform.axes * bitangent;
@@ -228,7 +228,7 @@ mat3 disk_tangent_space(vec3 intersection_point, Disk disk, out vec2 coordinates
     );
 
     vec3 tangent = normalize(displacement);
-    vec3 bitangent = normalize(vec3(sin(phi), 0., -cos(phi)));
+    vec3 bitangent = vec3(sin(phi), 0., -cos(phi));
     bitangent = transform.axes * bitangent;
 
     return mat3(
@@ -252,7 +252,7 @@ mat3 hollow_disk_tangent_space(vec3 intersection_point, HollowDisk disk, out vec
     );
 
     vec3 tangent = normalize(displacement);
-    vec3 bitangent = normalize(vec3(sin(phi), 0., -cos(phi)));
+    vec3 bitangent = vec3(sin(phi), 0., -cos(phi));
     bitangent = transform.axes * bitangent;
 
     return mat3(
@@ -277,7 +277,7 @@ mat3 cylinder_tangent_space(vec3 intersection_point, Cylinder cylinder, out vec2
         phi / (2. * PI)
     );
 
-    vec3 tangent = normalize(vec3(sin(phi), 0.0, -cos(phi)));
+    vec3 tangent = vec3(sin(phi), 0.0, -cos(phi));
     return mat3(
         tangent,
         bitangent,
