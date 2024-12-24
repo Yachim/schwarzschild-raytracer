@@ -38,6 +38,10 @@ void ObjectLoader::addLateralCylinder(LateralCylinder* lateralCylinder) {
     m_lateralCylinders.push_back(lateralCylinder);
 }
 
+void ObjectLoader::addRectangle(Rectangle* rectangle) {
+    m_rectangles.push_back(rectangle);
+}
+
 // returns the length of the array
 // objectsOffset is the offset for the objects glsl array
 uint ObjectLoader::loadType(GLuint program, ObjectType type, uint objectsOffset) {
@@ -70,10 +74,14 @@ uint ObjectLoader::loadType(GLuint program, ObjectType type, uint objectsOffset)
         numStr = "num_cylinders";
         glslListName = "cylinders";
         break;
+    case ObjectType::RECTANGLE:
+        objects.insert(objects.end(), m_rectangles.begin(), m_rectangles.end());
+        numStr = "num_rectangles";
+        glslListName = "rectangles";
+        break;
     default:
         return 0;
     }
-
 
     glUniform1i(glGetUniformLocation(program, numStr.c_str()), objects.size());
     for (uint i = 0; i < objects.size(); i++) {
@@ -93,6 +101,7 @@ void ObjectLoader::load(GLuint program) {
     offset += loadType(program, ObjectType::DISK, offset);
     offset += loadType(program, ObjectType::HOLLOW_DISK, offset);
     offset += loadType(program, ObjectType::LATERAL_CYLINDER, offset);
+    offset += loadType(program, ObjectType::RECTANGLE, offset);
 
     glUniform1i(glGetUniformLocation(program, "num_lights"), m_lights.size());
     for (uint i = 0; i < m_lights.size(); i++) {

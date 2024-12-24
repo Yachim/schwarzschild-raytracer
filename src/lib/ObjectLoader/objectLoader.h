@@ -9,6 +9,7 @@
 #include "../Objects/Disk/disk.h"
 #include "../Objects/HollowDisk/hollowDisk.h"
 #include "../Objects/LateralCylinder/lateralCylinder.h"
+#include "../Objects/Rectangle/rectangle.h"
 
 class ObjectLoader {
 private:
@@ -21,6 +22,7 @@ private:
     std::vector<Disk*> m_disks;
     std::vector<HollowDisk*> m_hollowDisks;
     std::vector<LateralCylinder*> m_lateralCylinders;
+    std::vector<Rectangle*> m_rectangles;
 
     uint loadType(GLuint program, ObjectType type, uint objectsOffset);
 
@@ -39,6 +41,7 @@ public:
     void addDisk(Disk* disk);
     void addHollowDisk(HollowDisk* hollowDisk);
     void addLateralCylinder(LateralCylinder* lateralCylinder);
+    void addRectangle(Rectangle* rectangle);
 
     void load(GLuint program);
 };

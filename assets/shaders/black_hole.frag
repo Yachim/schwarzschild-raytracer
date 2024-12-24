@@ -139,18 +139,29 @@ struct Cylinder {
 uniform int num_cylinders;
 uniform Cylinder cylinders[MAX_CYLINDERS];
 
+struct Rectangle {
+    Plane plane; // pos - top left corner
+    float width;
+    float height;
+};
+
+#define MAX_RECTANGLES 3
+uniform int num_rectangles;
+uniform Rectangle rectangles[MAX_RECTANGLES];
+
 const int OBJECT_TYPE_SPECIAL     = -42;
 const int OBJECT_TYPE_SPHERE      = 0;
 const int OBJECT_TYPE_PLANE       = 1;
 const int OBJECT_TYPE_DISK        = 2;
 const int OBJECT_TYPE_HOLLOW_DISK = 3;
 const int OBJECT_TYPE_CYLINDER    = 4;
+const int OBJECT_TYPE_RECTANGLE   = 5;
 struct Object {
     int type;
     int index; // indexing respective arrays
 };
 
-#define MAX_OBJECTS MAX_SPHERES + MAX_PLANES + MAX_DISKS + MAX_HOLLOW_DISKS + MAX_CYLINDERS
+#define MAX_OBJECTS MAX_SPHERES + MAX_PLANES + MAX_DISKS + MAX_HOLLOW_DISKS + MAX_CYLINDERS + MAX_RECTANGLES
 uniform Object objects[MAX_OBJECTS];
 
 Material get_object_material(Object object) {
@@ -166,6 +177,8 @@ Material get_object_material(Object object) {
             return hollow_disks[index].plane.material;
         case OBJECT_TYPE_CYLINDER:
             return cylinders[index].material;
+        case OBJECT_TYPE_RECTANGLE:
+            return rectangles[index].plane.material;
     }
 }
 
@@ -285,6 +298,20 @@ mat3 cylinder_tangent_space(vec3 intersection_point, Cylinder cylinder, out vec2
     );
 }
 
+mat3 rectangle_tangent_space(vec3 intersection_point, Rectangle rectangle, out vec2 coordinates) {
+    Transform transform = rectangle.plane.transform;
+    vec3 displacement = intersection_point - transform.pos;
+
+    vec3 local_displacement = transpose(transform.axes) * displacement;
+    coordinates = local_displacement.xz / vec2(rectangle.width, rectangle.height);
+
+    return mat3(
+        transform.axes[0],
+        transform.axes[2],
+        transform.axes[1]
+    );
+}
+
 // coordinates are uv coordinates
 mat3 tangent_space(vec3 intersection_point, Object object, out vec2 coordinates) {
     int index = object.index;
@@ -299,6 +326,8 @@ mat3 tangent_space(vec3 intersection_point, Object object, out vec2 coordinates)
             return hollow_disk_tangent_space(intersection_point, hollow_disks[index], coordinates);
         case OBJECT_TYPE_CYLINDER:
             return cylinder_tangent_space(intersection_point, cylinders[index], coordinates);
+        case OBJECT_TYPE_RECTANGLE:
+            return rectangle_tangent_space(intersection_point, rectangles[index], coordinates);
     }
 }
 // #endregion
@@ -459,7 +488,7 @@ bool hollow_disk_intersect(vec3 origin, vec3 dir, HollowDisk disk, out vec3 inte
     return hit && squared_dist >= disk.inner_radius * disk.inner_radius && squared_dist <= disk.outer_radius * disk.outer_radius;
 }
 
-bool isInRange(float n, float minimum, float maximum) {
+bool is_in_range(float n, float minimum, float maximum) {
     return n >= minimum && n <= maximum;
 }
 
@@ -486,8 +515,8 @@ bool cylinder_intersect(vec3 origin, vec3 dir, Cylinder cylinder, out vec3 inter
     float lambda2 = lambda_C + lambda_0C;
     vec3 intersection_point1 = origin + dir * lambda1;
     vec3 intersection_point2 = origin + dir * lambda2;
-    bool inCylinder1 = isInRange(dot(intersection_point1 - pos, axis), 0., height);
-    bool inCylinder2 = isInRange(dot(intersection_point2 - pos, axis), 0., height);
+    bool inCylinder1 = is_in_range(dot(intersection_point1 - pos, axis), 0., height);
+    bool inCylinder2 = is_in_range(dot(intersection_point2 - pos, axis), 0., height);
 
     if (!inCylinder1 && !inCylinder2)
         return false;
@@ -501,6 +530,16 @@ bool cylinder_intersect(vec3 origin, vec3 dir, Cylinder cylinder, out vec3 inter
 
     intersection_point = origin + dir * lambda;
     return lambda >= 0. && (max_lambda < 0. || lambda <= max_lambda);
+}
+
+bool rectangle_intersect(vec3 origin, vec3 dir, Rectangle rectangle, out vec3 intersection_point, float max_lambda) {
+    bool hit = plane_intersect(origin, dir, rectangle.plane, intersection_point, max_lambda);
+    if (!hit) return false;
+
+    Transform transform = rectangle.plane.transform;
+    float alpha = dot(intersection_point - transform.pos, transform.axes[0]);
+    float beta = dot(intersection_point - transform.pos, transform.axes[2]);
+    return is_in_range(alpha, 0, rectangle.width) && is_in_range(beta, 0, rectangle.height);
 }
 
 bool intersect_object(vec3 origin, vec3 dir, Object object, out vec3 intersection_point, float max_lambda) {
@@ -523,6 +562,9 @@ bool intersect_object(vec3 origin, vec3 dir, Object object, out vec3 intersectio
         case OBJECT_TYPE_CYLINDER:
             Cylinder cylinder = cylinders[object_index];
             return cylinder_intersect(origin, dir, cylinder, intersection_point, max_lambda);
+        case OBJECT_TYPE_RECTANGLE:
+            Rectangle rectangle = rectangles[object_index];
+            return rectangle_intersect(origin, dir, rectangle, intersection_point, max_lambda);
     }
 
     return false;
@@ -541,7 +583,7 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
         object = Object(-42, -1);
     }
 
-    int num_objects = num_spheres + num_planes + num_disks + num_hollow_disks + num_cylinders;
+    int num_objects = num_spheres + num_planes + num_disks + num_hollow_disks + num_cylinders + num_rectangles;
     for(int i = 0; i < num_objects; i++) {
         Object current_object = objects[i];
 
