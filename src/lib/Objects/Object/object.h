@@ -11,7 +11,8 @@ enum ObjectType {
     DISK,
     HOLLOW_DISK,
     LATERAL_CYLINDER,
-    RECTANGLE
+    RECTANGLE,
+    BOX
 };
 
 class Object {

@@ -126,7 +126,8 @@ int main(int, char**) {
     std::vector<std::string> texturePaths = {
         "assets/textures/2k_earth_daymap.jpg",
         "assets/textures/2k_saturn_ring_alpha.png",
-        "assets/textures/2k_earth_normal_map.jpg"
+        "assets/textures/2k_earth_normal_map.jpg",
+        "assets/textures/cubemap.png"
     };
 
     GLuint textureArrayID = loadTextureArray(texturePaths, shaderProgram);
@@ -154,6 +155,11 @@ int main(int, char**) {
     Light light;
     light.setIntensity(8.);
     objectLoader->addLight(&light);
+
+    Box box;
+    box.setPos(glm::vec3(10., 0., 0.));
+    box.setMaterialTextureIndex(3);
+    objectLoader->addBox(&box);
 
     glUseProgram(shaderProgram);
 

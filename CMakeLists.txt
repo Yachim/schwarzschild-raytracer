@@ -42,6 +42,9 @@ add_executable(schwarzschild_raytracer
     src/lib/Objects/Rectangle/rectangle.cpp
     src/lib/Objects/Rectangle/rectangle.h
 
+    src/lib/Objects/Box/box.cpp
+    src/lib/Objects/Box/box.h
+
     src/lib/Objects/Light/light.cpp
     src/lib/Objects/Light/light.h
 

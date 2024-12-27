@@ -156,6 +156,18 @@ struct Rectangle {
 uniform int num_rectangles;
 uniform Rectangle rectangles[MAX_RECTANGLES];
 
+struct Box {
+    Transform transform; // pos - left bottom back corner
+    Material material;
+    float width;
+    float depth;
+    float height;
+};
+
+#define MAX_BOXES 3
+uniform int num_boxes;
+uniform Box boxes[MAX_BOXES];
+
 const int OBJECT_TYPE_SPECIAL     = -42;
 const int OBJECT_TYPE_SPHERE      = 0;
 const int OBJECT_TYPE_PLANE       = 1;
@@ -163,12 +175,13 @@ const int OBJECT_TYPE_DISK        = 2;
 const int OBJECT_TYPE_HOLLOW_DISK = 3;
 const int OBJECT_TYPE_CYLINDER    = 4;
 const int OBJECT_TYPE_RECTANGLE   = 5;
+const int OBJECT_TYPE_BOX         = 6;
 struct Object {
     int type;
     int index; // indexing respective arrays
 };
 
-#define MAX_OBJECTS MAX_SPHERES + MAX_PLANES + MAX_DISKS + MAX_HOLLOW_DISKS + MAX_CYLINDERS + MAX_RECTANGLES
+#define MAX_OBJECTS MAX_SPHERES + MAX_PLANES + MAX_DISKS + MAX_HOLLOW_DISKS + MAX_CYLINDERS + MAX_RECTANGLES + MAX_BOXES
 uniform Object objects[MAX_OBJECTS];
 
 Material get_object_material(Object object) {
@@ -186,6 +199,8 @@ Material get_object_material(Object object) {
             return cylinders[index].material;
         case OBJECT_TYPE_RECTANGLE:
             return rectangles[index].plane.material;
+        case OBJECT_TYPE_BOX:
+            return boxes[index].material;
     }
 }
 
@@ -319,6 +334,81 @@ mat3 rectangle_tangent_space(vec3 intersection_point, Rectangle rectangle, out v
     );
 }
 
+mat3 box_tangent_space(vec3 intersection_point, Box box, out vec2 coordinates) {
+    Transform transform = box.transform;
+    vec3 displacement = intersection_point - transform.pos;
+
+    // Transform to local space
+    vec3 local_displacement = transpose(transform.axes) * displacement / vec3(box.width, box.height, box.depth);
+
+    // left
+    if (local_displacement.x < epsilon) {
+        coordinates = local_displacement.zy;
+        coordinates.x /= 4.;
+        coordinates.y = (coordinates.y + 1.) / 3.;
+        return mat3(
+            transform.axes[2],
+            transform.axes[1],
+            -transform.axes[0]
+        );
+    }
+    // front
+    if (1. - local_displacement.z < epsilon) {
+        coordinates = local_displacement.xy;
+        coordinates.x = (coordinates.x + 1.) / 4.;
+        coordinates.y = (coordinates.y + 1.) / 3.;
+        return transform.axes;
+    }
+    // right
+    if (1. - local_displacement.x < epsilon) {
+        coordinates = local_displacement.zy;
+        coordinates.x = 1. - coordinates.x;
+        coordinates.x = (coordinates.x + 2.) / 4.;
+        coordinates.y = (coordinates.y + 1.) / 3.;
+        return mat3(
+            -transform.axes[2],
+            transform.axes[1],
+            transform.axes[0]
+        );
+    }
+    // back
+    if (local_displacement.z < epsilon) {
+        coordinates = local_displacement.xy;
+        coordinates.x = 1. - coordinates.x;
+        coordinates.x = (coordinates.x + 3.) / 4.;
+        coordinates.y = (coordinates.y + 1.) / 3.;
+        return mat3(
+            -transform.axes[0],
+            transform.axes[1],
+            -transform.axes[2]
+        );
+    }
+    // top
+    if (1. - local_displacement.y < epsilon) {
+        coordinates = local_displacement.xz;
+        coordinates.y = 1. - coordinates.y;
+        coordinates.x = (coordinates.x + 1.) / 4.;
+        coordinates.y = (coordinates.y + 2.) / 3.;
+        return mat3(
+            transform.axes[0],
+            -transform.axes[2],
+            transform.axes[1]
+        );
+    }
+    // bot
+    if (local_displacement.y < epsilon) {
+        coordinates = local_displacement.xz;
+        coordinates.x = (coordinates.x + 1.) / 4.;
+        coordinates.y /= 3.;
+        return mat3(
+            transform.axes[0],
+            transform.axes[2],
+            -transform.axes[1]
+        );
+    }
+    coordinates = vec2(-1., -1.);
+}
+
 // coordinates are uv coordinates
 mat3 tangent_space(vec3 intersection_point, Object object, out vec2 coordinates) {
     int index = object.index;
@@ -335,6 +425,8 @@ mat3 tangent_space(vec3 intersection_point, Object object, out vec2 coordinates)
             return cylinder_tangent_space(intersection_point, cylinders[index], coordinates);
         case OBJECT_TYPE_RECTANGLE:
             return rectangle_tangent_space(intersection_point, rectangles[index], coordinates);
+        case OBJECT_TYPE_BOX:
+            return box_tangent_space(intersection_point, boxes[index], coordinates);
     }
 }
 // #endregion
@@ -549,6 +641,69 @@ bool rectangle_intersect(vec3 origin, vec3 dir, Rectangle rectangle, out vec3 in
     return is_in_range(alpha, 0, rectangle.width) && is_in_range(beta, 0, rectangle.height);
 }
 
+bool box_intersect(vec3 origin, vec3 dir, Box box, out vec3 intersection_point, float max_lambda) {
+    Rectangle bot_rect = Rectangle(
+        Plane(box.transform, box.material, vec2(0.), false, vec2(0.)),
+        box.width,
+        box.depth
+    );
+    Rectangle top_rect = bot_rect;
+    top_rect.plane.transform.pos += bot_rect.plane.transform.axes[1] * box.height;
+
+    Rectangle back_rect = Rectangle(
+        Plane(box.transform, box.material, vec2(0.), false, vec2(0.)),
+        box.width,
+        box.height
+    );
+    back_rect.plane.transform.axes = mat3(
+        box.transform.axes[0],
+        -box.transform.axes[2], // negative to ensure det = 1
+        box.transform.axes[1]
+    );
+    Rectangle front_rect = back_rect;
+    front_rect.plane.transform.pos -= front_rect.plane.transform.axes[1] * box.depth;
+
+    Rectangle left_rect = Rectangle(
+        Plane(box.transform, box.material, vec2(0.), false, vec2(0.)),
+        box.depth,
+        box.height
+    );
+    left_rect.plane.transform.axes = mat3(
+        box.transform.axes[2],
+        box.transform.axes[0],
+        box.transform.axes[1]
+    );
+    Rectangle right_rect = left_rect;
+    right_rect.plane.transform.pos += left_rect.plane.transform.axes[1] * box.width;
+
+    vec3 intersection_points[6];
+    bool hits[6] = bool[](
+        rectangle_intersect(origin, dir, bot_rect, intersection_points[0], max_lambda),
+        rectangle_intersect(origin, dir, top_rect, intersection_points[1], max_lambda),
+        rectangle_intersect(origin, dir, front_rect, intersection_points[2], max_lambda),
+        rectangle_intersect(origin, dir, back_rect, intersection_points[3], max_lambda),
+        rectangle_intersect(origin, dir, left_rect, intersection_points[4], max_lambda),
+        rectangle_intersect(origin, dir, right_rect, intersection_points[5], max_lambda)
+    );
+    //intersection_point = intersection_points[2];
+    //return hits[2];
+
+    bool any_hit = false;
+    float closest_dist = -1.;
+    for (int i = 0; i < 6; ++i) {
+        if (hits[i]) {
+            float dist = distance(intersection_points[i], origin);
+            if (closest_dist < 0. || dist < closest_dist) {
+                closest_dist = dist;
+                intersection_point = intersection_points[i];
+                any_hit = true;
+            }
+        }
+    }
+
+    return any_hit;
+}
+
 bool intersect_object(vec3 origin, vec3 dir, Object object, out vec3 intersection_point, float max_lambda) {
     int object_type = object.type;
     int object_index = object.index;
@@ -572,6 +727,9 @@ bool intersect_object(vec3 origin, vec3 dir, Object object, out vec3 intersectio
         case OBJECT_TYPE_RECTANGLE:
             Rectangle rectangle = rectangles[object_index];
             return rectangle_intersect(origin, dir, rectangle, intersection_point, max_lambda);
+        case OBJECT_TYPE_BOX:
+            Box box = boxes[object_index];
+            return box_intersect(origin, dir, box, intersection_point, max_lambda);
     }
 
     return false;
@@ -590,7 +748,7 @@ bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
         object = Object(-42, -1);
     }
 
-    int num_objects = num_spheres + num_planes + num_disks + num_hollow_disks + num_cylinders + num_rectangles;
+    int num_objects = num_spheres + num_planes + num_disks + num_hollow_disks + num_cylinders + num_rectangles + num_boxes;
     for(int i = 0; i < num_objects; i++) {
         Object current_object = objects[i];
 

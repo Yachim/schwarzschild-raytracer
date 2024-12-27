@@ -10,6 +10,7 @@
 #include "../Objects/HollowDisk/hollowDisk.h"
 #include "../Objects/LateralCylinder/lateralCylinder.h"
 #include "../Objects/Rectangle/rectangle.h"
+#include "../Objects/Box/box.h"
 
 class ObjectLoader {
 private:
@@ -23,6 +24,7 @@ private:
     std::vector<HollowDisk*> m_hollowDisks;
     std::vector<LateralCylinder*> m_lateralCylinders;
     std::vector<Rectangle*> m_rectangles;
+    std::vector<Box*> m_boxes;
 
     uint loadType(GLuint program, ObjectType type, uint objectsOffset);
 
@@ -42,6 +44,7 @@ public:
     void addHollowDisk(HollowDisk* hollowDisk);
     void addLateralCylinder(LateralCylinder* lateralCylinder);
     void addRectangle(Rectangle* rectangle);
+    void addBox(Box* box);
 
     void load(GLuint program);
 };

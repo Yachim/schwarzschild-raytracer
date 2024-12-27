@@ -42,6 +42,10 @@ void ObjectLoader::addRectangle(Rectangle* rectangle) {
     m_rectangles.push_back(rectangle);
 }
 
+void ObjectLoader::addBox(Box* box) {
+    m_boxes.push_back(box);
+}
+
 // returns the length of the array
 // objectsOffset is the offset for the objects glsl array
 uint ObjectLoader::loadType(GLuint program, ObjectType type, uint objectsOffset) {
@@ -79,6 +83,11 @@ uint ObjectLoader::loadType(GLuint program, ObjectType type, uint objectsOffset)
         numStr = "num_rectangles";
         glslListName = "rectangles";
         break;
+    case ObjectType::BOX:
+        objects.insert(objects.end(), m_boxes.begin(), m_boxes.end());
+        numStr = "num_boxes";
+        glslListName = "boxes";
+        break;
     default:
         return 0;
     }
@@ -102,6 +111,7 @@ void ObjectLoader::load(GLuint program) {
     offset += loadType(program, ObjectType::HOLLOW_DISK, offset);
     offset += loadType(program, ObjectType::LATERAL_CYLINDER, offset);
     offset += loadType(program, ObjectType::RECTANGLE, offset);
+    offset += loadType(program, ObjectType::BOX, offset);
 
     glUniform1i(glGetUniformLocation(program, "num_lights"), m_lights.size());
     for (uint i = 0; i < m_lights.size(); i++) {
