@@ -45,6 +45,12 @@ public:
     bool getMaterialSwapUvs();
     void setMaterialSwapUvs(bool swapUvs);
 
+    bool getMaterialDoubleSidedNormals();
+    void setMaterialDoubleSidedNormals(bool doubleSidedNormals);
+
+    bool getMaterialFlipNormals();
+    void setMaterialFlipNormals(bool flipNormals);
+
 protected:
     Material m_material = Material();
 
@@ -59,5 +65,7 @@ protected:
     GLint m_materialInvertUvXLoc;
     GLint m_materialInvertUvYLoc;
     GLint m_materialSwapUvsLoc;
+    GLint m_materialDoubleSidedNormalsLoc;
+    GLint m_materialFlipNormalsLoc;
 };
 #endif

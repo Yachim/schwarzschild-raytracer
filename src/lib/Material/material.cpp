@@ -74,3 +74,17 @@ bool Material::getSwapUvs() {
 void Material::setSwapUvs(bool swapUvs) {
     m_swapUvs = swapUvs;
 }
+
+bool Material::getDoubleSidedNormals() {
+    return m_doubleSidedNormals;
+}
+void Material::setDoubleSidedNormals(bool doubleSidedNormals) {
+    m_doubleSidedNormals = doubleSidedNormals;
+}
+
+bool Material::getFlipNormals() {
+    return m_flipNormals;
+}
+void Material::setFlipNormals(bool flipNormals) {
+    m_flipNormals = flipNormals;
+}

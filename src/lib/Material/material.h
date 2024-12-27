@@ -39,6 +39,12 @@ public:
     bool getSwapUvs();
     void setSwapUvs(bool swapUvs);
 
+    bool getDoubleSidedNormals();
+    void setDoubleSidedNormals(bool doubleSidedNormals);
+
+    bool getFlipNormals();
+    void setFlipNormals(bool flipNormals);
+
 private:
     glm::vec4 m_color{ 0.5, 0., 0.5, 1. };
     float m_ambient = 0.1;
@@ -50,5 +56,7 @@ private:
     bool m_invertUvX = false;
     bool m_invertUvY = false;
     bool m_swapUvs = false;
+    bool m_doubleSidedNormals = true;
+    bool m_flipNormals = false;
 };
 #endif

@@ -83,6 +83,8 @@ struct Material {
     bool invert_uv_x;
     bool invert_uv_y;
     bool swap_uvs;
+    bool double_sided_normals;
+    bool flip_normals;
 };
 
 struct Sphere {
@@ -100,7 +102,7 @@ const mat3 DEFAULT_AXES = mat3(
     vec3(0., 1., 0.),
     vec3(0., 0., 1.)
 );
-const Material BLANK_MAT = Material(vec4(0.0, 0.0, 0.0, 1.0), 0.1, 0.0, 0.0, 32.0, -1, -1, false, false, false);
+const Material BLANK_MAT = Material(vec4(0.0, 0.0, 0.0, 1.0), 0.1, 0.0, 0.0, 32.0, -1, -1, false, false, false, false, false);
 const Sphere BLACK_HOLE = Sphere(Transform(vec3(0., 0., 0.), DEFAULT_AXES), BLANK_MAT, 1.0);
 
 struct Plane {
@@ -373,6 +375,8 @@ vec4 calculate_lighting(HitInfo hit_info, vec3 view_dir) {
     if (hit_info.object.type == OBJECT_TYPE_SPECIAL) return vec4(0., 0., 0., 1.);
 
     Material material = get_object_material(hit_info.object);
+    if (material.flip_normals) hit_info.tangent_space[2] *= -1.;
+    if (!material.double_sided_normals && dot(hit_info.tangent_space[2], view_dir) < 0.) return vec4(0., 0., 0., 0.);
     vec2 object_uv = hit_info.tangent_coordinates;
 
     if (material.swap_uvs)

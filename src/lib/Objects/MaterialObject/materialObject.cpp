@@ -81,6 +81,20 @@ void MaterialObject::setMaterialSwapUvs(bool swapUvs) {
     m_material.setSwapUvs(swapUvs);
 }
 
+bool MaterialObject::getMaterialDoubleSidedNormals() {
+    return m_material.getDoubleSidedNormals();
+}
+void MaterialObject::setMaterialDoubleSidedNormals(bool doubleSidedNormals) {
+    m_material.setDoubleSidedNormals(doubleSidedNormals);
+}
+
+bool MaterialObject::getMaterialFlipNormals() {
+    return m_material.getFlipNormals();
+}
+void MaterialObject::setMaterialFlipNormals(bool flipNormals) {
+    m_material.setFlipNormals(flipNormals);
+}
+
 
 void MaterialObject::setupShader(GLuint program, std::string prefix) {
     Object::setupShader(program, prefix);
@@ -95,6 +109,8 @@ void MaterialObject::setupShader(GLuint program, std::string prefix) {
     m_materialInvertUvXLoc = glGetUniformLocation(program, (prefix + ".invert_uv_x").c_str());
     m_materialInvertUvYLoc = glGetUniformLocation(program, (prefix + ".invert_uv_y").c_str());
     m_materialSwapUvsLoc = glGetUniformLocation(program, (prefix + ".swap_uvs").c_str());
+    m_materialDoubleSidedNormalsLoc = glGetUniformLocation(program, (prefix + ".double_sided_normals").c_str());
+    m_materialFlipNormalsLoc = glGetUniformLocation(program, (prefix + ".flip_normals").c_str());
 }
 
 void MaterialObject::loadShader() {
@@ -111,4 +127,6 @@ void MaterialObject::loadShader() {
     glUniform1i(m_materialInvertUvXLoc, m_material.getInvertUvX());
     glUniform1i(m_materialInvertUvYLoc, m_material.getInvertUvY());
     glUniform1i(m_materialSwapUvsLoc, m_material.getSwapUvs());
+    glUniform1i(m_materialDoubleSidedNormalsLoc, m_material.getDoubleSidedNormals());
+    glUniform1i(m_materialFlipNormalsLoc, m_material.getFlipNormals());
 }
