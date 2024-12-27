@@ -204,15 +204,19 @@ Material get_object_material(Object object) {
     }
 }
 
-// returns matrix: [tangent, bitangent, normal]
-// coordinates: uv
-// u: tangent direction
-// v: bitangent direction
-// every coordinates except plane are normalized
+struct HitInfo {
+  bool is_hit;
+  float dist;
+  vec3 intersection_point;
+  mat3 tangent_space; // [tangent, bitangent, normal]
+  vec2 tangent_coordinates; // [tangent direction, bitangent direction]; normalized except for plane
+  Object object;
+};
+
 // #region tangent_space
-mat3 sphere_tangent_space(vec3 intersection_point, Sphere sphere, out vec2 coordinates) {
+void sphere_tangent_space(inout HitInfo hit_info, Sphere sphere) {
     Transform transform = sphere.transform;
-    vec3 displacement = intersection_point - transform.pos;
+    vec3 displacement = hit_info.intersection_point - transform.pos;
     vec3 normal = normalize(displacement);
 
     vec3 local_displacement = transpose(transform.axes) * displacement;
@@ -220,7 +224,7 @@ mat3 sphere_tangent_space(vec3 intersection_point, Sphere sphere, out vec2 coord
     if (phi < 0.) phi += 2.* PI;
     float theta = asin(local_displacement.y / sphere.radius);
 
-    coordinates = vec2(phi / (2. * PI), theta / PI + 0.5);
+    hit_info.tangent_coordinates = vec2(phi / (2. * PI), theta / PI + 0.5);
 
     vec3 tangent = vec3(sin(phi), 0.0, -cos(phi));
     vec3 bitangent = vec3(-cos(phi) * cos(theta), sin(theta), -sin(phi) * cos(theta));
@@ -228,36 +232,36 @@ mat3 sphere_tangent_space(vec3 intersection_point, Sphere sphere, out vec2 coord
     tangent = transform.axes * tangent;
     bitangent = transform.axes * bitangent;
 
-    return mat3(
+    hit_info.tangent_space = mat3(
         tangent,
         bitangent,
         normal
     );
 }
 
-mat3 plane_tangent_space(vec3 intersection_point, Plane plane, out vec2 coordinates) {
+void plane_tangent_space(inout HitInfo hit_info, Plane plane) {
     Transform transform = plane.transform;
-    vec3 displacement = intersection_point - transform.pos;
+    vec3 displacement = hit_info.intersection_point - transform.pos;
 
     vec3 local_displacement = transpose(transform.axes) * displacement;
-    coordinates = local_displacement.xz;
+    hit_info.tangent_coordinates = local_displacement.xz;
 
-    return mat3(
+    hit_info.tangent_space = mat3(
         transform.axes[0],
         transform.axes[2],
         transform.axes[1]
     );
 }
 
-mat3 disk_tangent_space(vec3 intersection_point, Disk disk, out vec2 coordinates) {
+void disk_tangent_space(inout HitInfo hit_info, Disk disk) {
     Transform transform = disk.plane.transform;
-    vec3 displacement = intersection_point - transform.pos;
+    vec3 displacement = hit_info.intersection_point - transform.pos;
 
     vec3 local_displacement = transpose(transform.axes) * displacement;
     float phi = atan(local_displacement.z, local_displacement.x);
     if (phi < 0.) phi += 2.* PI;
 
-    coordinates = vec2(
+    hit_info.tangent_coordinates = vec2(
         length(local_displacement) / disk.radius,
         phi / (2. * PI)
     );
@@ -266,22 +270,22 @@ mat3 disk_tangent_space(vec3 intersection_point, Disk disk, out vec2 coordinates
     vec3 bitangent = vec3(sin(phi), 0., -cos(phi));
     bitangent = transform.axes * bitangent;
 
-    return mat3(
+    hit_info.tangent_space = mat3(
         tangent,
         bitangent,
         transform.axes[1]
     );
 }
 
-mat3 hollow_disk_tangent_space(vec3 intersection_point, HollowDisk disk, out vec2 coordinates) {
+void hollow_disk_tangent_space(inout HitInfo hit_info, HollowDisk disk) {
     Transform transform = disk.plane.transform;
-    vec3 displacement = intersection_point - transform.pos;
+    vec3 displacement = hit_info.intersection_point - transform.pos;
 
     vec3 local_displacement = transpose(transform.axes) * displacement;
     float phi = atan(local_displacement.z, local_displacement.x);
     if (phi < 0.) phi += 2.* PI;
 
-    coordinates = vec2(
+    hit_info.tangent_coordinates = vec2(
         (length(local_displacement) - disk.inner_radius) / (disk.outer_radius - disk.inner_radius),
         phi / (2. * PI)
     );
@@ -290,16 +294,16 @@ mat3 hollow_disk_tangent_space(vec3 intersection_point, HollowDisk disk, out vec
     vec3 bitangent = vec3(sin(phi), 0., -cos(phi));
     bitangent = transform.axes * bitangent;
 
-    return mat3(
+    hit_info.tangent_space = mat3(
         tangent,
         bitangent,
         transform.axes[1]
     );
 }
 
-mat3 cylinder_tangent_space(vec3 intersection_point, Cylinder cylinder, out vec2 coordinates) {
+void cylinder_tangent_space(inout HitInfo hit_info, Cylinder cylinder) {
     Transform transform = cylinder.transform;
-    vec3 displacement = intersection_point - transform.pos;
+    vec3 displacement = hit_info.intersection_point - transform.pos;
     vec3 normal = normalize(displacement);
     vec3 bitangent = transform.axes[1];
 
@@ -307,127 +311,31 @@ mat3 cylinder_tangent_space(vec3 intersection_point, Cylinder cylinder, out vec2
     float phi = atan(local_displacement.z, local_displacement.x);
     if (phi < 0.) phi += 2.* PI;
 
-    coordinates = vec2(
+    hit_info.tangent_coordinates = vec2(
         local_displacement.y / cylinder.height,
         phi / (2. * PI)
     );
 
     vec3 tangent = vec3(sin(phi), 0.0, -cos(phi));
-    return mat3(
+    hit_info.tangent_space = mat3(
         tangent,
         bitangent,
         normal
     );
 }
 
-mat3 rectangle_tangent_space(vec3 intersection_point, Rectangle rectangle, out vec2 coordinates) {
+void rectangle_tangent_space(inout HitInfo hit_info, Rectangle rectangle) {
     Transform transform = rectangle.plane.transform;
-    vec3 displacement = intersection_point - transform.pos;
+    vec3 displacement = hit_info.intersection_point - transform.pos;
 
     vec3 local_displacement = transpose(transform.axes) * displacement;
-    coordinates = local_displacement.xz / vec2(rectangle.width, rectangle.height);
+    hit_info.tangent_coordinates = local_displacement.xz / vec2(rectangle.width, rectangle.height);
 
-    return mat3(
+    hit_info.tangent_space = mat3(
         transform.axes[0],
         transform.axes[2],
         transform.axes[1]
     );
-}
-
-mat3 box_tangent_space(vec3 intersection_point, Box box, out vec2 coordinates) {
-    Transform transform = box.transform;
-    vec3 displacement = intersection_point - transform.pos;
-
-    // Transform to local space
-    vec3 local_displacement = transpose(transform.axes) * displacement / vec3(box.width, box.height, box.depth);
-
-    // left
-    if (local_displacement.x < epsilon) {
-        coordinates = local_displacement.zy;
-        coordinates.x /= 4.;
-        coordinates.y = (coordinates.y + 1.) / 3.;
-        return mat3(
-            transform.axes[2],
-            transform.axes[1],
-            -transform.axes[0]
-        );
-    }
-    // front
-    if (1. - local_displacement.z < epsilon) {
-        coordinates = local_displacement.xy;
-        coordinates.x = (coordinates.x + 1.) / 4.;
-        coordinates.y = (coordinates.y + 1.) / 3.;
-        return transform.axes;
-    }
-    // right
-    if (1. - local_displacement.x < epsilon) {
-        coordinates = local_displacement.zy;
-        coordinates.x = 1. - coordinates.x;
-        coordinates.x = (coordinates.x + 2.) / 4.;
-        coordinates.y = (coordinates.y + 1.) / 3.;
-        return mat3(
-            -transform.axes[2],
-            transform.axes[1],
-            transform.axes[0]
-        );
-    }
-    // back
-    if (local_displacement.z < epsilon) {
-        coordinates = local_displacement.xy;
-        coordinates.x = 1. - coordinates.x;
-        coordinates.x = (coordinates.x + 3.) / 4.;
-        coordinates.y = (coordinates.y + 1.) / 3.;
-        return mat3(
-            -transform.axes[0],
-            transform.axes[1],
-            -transform.axes[2]
-        );
-    }
-    // top
-    if (1. - local_displacement.y < epsilon) {
-        coordinates = local_displacement.xz;
-        coordinates.y = 1. - coordinates.y;
-        coordinates.x = (coordinates.x + 1.) / 4.;
-        coordinates.y = (coordinates.y + 2.) / 3.;
-        return mat3(
-            transform.axes[0],
-            -transform.axes[2],
-            transform.axes[1]
-        );
-    }
-    // bot
-    if (local_displacement.y < epsilon) {
-        coordinates = local_displacement.xz;
-        coordinates.x = (coordinates.x + 1.) / 4.;
-        coordinates.y /= 3.;
-        return mat3(
-            transform.axes[0],
-            transform.axes[2],
-            -transform.axes[1]
-        );
-    }
-    coordinates = vec2(-1., -1.);
-}
-
-// coordinates are uv coordinates
-mat3 tangent_space(vec3 intersection_point, Object object, out vec2 coordinates) {
-    int index = object.index;
-    switch (object.type) {
-        case OBJECT_TYPE_SPHERE:
-            return sphere_tangent_space(intersection_point, spheres[index], coordinates);
-        case OBJECT_TYPE_PLANE:
-            return plane_tangent_space(intersection_point, planes[index], coordinates);
-        case OBJECT_TYPE_DISK:
-            return disk_tangent_space(intersection_point, disks[index], coordinates);
-        case OBJECT_TYPE_HOLLOW_DISK:
-            return hollow_disk_tangent_space(intersection_point, hollow_disks[index], coordinates);
-        case OBJECT_TYPE_CYLINDER:
-            return cylinder_tangent_space(intersection_point, cylinders[index], coordinates);
-        case OBJECT_TYPE_RECTANGLE:
-            return rectangle_tangent_space(intersection_point, rectangles[index], coordinates);
-        case OBJECT_TYPE_BOX:
-            return box_tangent_space(intersection_point, boxes[index], coordinates);
-    }
 }
 // #endregion
 
@@ -456,27 +364,26 @@ float square_vector(vec3 v) {
     return dot(v, v);
 }
 
-vec4 calculate_lighting(vec3 point, vec3 view_dir, Object object) {
-    if (object.type == OBJECT_TYPE_SPECIAL) return vec4(0., 0., 0., 1.); // black hole
+vec4 calculate_lighting(HitInfo hit_info, vec3 view_dir) {
+    if (hit_info.object.type == OBJECT_TYPE_SPECIAL) return vec4(0., 0., 0., 1.);
 
-    Material material = get_object_material(object);
-    vec2 object_uv;
-    mat3 tangent_basis = tangent_space(point, object, object_uv);
+    Material material = get_object_material(hit_info.object);
+    vec2 object_uv = hit_info.tangent_coordinates;
 
     if (material.swap_uvs)
         object_uv = vec2(object_uv.y, object_uv.x);
     if (material.invert_uv_x)
-        object_uv.x = (object.type == OBJECT_TYPE_PLANE ? planes[object.index].texture_size.x : 1.) - object_uv.x;
+        object_uv.x = (hit_info.object.type == OBJECT_TYPE_PLANE ? planes[hit_info.object.index].texture_size.x : 1.) - object_uv.x;
     if (material.invert_uv_y)
-        object_uv.y = (object.type == OBJECT_TYPE_PLANE ? planes[object.index].texture_size.y : 1.) - object_uv.y;
+        object_uv.y = (hit_info.object.type == OBJECT_TYPE_PLANE ? planes[hit_info.object.index].texture_size.y : 1.) - object_uv.y;
 
     vec4 base_color = material.color;
     if (material.texture_index >= 0) {
         vec2 rescaled_uv = object_uv * texture_sizes[material.texture_index] / max_texture_size;
 
         bool render_color = true;
-        if (object.type == OBJECT_TYPE_PLANE) {
-            Plane plane = planes[object.index];
+        if (hit_info.object.type == OBJECT_TYPE_PLANE) {
+            Plane plane = planes[hit_info.object.index];
             rescaled_uv -= plane.texture_offset;
             vec2 plane_uv = rescaled_uv / plane.texture_size;
 
@@ -496,17 +403,17 @@ vec4 calculate_lighting(vec3 point, vec3 view_dir, Object object) {
     }
     vec3 final_color = material.ambient * base_color.rgb; // Ambient component
 
-    vec3 normal = tangent_basis[2];
+    vec3 normal = hit_info.tangent_space[2];
     if (material.normal_map_index >= 0) {
         vec2 rescaled_uv = object_uv * texture_sizes[material.normal_map_index] / max_texture_size;
         vec3 normal_map = texture(textures, vec3(rescaled_uv, material.normal_map_index)).rgb;
-        normal = normalize(tangent_basis * normal_map);
+        normal = normalize(hit_info.tangent_space * normal_map);
     }
 
     for(int i = 0; i < num_lights; i++) {
         Light light = lights[i];
-        vec3 light_dir = normalize(light.transform.pos - point);
-        float distance = length(light.transform.pos - point);
+        vec3 light_dir = normalize(light.transform.pos - hit_info.intersection_point);
+        float distance = length(light.transform.pos - hit_info.intersection_point);
 
         // Attenuation
         float attenuation = 1.0 / (light.attenuation_constant +
@@ -518,7 +425,7 @@ vec4 calculate_lighting(vec3 point, vec3 view_dir, Object object) {
         vec3 diffuse = material.diffuse * diff * light.color * base_color.rgb;
 
         // Specular
-        vec3 reflect_dir = reflect(-light_dir, tangent_basis[1]);
+        vec3 reflect_dir = reflect(-light_dir, normal);
         float spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
         vec3 specular = material.specular * spec * light.color;
 
@@ -545,10 +452,12 @@ float min_positive(float n1, float n2) {
 }
 
 // #region intersections
-bool sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, out vec3 intersection_point, float max_lambda) {
+HitInfo sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, float max_lambda) {
+    HitInfo res;
     float D = pow(dot(dir, origin - sphere.transform.pos), 2) - square_vector(origin - sphere.transform.pos) + sphere.radius * sphere.radius;
     if(D < 0) {
-        return false;
+        res.is_hit = false;
+        return res;
     }
 
     float sqrt_D = sqrt(D);
@@ -558,40 +467,58 @@ bool sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, out vec3 intersectio
 
     float lambda = min_positive(lambda1, lambda2);
 
-    intersection_point = origin + lambda * dir;
-    return lambda >= 0 && (max_lambda < 0. || lambda <= max_lambda);
+    res.is_hit = lambda >= 0 && (max_lambda < 0. || lambda <= max_lambda);
+    if (!res.is_hit) return res;
+    res.intersection_point = origin + lambda * dir;
+    res.dist = distance(res.intersection_point, origin);
+    sphere_tangent_space(res, sphere);
+    return res;
 }
-bool sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, out vec3 intersection_point) {
-    return sphere_intersect(origin, dir, sphere, intersection_point, -1.);
+HitInfo sphere_intersect(vec3 origin, vec3 dir, Sphere sphere) {
+    return sphere_intersect(origin, dir, sphere, -1.);
 }
 
-bool plane_intersect(vec3 origin, vec3 dir, Plane plane, out vec3 intersection_point, float max_lambda) {
+HitInfo plane_intersect(vec3 origin, vec3 dir, Plane plane, float max_lambda) {
+    HitInfo res;
+
     vec3 normal = plane.transform.axes[1];
     float denom = dot(normal, dir);
-    if(abs(denom) < epsilon)
-        return false;
+    if(abs(denom) < epsilon) {
+        res.is_hit = false;
+        return res;
+    }
 
     float lambda = dot(normal, plane.transform.pos - origin) / denom;
-    intersection_point = origin + dir * lambda;
-    return lambda >= 0. && (max_lambda < 0. || lambda <= max_lambda);
+    res.is_hit = lambda >= 0. && (max_lambda < 0. || lambda <= max_lambda);
+    if (!res.is_hit) return res;
+    res.intersection_point = origin + dir * lambda;
+    res.dist = distance(res.intersection_point, origin);
+    plane_tangent_space(res, plane);
+    return res;
 }
 
-bool disk_intersect(vec3 origin, vec3 dir, Disk disk, out vec3 intersection_point, float max_lambda) {
-    bool hit = plane_intersect(origin, dir, disk.plane, intersection_point, max_lambda);
-    return hit && square_vector(intersection_point - disk.plane.transform.pos) <= disk.radius * disk.radius;
+HitInfo disk_intersect(vec3 origin, vec3 dir, Disk disk, float max_lambda) {
+    HitInfo res = plane_intersect(origin, dir, disk.plane, max_lambda);
+    res.is_hit = res.is_hit && square_vector(res.intersection_point - disk.plane.transform.pos) <= disk.radius * disk.radius;
+    if (!res.is_hit) return res;
+    disk_tangent_space(res, disk);
+    return res;
 }
 
-bool hollow_disk_intersect(vec3 origin, vec3 dir, HollowDisk disk, out vec3 intersection_point, float max_lambda) {
-    bool hit = plane_intersect(origin, dir, disk.plane, intersection_point, max_lambda);
-    float squared_dist = square_vector(intersection_point - disk.plane.transform.pos);
-    return hit && squared_dist >= disk.inner_radius * disk.inner_radius && squared_dist <= disk.outer_radius * disk.outer_radius;
+HitInfo hollow_disk_intersect(vec3 origin, vec3 dir, HollowDisk disk, float max_lambda) {
+    HitInfo res = plane_intersect(origin, dir, disk.plane, max_lambda);
+    float squared_dist = square_vector(res.intersection_point - disk.plane.transform.pos);
+    res.is_hit = res.is_hit && squared_dist >= disk.inner_radius * disk.inner_radius && squared_dist <= disk.outer_radius * disk.outer_radius;
+    if (!res.is_hit) return res;
+    hollow_disk_tangent_space(res, disk);
+    return res;
 }
 
 bool is_in_range(float n, float minimum, float maximum) {
     return n >= minimum && n <= maximum;
 }
 
-bool cylinder_intersect(vec3 origin, vec3 dir, Cylinder cylinder, out vec3 intersection_point, float max_lambda) {
+HitInfo cylinder_intersect(vec3 origin, vec3 dir, Cylinder cylinder, float max_lambda) {
     vec3 pos = cylinder.transform.pos;
     vec3 axis = cylinder.transform.axes[1];
     float height = cylinder.height;
@@ -606,8 +533,11 @@ bool cylinder_intersect(vec3 origin, vec3 dir, Cylinder cylinder, out vec3 inter
     vec3 l = l_ - dot(l_, axis) * axis;
     float lambda_C = dot(l, dir_perp) / dir_perp_length_squared;
     float dSquared = square_vector(lambda_C * dir_perp - l);
-    if(dSquared > radiusSquared)
-        return false;
+    HitInfo res;
+    if(dSquared > radiusSquared) {
+        res.is_hit = false;
+        return res;
+    }
     float lambda_0C = sqrt((radiusSquared - dSquared) / dir_perp_length_squared);
 
     float lambda1 = lambda_C - lambda_0C;
@@ -617,8 +547,10 @@ bool cylinder_intersect(vec3 origin, vec3 dir, Cylinder cylinder, out vec3 inter
     bool inCylinder1 = is_in_range(dot(intersection_point1 - pos, axis), 0., height);
     bool inCylinder2 = is_in_range(dot(intersection_point2 - pos, axis), 0., height);
 
-    if (!inCylinder1 && !inCylinder2)
-        return false;
+    if (!inCylinder1 && !inCylinder2) {
+        res.is_hit = false;
+        return res;
+    }
     float lambda = -1.;
     if (inCylinder1 && inCylinder2)
         lambda = min_positive(lambda1, lambda2);
@@ -627,28 +559,39 @@ bool cylinder_intersect(vec3 origin, vec3 dir, Cylinder cylinder, out vec3 inter
     else if (inCylinder2)
         lambda = lambda2;
 
-    intersection_point = origin + dir * lambda;
-    return lambda >= 0. && (max_lambda < 0. || lambda <= max_lambda);
+    res.intersection_point = origin + dir * lambda;
+    res.is_hit = lambda >= 0. && (max_lambda < 0. || lambda <= max_lambda);
+    if (!res.is_hit) return res;
+    res.dist = distance(res.intersection_point, origin);
+    cylinder_tangent_space(res, cylinder);
+    return res;
 }
 
-bool rectangle_intersect(vec3 origin, vec3 dir, Rectangle rectangle, out vec3 intersection_point, float max_lambda) {
-    bool hit = plane_intersect(origin, dir, rectangle.plane, intersection_point, max_lambda);
-    if (!hit) return false;
+HitInfo rectangle_intersect(vec3 origin, vec3 dir, Rectangle rectangle, float max_lambda) {
+    HitInfo res = plane_intersect(origin, dir, rectangle.plane, max_lambda);
+    if (!res.is_hit) return res;
 
     Transform transform = rectangle.plane.transform;
-    float alpha = dot(intersection_point - transform.pos, transform.axes[0]);
-    float beta = dot(intersection_point - transform.pos, transform.axes[2]);
-    return is_in_range(alpha, 0, rectangle.width) && is_in_range(beta, 0, rectangle.height);
+    float alpha = dot(res.intersection_point - transform.pos, transform.axes[0]);
+    float beta = dot(res.intersection_point - transform.pos, transform.axes[2]);
+    res.is_hit = is_in_range(alpha, 0, rectangle.width) && is_in_range(beta, 0, rectangle.height);
+    if (!res.is_hit) return res;
+    rectangle_tangent_space(res, rectangle);
+    return res;
 }
 
-bool box_intersect(vec3 origin, vec3 dir, Box box, out vec3 intersection_point, float max_lambda) {
+HitInfo box_intersect(vec3 origin, vec3 dir, Box box, float max_lambda) {
     Rectangle bot_rect = Rectangle(
         Plane(box.transform, box.material, vec2(0.), false, vec2(0.)),
         box.width,
         box.depth
     );
+    bot_rect.plane.transform.axes[1] *= -1.;
     Rectangle top_rect = bot_rect;
-    top_rect.plane.transform.pos += bot_rect.plane.transform.axes[1] * box.height;
+    top_rect.plane.transform.pos += box.transform.axes[1] * box.height;
+    top_rect.plane.transform.pos += box.transform.axes[2] * box.depth;
+    top_rect.plane.transform.axes[1] = box.transform.axes[1];
+    top_rect.plane.transform.axes[2] = -box.transform.axes[2];
 
     Rectangle back_rect = Rectangle(
         Plane(box.transform, box.material, vec2(0.), false, vec2(0.)),
@@ -656,12 +599,17 @@ bool box_intersect(vec3 origin, vec3 dir, Box box, out vec3 intersection_point, 
         box.height
     );
     back_rect.plane.transform.axes = mat3(
-        box.transform.axes[0],
-        -box.transform.axes[2], // negative to ensure det = 1
+        -box.transform.axes[0],
+        -box.transform.axes[2],
         box.transform.axes[1]
     );
+    back_rect.plane.transform.pos += box.transform.axes[0] * box.width;
     Rectangle front_rect = back_rect;
-    front_rect.plane.transform.pos -= front_rect.plane.transform.axes[1] * box.depth;
+    front_rect.plane.transform.pos -= box.transform.axes[0] * box.width;
+    front_rect.plane.transform.pos += box.transform.axes[2] * box.depth;
+    front_rect.plane.transform.axes[0] = box.transform.axes[0];
+    front_rect.plane.transform.axes[1] = box.transform.axes[2];
+    front_rect.plane.transform.axes[2] = box.transform.axes[1];
 
     Rectangle left_rect = Rectangle(
         Plane(box.transform, box.material, vec2(0.), false, vec2(0.)),
@@ -670,110 +618,131 @@ bool box_intersect(vec3 origin, vec3 dir, Box box, out vec3 intersection_point, 
     );
     left_rect.plane.transform.axes = mat3(
         box.transform.axes[2],
-        box.transform.axes[0],
+        -box.transform.axes[0],
         box.transform.axes[1]
     );
     Rectangle right_rect = left_rect;
-    right_rect.plane.transform.pos += left_rect.plane.transform.axes[1] * box.width;
+    right_rect.plane.transform.pos += box.transform.axes[0] * box.width;
+    right_rect.plane.transform.pos += box.transform.axes[2] * box.depth;
+    right_rect.plane.transform.axes[0] = -box.transform.axes[2];
+    right_rect.plane.transform.axes[1] = box.transform.axes[0];
 
-    vec3 intersection_points[6];
-    bool hits[6] = bool[](
-        rectangle_intersect(origin, dir, bot_rect, intersection_points[0], max_lambda),
-        rectangle_intersect(origin, dir, top_rect, intersection_points[1], max_lambda),
-        rectangle_intersect(origin, dir, front_rect, intersection_points[2], max_lambda),
-        rectangle_intersect(origin, dir, back_rect, intersection_points[3], max_lambda),
-        rectangle_intersect(origin, dir, left_rect, intersection_points[4], max_lambda),
-        rectangle_intersect(origin, dir, right_rect, intersection_points[5], max_lambda)
-    );
-    //intersection_point = intersection_points[2];
-    //return hits[2];
+    Rectangle rects[6] = Rectangle[](bot_rect, top_rect, front_rect, back_rect, left_rect, right_rect);
 
-    bool any_hit = false;
-    float closest_dist = -1.;
-    for (int i = 0; i < 6; ++i) {
-        if (hits[i]) {
-            float dist = distance(intersection_points[i], origin);
-            if (closest_dist < 0. || dist < closest_dist) {
-                closest_dist = dist;
-                intersection_point = intersection_points[i];
-                any_hit = true;
-            }
+    HitInfo res;
+    res.is_hit = false;
+    int closest_index = -1;
+    for (int i = 0; i < 6; i++) {
+        HitInfo hit_info = rectangle_intersect(origin, dir, rects[i], max_lambda);
+        if (!hit_info.is_hit) continue;
+
+        if (closest_index < 0 || hit_info.dist < res.dist) {
+            res = hit_info;
+            closest_index = i;
         }
     }
+    if (!res.is_hit) return res;
 
-    return any_hit;
+    rectangle_tangent_space(res, rects[closest_index]);
+    
+    switch (closest_index) {
+        case 0: // bot
+            res.tangent_coordinates.x += 1.;
+            break;
+        case 1: // top
+            res.tangent_coordinates.x += 1.;
+            res.tangent_coordinates.y += 2.;
+            break;
+        case 2: // front
+            res.tangent_coordinates.x += 1.;
+            res.tangent_coordinates.y += 1.;
+            break;
+        case 3: // back
+            res.tangent_coordinates.x += 3.;
+            res.tangent_coordinates.y += 1.;
+            break;
+        case 4: // left
+            res.tangent_coordinates.y += 1.;
+            break;
+        case 5: // right
+            res.tangent_coordinates.x += 2.;
+            res.tangent_coordinates.y += 1.;
+            break;
+    }
+    res.tangent_coordinates.x /= 4.;
+    res.tangent_coordinates.y /= 3.;
+
+    return res;
 }
 
-bool intersect_object(vec3 origin, vec3 dir, Object object, out vec3 intersection_point, float max_lambda) {
+HitInfo intersect_object(vec3 origin, vec3 dir, Object object, float max_lambda) {
     int object_type = object.type;
     int object_index = object.index;
 
+    HitInfo res;
+    res.is_hit = false;
     switch(object_type) {
         case OBJECT_TYPE_SPHERE:
             Sphere sphere = spheres[object_index];
-            return sphere_intersect(origin, dir, sphere, intersection_point, max_lambda);
+            res = sphere_intersect(origin, dir, sphere, max_lambda);
+            break;
         case OBJECT_TYPE_PLANE:
             Plane plane = planes[object_index];
-            return plane_intersect(origin, dir, plane, intersection_point, max_lambda);
+            res = plane_intersect(origin, dir, plane, max_lambda);
+            break;
         case OBJECT_TYPE_DISK:
             Disk disk = disks[object_index];
-            return disk_intersect(origin, dir, disk, intersection_point, max_lambda);
+            res = disk_intersect(origin, dir, disk, max_lambda);
+            break;
         case OBJECT_TYPE_HOLLOW_DISK:
             HollowDisk hollow_disk = hollow_disks[object_index];
-            return hollow_disk_intersect(origin, dir, hollow_disk, intersection_point, max_lambda);
+            res = hollow_disk_intersect(origin, dir, hollow_disk, max_lambda);
+            break;
         case OBJECT_TYPE_CYLINDER:
             Cylinder cylinder = cylinders[object_index];
-            return cylinder_intersect(origin, dir, cylinder, intersection_point, max_lambda);
+            res = cylinder_intersect(origin, dir, cylinder, max_lambda);
+            break;
         case OBJECT_TYPE_RECTANGLE:
             Rectangle rectangle = rectangles[object_index];
-            return rectangle_intersect(origin, dir, rectangle, intersection_point, max_lambda);
+            res = rectangle_intersect(origin, dir, rectangle, max_lambda);
+            break;
         case OBJECT_TYPE_BOX:
             Box box = boxes[object_index];
-            return box_intersect(origin, dir, box, intersection_point, max_lambda);
+            res = box_intersect(origin, dir, box, max_lambda);
+            break;
     }
+    res.object = object;
 
-    return false;
+    return res;
 }
 
-bool intersect(vec3 origin, vec3 dir, out vec4 color, float max_lambda) {
-    float min_dist = -1.;
-    bool hit = false;
-    Object object;
-
+vec4 intersect(vec3 origin, vec3 dir, float max_lambda) {
     // black hole check
-    vec3 intersection_point = vec3(0., 0., 0.);
-    if(sphere_intersect(origin, dir, BLACK_HOLE, intersection_point, max_lambda)) {
-        min_dist = distance(intersection_point, origin);
-        hit = true;
-        object = Object(-42, -1);
-    }
+    HitInfo closest_hit = sphere_intersect(origin, dir, BLACK_HOLE, max_lambda);
+    if (closest_hit.is_hit) closest_hit.object = Object(OBJECT_TYPE_SPECIAL, -1);
 
     int num_objects = num_spheres + num_planes + num_disks + num_hollow_disks + num_cylinders + num_rectangles + num_boxes;
     for(int i = 0; i < num_objects; i++) {
         Object current_object = objects[i];
 
-        vec3 current_intersection_point;
-        if (intersect_object(origin, dir, current_object, current_intersection_point, max_lambda)) {
-            float dist = distance(current_intersection_point, origin);
-            if(!hit || dist < min_dist) {
-                min_dist = dist;
-                hit = true;
-                intersection_point = current_intersection_point;
-                object = current_object;
-            }
+        HitInfo hit = intersect_object(origin, dir, current_object, max_lambda);
+        if (!hit.is_hit) continue;
+
+        if(!closest_hit.is_hit || hit.dist < closest_hit.dist) {
+            closest_hit = hit;
         }
     }
 
-    color = vec4(0., 0., 0., 0.);
-    if(hit) {
-        color = calculate_lighting(intersection_point, -dir, object);
+    vec4 color = vec4(0., 0., 0., 0.);
+    if (closest_hit.is_hit) {
+        color = calculate_lighting(closest_hit, -dir);
     }
 
-    return color.a == 1.;
+    return color;
 }
 
-bool intersect(vec3 origin, vec3 dir, out vec4 color) {
-    return intersect(origin, dir, color, -1.);
+vec4 intersect(vec3 origin, vec3 dir) {
+    return intersect(origin, dir, -1.);
 }
 // #endregion
 
@@ -815,8 +784,7 @@ void main() {
     }
 
     vec3 normal_vec = normalize(ray_pos);
-    bool hit_opaque;
-    if(
+    if (
         (
             raytrace_type == RAYTRACE_TYPE_FLAT ||
             (raytrace_type == RAYTRACE_TYPE_HALF_WIDTH && uv.x > 2. * curved_percentage + -1.) ||
@@ -824,11 +792,9 @@ void main() {
         ) || // flat space
         abs(dot(ray, normal_vec)) >= 1. - epsilon // radial trajectory
     ) {
-        vec4 intersection_color;
-        hit_opaque = intersect(ray_pos, ray, intersection_color);
+        vec4 intersection_color = intersect(ray_pos, ray);
         FragColor += intersection_color;
-        if(!hit_opaque)
-            FragColor += get_bg(ray);
+        if (intersection_color.a != 1.) FragColor += get_bg(ray);
         return;
     }
 
@@ -842,28 +808,24 @@ void main() {
     for(int i = 0; i < max_steps; i++) {
         if(u < u_f) {
             // flat space approximation
-            vec3 u_f_intersection_point;
-            if(!sphere_intersect(ray_pos, ray, Sphere(Transform(vec3(0., 0., 0.), DEFAULT_AXES), BLANK_MAT, 1. / u_f), u_f_intersection_point)) {
-                vec4 intersection_color;
-                hit_opaque = intersect(ray_pos, ray, intersection_color);
+            HitInfo u_f_hit = sphere_intersect(ray_pos, ray, Sphere(Transform(vec3(0., 0., 0.), DEFAULT_AXES), BLANK_MAT, 1. / u_f));
+            if (!u_f_hit.is_hit) {
+                vec4 intersection_color = intersect(ray_pos, ray);
                 FragColor += intersection_color;
-                if(!hit_opaque)
-                    FragColor += get_bg(ray);
+                if(intersection_color.a != 1.) FragColor += get_bg(ray);
                 return;
             }
 
-            normal_vec = normalize(u_f_intersection_point);
+            normal_vec = normalize(u_f_hit.intersection_point);
             if(abs(dot(ray, normal_vec)) >= 1. - epsilon) { // if radial trajectory
-                vec4 intersection_color;
-                hit_opaque = intersect(ray_pos, ray, intersection_color);
+                vec4 intersection_color = intersect(ray_pos, ray);
                 FragColor += intersection_color;
-                if(!hit_opaque)
-                    FragColor += get_bg(ray);
+                if(intersection_color.a != 1.) FragColor += get_bg(ray);
                 return;
             }
 
             tangent_vec = normalize(cross(cross(normal_vec, ray), normal_vec));
-            u = 1. / length(u_f_intersection_point);
+            u = 1. / length(u_f_hit.intersection_point);
             du = -u * dot(ray, normal_vec) / dot(ray, tangent_vec);
         }
 
@@ -883,11 +845,9 @@ void main() {
         float ray_length = length(delta_ray);
         ray = delta_ray / ray_length;
 
-        vec4 intersection_color;
-        hit_opaque = intersect(prev_ray_pos, ray, intersection_color, ray_length);
+        vec4 intersection_color = intersect(prev_ray_pos, ray, ray_length);
         FragColor += intersection_color;
-        if(hit_opaque)
-            return;
+        if(intersection_color.a == 1.) return;
     }
 
     FragColor += get_bg(ray);
