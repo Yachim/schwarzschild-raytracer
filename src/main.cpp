@@ -265,6 +265,13 @@ int main(int, char**) {
         }
 #pragma endregion
 
+        if (input->isPressed(GLFW_KEY_C)) {
+            glUniform1i(glGetUniformLocation(shaderProgram, "crosshair"), 1);
+        }
+        else {
+            glUniform1i(glGetUniformLocation(shaderProgram, "crosshair"), 0);
+        }
+
         if (input->isPressed(GLFW_KEY_F) && !input->isPressed(GLFW_KEY_F, GLFW_MOD_ALT) && !input->isPressed(GLFW_KEY_F, GLFW_MOD_CAPS_LOCK)) {
             if (cam.getOrthographic()) {
                 cam.setOrthographicWidth(DEFAULT_ORTHOGRAPHIC_WIDTH);

@@ -21,7 +21,14 @@ uniform int max_steps = 1000;
 uniform int max_revolutions = 2;
 
 uniform float u_f = 0.01;
-uniform float parallel_threshold = 0.9999999; // minimum value of a dot product of two unit vectors a . b, when the vectors are considered parallel; perpendicular_threshold = 1 - parallel_threshold
+
+uniform bool crosshair = false;
+const float crosshair_length = 10.;
+const float crosshair_width = 2.;
+const float crosshair_space = 5.;
+const vec4 crosshair_color = vec4(0.5, 0.5, 0.5, 0.5);
+
+const float epsilon = 0.0000001;
 
 const int RAYTRACE_TYPE_CURVED      = 0;
 const int RAYTRACE_TYPE_FLAT        = 1;
@@ -469,7 +476,7 @@ bool sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, out vec3 intersectio
 bool plane_intersect(vec3 origin, vec3 dir, Plane plane, out vec3 intersection_point, float max_lambda) {
     vec3 normal = plane.transform.axes[1];
     float denom = dot(normal, dir);
-    if(abs(denom) < 1. - parallel_threshold)
+    if(abs(denom) < epsilon)
         return false;
 
     float lambda = dot(normal, plane.transform.pos - origin) / denom;
@@ -623,6 +630,21 @@ vec4 get_bg(vec3 dir) {
 }
 
 void main() {
+    FragColor = vec4(0.);
+    if (crosshair && ( // dividing by two because uv is in [-1, 1]
+        (
+            abs(uv.x * resolution.x / 2.) < crosshair_width / 2. && 
+            abs(uv.y * resolution.y / 2.) > crosshair_space && 
+            abs(uv.y * resolution.y / 2.) < crosshair_length + crosshair_space
+        ) || (
+            abs(uv.y * resolution.y / 2.) < crosshair_width / 2. && 
+            abs(uv.x * resolution.x / 2.) > crosshair_space && 
+            abs(uv.x * resolution.x / 2.) < crosshair_length + crosshair_space
+        )
+    )) {
+        FragColor = crosshair_color;
+    }
+
     float ray_forward = 1. / tan(cam.fov / 360. * PI);
     float max_angle = 2. * float(max_revolutions) * PI;
 
@@ -636,14 +658,13 @@ void main() {
 
     vec3 normal_vec = normalize(ray_pos);
     bool hit_opaque;
-    FragColor = vec4(0., 0., 0., 0.);
     if(
         (
             raytrace_type == RAYTRACE_TYPE_FLAT ||
             (raytrace_type == RAYTRACE_TYPE_HALF_WIDTH && uv.x > 2. * curved_percentage + -1.) ||
             (raytrace_type == RAYTRACE_TYPE_HALF_HEIGHT && uv.y > 2. * curved_percentage + -1.)
         ) || // flat space
-        abs(dot(ray, normal_vec)) >= parallel_threshold // radial trajectory
+        abs(dot(ray, normal_vec)) >= 1. - epsilon // radial trajectory
     ) {
         vec4 intersection_color;
         hit_opaque = intersect(ray_pos, ray, intersection_color);
@@ -674,7 +695,7 @@ void main() {
             }
 
             normal_vec = normalize(u_f_intersection_point);
-            if(abs(dot(ray, normal_vec)) >= parallel_threshold) { // if radial trajectory
+            if(abs(dot(ray, normal_vec)) >= 1. - epsilon) { // if radial trajectory
                 vec4 intersection_color;
                 hit_opaque = intersect(ray_pos, ray, intersection_color);
                 FragColor += intersection_color;
