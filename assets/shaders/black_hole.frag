@@ -204,6 +204,11 @@ Material get_object_material(Object object) {
     }
 }
 
+struct Ray {
+    vec3 origin;
+    vec3 dir;
+};
+
 struct HitInfo {
   bool is_hit;
   float dist;
@@ -452,16 +457,16 @@ float min_positive(float n1, float n2) {
 }
 
 // #region intersections
-HitInfo sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, float max_lambda) {
+HitInfo sphere_intersect(Ray ray, Sphere sphere, float max_lambda) {
     HitInfo res;
-    float D = pow(dot(dir, origin - sphere.transform.pos), 2) - square_vector(origin - sphere.transform.pos) + sphere.radius * sphere.radius;
+    float D = pow(dot(ray.dir, ray.origin - sphere.transform.pos), 2) - square_vector(ray.origin - sphere.transform.pos) + sphere.radius * sphere.radius;
     if(D < 0) {
         res.is_hit = false;
         return res;
     }
 
     float sqrt_D = sqrt(D);
-    float first_term = -dot(dir, origin - sphere.transform.pos);
+    float first_term = -dot(ray.dir, ray.origin - sphere.transform.pos);
     float lambda1 = first_term - sqrt_D;
     float lambda2 = first_term + sqrt_D;
 
@@ -469,44 +474,44 @@ HitInfo sphere_intersect(vec3 origin, vec3 dir, Sphere sphere, float max_lambda)
 
     res.is_hit = lambda >= 0 && (max_lambda < 0. || lambda <= max_lambda);
     if (!res.is_hit) return res;
-    res.intersection_point = origin + lambda * dir;
-    res.dist = distance(res.intersection_point, origin);
+    res.intersection_point = ray.origin + lambda * ray.dir;
+    res.dist = distance(res.intersection_point, ray.origin);
     sphere_tangent_space(res, sphere);
     return res;
 }
-HitInfo sphere_intersect(vec3 origin, vec3 dir, Sphere sphere) {
-    return sphere_intersect(origin, dir, sphere, -1.);
+HitInfo sphere_intersect(Ray ray, Sphere sphere) {
+    return sphere_intersect(ray, sphere, -1.);
 }
 
-HitInfo plane_intersect(vec3 origin, vec3 dir, Plane plane, float max_lambda) {
+HitInfo plane_intersect(Ray ray, Plane plane, float max_lambda) {
     HitInfo res;
 
     vec3 normal = plane.transform.axes[1];
-    float denom = dot(normal, dir);
+    float denom = dot(normal, ray.dir);
     if(abs(denom) < epsilon) {
         res.is_hit = false;
         return res;
     }
 
-    float lambda = dot(normal, plane.transform.pos - origin) / denom;
+    float lambda = dot(normal, plane.transform.pos - ray.origin) / denom;
     res.is_hit = lambda >= 0. && (max_lambda < 0. || lambda <= max_lambda);
     if (!res.is_hit) return res;
-    res.intersection_point = origin + dir * lambda;
-    res.dist = distance(res.intersection_point, origin);
+    res.intersection_point = ray.origin + ray.dir * lambda;
+    res.dist = distance(res.intersection_point, ray.origin);
     plane_tangent_space(res, plane);
     return res;
 }
 
-HitInfo disk_intersect(vec3 origin, vec3 dir, Disk disk, float max_lambda) {
-    HitInfo res = plane_intersect(origin, dir, disk.plane, max_lambda);
+HitInfo disk_intersect(Ray ray, Disk disk, float max_lambda) {
+    HitInfo res = plane_intersect(ray, disk.plane, max_lambda);
     res.is_hit = res.is_hit && square_vector(res.intersection_point - disk.plane.transform.pos) <= disk.radius * disk.radius;
     if (!res.is_hit) return res;
     disk_tangent_space(res, disk);
     return res;
 }
 
-HitInfo hollow_disk_intersect(vec3 origin, vec3 dir, HollowDisk disk, float max_lambda) {
-    HitInfo res = plane_intersect(origin, dir, disk.plane, max_lambda);
+HitInfo hollow_disk_intersect(Ray ray, HollowDisk disk, float max_lambda) {
+    HitInfo res = plane_intersect(ray, disk.plane, max_lambda);
     float squared_dist = square_vector(res.intersection_point - disk.plane.transform.pos);
     res.is_hit = res.is_hit && squared_dist >= disk.inner_radius * disk.inner_radius && squared_dist <= disk.outer_radius * disk.outer_radius;
     if (!res.is_hit) return res;
@@ -518,18 +523,18 @@ bool is_in_range(float n, float minimum, float maximum) {
     return n >= minimum && n <= maximum;
 }
 
-HitInfo cylinder_intersect(vec3 origin, vec3 dir, Cylinder cylinder, float max_lambda) {
+HitInfo cylinder_intersect(Ray ray, Cylinder cylinder, float max_lambda) {
     vec3 pos = cylinder.transform.pos;
     vec3 axis = cylinder.transform.axes[1];
     float height = cylinder.height;
 
-    vec3 dir_parallel = dot(dir, axis) * axis;
-    vec3 dir_perp = dir - dir_parallel;
+    vec3 dir_parallel = dot(ray.dir, axis) * axis;
+    vec3 dir_perp = ray.dir - dir_parallel;
     float dir_perp_length_squared = square_vector(dir_perp);
 
     float radiusSquared = cylinder.radius * cylinder.radius;
 
-    vec3 l_ = pos - origin;
+    vec3 l_ = pos - ray.origin;
     vec3 l = l_ - dot(l_, axis) * axis;
     float lambda_C = dot(l, dir_perp) / dir_perp_length_squared;
     float dSquared = square_vector(lambda_C * dir_perp - l);
@@ -542,8 +547,8 @@ HitInfo cylinder_intersect(vec3 origin, vec3 dir, Cylinder cylinder, float max_l
 
     float lambda1 = lambda_C - lambda_0C;
     float lambda2 = lambda_C + lambda_0C;
-    vec3 intersection_point1 = origin + dir * lambda1;
-    vec3 intersection_point2 = origin + dir * lambda2;
+    vec3 intersection_point1 = ray.origin + ray.dir * lambda1;
+    vec3 intersection_point2 = ray.origin + ray.dir * lambda2;
     bool inCylinder1 = is_in_range(dot(intersection_point1 - pos, axis), 0., height);
     bool inCylinder2 = is_in_range(dot(intersection_point2 - pos, axis), 0., height);
 
@@ -559,16 +564,16 @@ HitInfo cylinder_intersect(vec3 origin, vec3 dir, Cylinder cylinder, float max_l
     else if (inCylinder2)
         lambda = lambda2;
 
-    res.intersection_point = origin + dir * lambda;
+    res.intersection_point = ray.origin + ray.dir * lambda;
     res.is_hit = lambda >= 0. && (max_lambda < 0. || lambda <= max_lambda);
     if (!res.is_hit) return res;
-    res.dist = distance(res.intersection_point, origin);
+    res.dist = distance(res.intersection_point, ray.origin);
     cylinder_tangent_space(res, cylinder);
     return res;
 }
 
-HitInfo rectangle_intersect(vec3 origin, vec3 dir, Rectangle rectangle, float max_lambda) {
-    HitInfo res = plane_intersect(origin, dir, rectangle.plane, max_lambda);
+HitInfo rectangle_intersect(Ray ray, Rectangle rectangle, float max_lambda) {
+    HitInfo res = plane_intersect(ray, rectangle.plane, max_lambda);
     if (!res.is_hit) return res;
 
     Transform transform = rectangle.plane.transform;
@@ -580,7 +585,7 @@ HitInfo rectangle_intersect(vec3 origin, vec3 dir, Rectangle rectangle, float ma
     return res;
 }
 
-HitInfo box_intersect(vec3 origin, vec3 dir, Box box, float max_lambda) {
+HitInfo box_intersect(Ray ray, Box box, float max_lambda) {
     Rectangle bot_rect = Rectangle(
         Plane(box.transform, box.material, vec2(0.), false, vec2(0.)),
         box.width,
@@ -633,7 +638,7 @@ HitInfo box_intersect(vec3 origin, vec3 dir, Box box, float max_lambda) {
     res.is_hit = false;
     int closest_index = -1;
     for (int i = 0; i < 6; i++) {
-        HitInfo hit_info = rectangle_intersect(origin, dir, rects[i], max_lambda);
+        HitInfo hit_info = rectangle_intersect(ray, rects[i], max_lambda);
         if (!hit_info.is_hit) continue;
 
         if (closest_index < 0 || hit_info.dist < res.dist) {
@@ -675,7 +680,7 @@ HitInfo box_intersect(vec3 origin, vec3 dir, Box box, float max_lambda) {
     return res;
 }
 
-HitInfo intersect_object(vec3 origin, vec3 dir, Object object, float max_lambda) {
+HitInfo intersect_object(Ray ray, Object object, float max_lambda) {
     int object_type = object.type;
     int object_index = object.index;
 
@@ -684,31 +689,31 @@ HitInfo intersect_object(vec3 origin, vec3 dir, Object object, float max_lambda)
     switch(object_type) {
         case OBJECT_TYPE_SPHERE:
             Sphere sphere = spheres[object_index];
-            res = sphere_intersect(origin, dir, sphere, max_lambda);
+            res = sphere_intersect(ray, sphere, max_lambda);
             break;
         case OBJECT_TYPE_PLANE:
             Plane plane = planes[object_index];
-            res = plane_intersect(origin, dir, plane, max_lambda);
+            res = plane_intersect(ray, plane, max_lambda);
             break;
         case OBJECT_TYPE_DISK:
             Disk disk = disks[object_index];
-            res = disk_intersect(origin, dir, disk, max_lambda);
+            res = disk_intersect(ray, disk, max_lambda);
             break;
         case OBJECT_TYPE_HOLLOW_DISK:
             HollowDisk hollow_disk = hollow_disks[object_index];
-            res = hollow_disk_intersect(origin, dir, hollow_disk, max_lambda);
+            res = hollow_disk_intersect(ray, hollow_disk, max_lambda);
             break;
         case OBJECT_TYPE_CYLINDER:
             Cylinder cylinder = cylinders[object_index];
-            res = cylinder_intersect(origin, dir, cylinder, max_lambda);
+            res = cylinder_intersect(ray, cylinder, max_lambda);
             break;
         case OBJECT_TYPE_RECTANGLE:
             Rectangle rectangle = rectangles[object_index];
-            res = rectangle_intersect(origin, dir, rectangle, max_lambda);
+            res = rectangle_intersect(ray, rectangle, max_lambda);
             break;
         case OBJECT_TYPE_BOX:
             Box box = boxes[object_index];
-            res = box_intersect(origin, dir, box, max_lambda);
+            res = box_intersect(ray, box, max_lambda);
             break;
     }
     res.object = object;
@@ -716,16 +721,16 @@ HitInfo intersect_object(vec3 origin, vec3 dir, Object object, float max_lambda)
     return res;
 }
 
-vec4 intersect(vec3 origin, vec3 dir, float max_lambda) {
+vec4 intersect(Ray ray, float max_lambda) {
     // black hole check
-    HitInfo closest_hit = sphere_intersect(origin, dir, BLACK_HOLE, max_lambda);
+    HitInfo closest_hit = sphere_intersect(ray, BLACK_HOLE, max_lambda);
     if (closest_hit.is_hit) closest_hit.object = Object(OBJECT_TYPE_SPECIAL, -1);
 
     int num_objects = num_spheres + num_planes + num_disks + num_hollow_disks + num_cylinders + num_rectangles + num_boxes;
     for(int i = 0; i < num_objects; i++) {
         Object current_object = objects[i];
 
-        HitInfo hit = intersect_object(origin, dir, current_object, max_lambda);
+        HitInfo hit = intersect_object(ray, current_object, max_lambda);
         if (!hit.is_hit) continue;
 
         if(!closest_hit.is_hit || hit.dist < closest_hit.dist) {
@@ -735,14 +740,14 @@ vec4 intersect(vec3 origin, vec3 dir, float max_lambda) {
 
     vec4 color = vec4(0., 0., 0., 0.);
     if (closest_hit.is_hit) {
-        color = calculate_lighting(closest_hit, -dir);
+        color = calculate_lighting(closest_hit, -ray.dir);
     }
 
     return color;
 }
 
-vec4 intersect(vec3 origin, vec3 dir) {
-    return intersect(origin, dir, -1.);
+vec4 intersect(Ray ray) {
+    return intersect(ray, -1.);
 }
 // #endregion
 
@@ -776,57 +781,56 @@ void main() {
     float max_angle = 2. * float(max_revolutions) * PI;
 
     vec2 uv_vec = vec2(uv.x, uv.y * resolution.y / resolution.x);
-    vec3 ray = normalize(cam.transform.axes * vec3(uv_vec, ray_forward));
-    vec3 ray_pos = cam.transform.pos;
+    Ray ray = Ray(cam.transform.pos, normalize(cam.transform.axes * vec3(uv_vec, ray_forward)));
     if (cam.orthographic) {
-        ray = cam.transform.axes[2];
-        ray_pos = cam.transform.pos + cam.transform.axes * cam.orthographic_width * vec3(uv_vec, 0.);
+        ray.dir = cam.transform.axes[2];
+        ray.origin = cam.transform.pos + cam.transform.axes * cam.orthographic_width * vec3(uv_vec, 0.);
     }
 
-    vec3 normal_vec = normalize(ray_pos);
+    vec3 normal_vec = normalize(ray.origin);
     if (
         (
             raytrace_type == RAYTRACE_TYPE_FLAT ||
             (raytrace_type == RAYTRACE_TYPE_HALF_WIDTH && uv.x > 2. * curved_percentage + -1.) ||
             (raytrace_type == RAYTRACE_TYPE_HALF_HEIGHT && uv.y > 2. * curved_percentage + -1.)
         ) || // flat space
-        abs(dot(ray, normal_vec)) >= 1. - epsilon // radial trajectory
+        abs(dot(ray.dir, normal_vec)) >= 1. - epsilon // radial trajectory
     ) {
-        vec4 intersection_color = intersect(ray_pos, ray);
+        vec4 intersection_color = intersect(ray);
         FragColor += intersection_color;
-        if (intersection_color.a != 1.) FragColor += get_bg(ray);
+        if (intersection_color.a != 1.) FragColor += get_bg(ray.dir);
         return;
     }
 
-    vec3 tangent_vec = normalize(cross(cross(normal_vec, ray), normal_vec));
+    vec3 tangent_vec = normalize(cross(cross(normal_vec, ray.dir), normal_vec));
 
     vec3 prev_ray_pos;
-    float u = 1. / length(ray_pos);
-    float du = -u * dot(ray, normal_vec) / dot(ray, tangent_vec);
+    float u = 1. / length(ray.origin);
+    float du = -u * dot(ray.dir, normal_vec) / dot(ray.dir, tangent_vec);
 
     float phi = 0.;
     for(int i = 0; i < max_steps; i++) {
         if(u < u_f) {
             // flat space approximation
-            HitInfo u_f_hit = sphere_intersect(ray_pos, ray, Sphere(Transform(vec3(0., 0., 0.), DEFAULT_AXES), BLANK_MAT, 1. / u_f));
+            HitInfo u_f_hit = sphere_intersect(ray, Sphere(Transform(vec3(0., 0., 0.), DEFAULT_AXES), BLANK_MAT, 1. / u_f));
             if (!u_f_hit.is_hit) {
-                vec4 intersection_color = intersect(ray_pos, ray);
+                vec4 intersection_color = intersect(ray);
                 FragColor += intersection_color;
-                if(intersection_color.a != 1.) FragColor += get_bg(ray);
+                if(intersection_color.a != 1.) FragColor += get_bg(ray.dir);
                 return;
             }
 
             normal_vec = normalize(u_f_hit.intersection_point);
-            if(abs(dot(ray, normal_vec)) >= 1. - epsilon) { // if radial trajectory
-                vec4 intersection_color = intersect(ray_pos, ray);
+            if(abs(dot(ray.dir, normal_vec)) >= 1. - epsilon) { // if radial trajectory
+                vec4 intersection_color = intersect(ray);
                 FragColor += intersection_color;
-                if(intersection_color.a != 1.) FragColor += get_bg(ray);
+                if(intersection_color.a != 1.) FragColor += get_bg(ray.dir);
                 return;
             }
 
-            tangent_vec = normalize(cross(cross(normal_vec, ray), normal_vec));
+            tangent_vec = normalize(cross(cross(normal_vec, ray.dir), normal_vec));
             u = 1. / length(u_f_hit.intersection_point);
-            du = -u * dot(ray, normal_vec) / dot(ray, tangent_vec);
+            du = -u * dot(ray.dir, normal_vec) / dot(ray.dir, tangent_vec);
         }
 
         float step_size = (max_angle - phi) / float(max_steps - i);
@@ -839,16 +843,16 @@ void main() {
         if(u < 0.)
             break;
 
-        prev_ray_pos = ray_pos;
-        ray_pos = (cos(phi) * normal_vec + sin(phi) * tangent_vec) / u;
-        vec3 delta_ray = ray_pos - prev_ray_pos;
+        prev_ray_pos = ray.origin;
+        ray.origin = (cos(phi) * normal_vec + sin(phi) * tangent_vec) / u;
+        vec3 delta_ray = ray.origin - prev_ray_pos;
         float ray_length = length(delta_ray);
-        ray = delta_ray / ray_length;
+        ray.dir = delta_ray / ray_length;
 
-        vec4 intersection_color = intersect(prev_ray_pos, ray, ray_length);
+        vec4 intersection_color = intersect(Ray(prev_ray_pos, ray.dir), ray_length);
         FragColor += intersection_color;
         if(intersection_color.a == 1.) return;
     }
 
-    FragColor += get_bg(ray);
+    FragColor += get_bg(ray.dir);
 }
