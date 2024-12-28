@@ -124,9 +124,7 @@ int main(int, char**) {
     glUniform1i(glGetUniformLocation(shaderProgram, "background_texture"), 0);
 
     std::vector<std::string> texturePaths = {
-        "assets/textures/2k_earth_daymap.jpg",
-        "assets/textures/2k_saturn_ring_alpha.png",
-        "assets/textures/2k_earth_normal_map.jpg",
+        "assets/textures/uv_checker.jpg",
         "assets/textures/cubemap.png"
     };
 
@@ -144,22 +142,45 @@ int main(int, char**) {
     Sphere sphere(glm::vec3(-10., 0., 0.));
     sphere.setMaterialColor(glm::vec4(1., 0., 0., 1.));
     sphere.setMaterialTextureIndex(0);
-    sphere.setMaterialNormalMapIndex(2);
     objectLoader->addSphere(&sphere);
 
+    Disk disk;
+    disk.setRadius(2.);
+    disk.setPos(glm::vec3(0., 0., -10.));
+    disk.setAxes(glm::mat3(
+        glm::vec3(-1. / sqrt(6.), sqrt(2. / 3.), -1. / sqrt(6.)),
+        glm::vec3(1. / sqrt(3.), 1. / sqrt(3.), 1. / sqrt(3.)),
+        glm::vec3(1. / sqrt(2.), 0., -1. / sqrt(2.))
+    ));
+    disk.setMaterialTextureIndex(0);
+    objectLoader->addDisk(&disk);
+
     HollowDisk accretionDisk;
-    accretionDisk.setMaterialColor(glm::vec4(1., 0.5, 0.1, 1.));
-    accretionDisk.setMaterialTextureIndex(1);
+    accretionDisk.setMaterialTextureIndex(0);
     objectLoader->addHollowDisk(&accretionDisk);
 
     Light light;
     light.setIntensity(8.);
     objectLoader->addLight(&light);
 
+    Rectangle rect;
+    rect.setPos(glm::vec3(0., 0., 10.));
+    rect.setWidth(3.);
+    rect.setHeight(2.);
+    rect.setMaterialTextureIndex(0);
+    objectLoader->addRectangle(&rect);
+
     Box box;
     box.setPos(glm::vec3(10., 0., 0.));
-    box.setMaterialTextureIndex(3);
+    box.setMaterialTextureIndex(1);
     objectLoader->addBox(&box);
+
+    LateralCylinder cyl;
+    cyl.setPos(glm::vec3(0., 10., 0.));
+    cyl.setHeight(5.);
+    cyl.setRadius(2.);
+    cyl.setMaterialTextureIndex(0);
+    objectLoader->addLateralCylinder(&cyl);
 
     glUseProgram(shaderProgram);
 

@@ -227,14 +227,14 @@ void sphere_tangent_space(inout HitInfo hit_info, Sphere sphere) {
     vec3 normal = normalize(displacement);
 
     vec3 local_displacement = transpose(transform.axes) * displacement;
-    float phi = atan(local_displacement.z, local_displacement.x);
+    float phi = atan(local_displacement.x, local_displacement.z);
     if (phi < 0.) phi += 2.* PI;
     float theta = asin(local_displacement.y / sphere.radius);
 
     hit_info.tangent_coordinates = vec2(phi / (2. * PI), theta / PI + 0.5);
 
-    vec3 tangent = vec3(sin(phi), 0.0, -cos(phi));
-    vec3 bitangent = vec3(-cos(phi) * cos(theta), sin(theta), -sin(phi) * cos(theta));
+    vec3 tangent = vec3(cos(phi), 0.0, -sin(phi));
+    vec3 bitangent = vec3(sin(phi) * cos(theta), sin(theta), cos(phi) * cos(theta));
 
     tangent = transform.axes * tangent;
     bitangent = transform.axes * bitangent;
@@ -252,10 +252,11 @@ void plane_tangent_space(inout HitInfo hit_info, Plane plane) {
 
     vec3 local_displacement = transpose(transform.axes) * displacement;
     hit_info.tangent_coordinates = local_displacement.xz;
+    hit_info.tangent_coordinates.y *= -1.;
 
     hit_info.tangent_space = mat3(
         transform.axes[0],
-        transform.axes[2],
+        -transform.axes[2],
         transform.axes[1]
     );
 }
@@ -265,7 +266,7 @@ void disk_tangent_space(inout HitInfo hit_info, Disk disk) {
     vec3 displacement = hit_info.intersection_point - transform.pos;
 
     vec3 local_displacement = transpose(transform.axes) * displacement;
-    float phi = atan(local_displacement.z, local_displacement.x);
+    float phi = atan(local_displacement.x, local_displacement.z);
     if (phi < 0.) phi += 2.* PI;
 
     hit_info.tangent_coordinates = vec2(
@@ -274,7 +275,7 @@ void disk_tangent_space(inout HitInfo hit_info, Disk disk) {
     );
 
     vec3 tangent = normalize(displacement);
-    vec3 bitangent = vec3(sin(phi), 0., -cos(phi));
+    vec3 bitangent = vec3(cos(phi), 0., -sin(phi));
     bitangent = transform.axes * bitangent;
 
     hit_info.tangent_space = mat3(
@@ -289,7 +290,7 @@ void hollow_disk_tangent_space(inout HitInfo hit_info, HollowDisk disk) {
     vec3 displacement = hit_info.intersection_point - transform.pos;
 
     vec3 local_displacement = transpose(transform.axes) * displacement;
-    float phi = atan(local_displacement.z, local_displacement.x);
+    float phi = atan(local_displacement.x, local_displacement.z);
     if (phi < 0.) phi += 2.* PI;
 
     hit_info.tangent_coordinates = vec2(
@@ -298,7 +299,7 @@ void hollow_disk_tangent_space(inout HitInfo hit_info, HollowDisk disk) {
     );
 
     vec3 tangent = normalize(displacement);
-    vec3 bitangent = vec3(sin(phi), 0., -cos(phi));
+    vec3 bitangent = vec3(cos(phi), 0., -sin(phi));
     bitangent = transform.axes * bitangent;
 
     hit_info.tangent_space = mat3(
@@ -315,15 +316,15 @@ void cylinder_tangent_space(inout HitInfo hit_info, Cylinder cylinder) {
     vec3 bitangent = transform.axes[1];
 
     vec3 local_displacement = transpose(transform.axes) * displacement;
-    float phi = atan(local_displacement.z, local_displacement.x);
+    float phi = atan(local_displacement.x, local_displacement.z);
     if (phi < 0.) phi += 2.* PI;
 
     hit_info.tangent_coordinates = vec2(
-        local_displacement.y / cylinder.height,
-        phi / (2. * PI)
+        phi / (2. * PI),
+        local_displacement.y / cylinder.height
     );
 
-    vec3 tangent = vec3(sin(phi), 0.0, -cos(phi));
+    vec3 tangent = cylinder.transform.axes * vec3(cos(phi), 0.0, -sin(phi));
     hit_info.tangent_space = mat3(
         tangent,
         bitangent,
@@ -337,12 +338,18 @@ void rectangle_tangent_space(inout HitInfo hit_info, Rectangle rectangle) {
 
     vec3 local_displacement = transpose(transform.axes) * displacement;
     hit_info.tangent_coordinates = local_displacement.xz / vec2(rectangle.width, rectangle.height);
+    hit_info.tangent_coordinates.y = 1. - hit_info.tangent_coordinates.y;
 
     hit_info.tangent_space = mat3(
         transform.axes[0],
-        transform.axes[2],
+        -transform.axes[2],
         transform.axes[1]
     );
+}
+
+// rectangle_index: [bot, top, front, back, left, right]
+void box_tangent_space(inout HitInfo hit_info, Box box, int rectangle_index) {
+
 }
 // #endregion
 
@@ -591,50 +598,66 @@ HitInfo rectangle_intersect(Ray ray, Rectangle rectangle, float max_lambda) {
 
 HitInfo box_intersect(Ray ray, Box box, float max_lambda) {
     Rectangle bot_rect = Rectangle(
-        Plane(box.transform, box.material, vec2(0.), false, vec2(0.)),
+        Plane(Transform(
+            box.transform.pos + box.transform.axes[2] * box.depth,
+            mat3(
+                box.transform.axes[0],
+                -box.transform.axes[1],
+                -box.transform.axes[2]
+            )
+        ), box.material, vec2(0.), false, vec2(0.)),
         box.width,
         box.depth
     );
-    bot_rect.plane.transform.axes[1] *= -1.;
     Rectangle top_rect = bot_rect;
-    top_rect.plane.transform.pos += box.transform.axes[1] * box.height;
-    top_rect.plane.transform.pos += box.transform.axes[2] * box.depth;
-    top_rect.plane.transform.axes[1] = box.transform.axes[1];
-    top_rect.plane.transform.axes[2] = -box.transform.axes[2];
+    top_rect.plane.transform = Transform(
+        box.transform.pos + box.transform.axes[1] * box.height,
+        box.transform.axes
+    );
 
     Rectangle back_rect = Rectangle(
-        Plane(box.transform, box.material, vec2(0.), false, vec2(0.)),
+        Plane(Transform(
+            box.transform.pos + box.transform.axes * vec3(box.width, box.height, 0.),
+            mat3(
+                -box.transform.axes[0],
+                -box.transform.axes[2],
+                -box.transform.axes[1]
+            )
+        ), box.material, vec2(0.), false, vec2(0.)),
         box.width,
         box.height
     );
-    back_rect.plane.transform.axes = mat3(
-        -box.transform.axes[0],
-        -box.transform.axes[2],
-        box.transform.axes[1]
-    );
-    back_rect.plane.transform.pos += box.transform.axes[0] * box.width;
     Rectangle front_rect = back_rect;
-    front_rect.plane.transform.pos -= box.transform.axes[0] * box.width;
-    front_rect.plane.transform.pos += box.transform.axes[2] * box.depth;
-    front_rect.plane.transform.axes[0] = box.transform.axes[0];
-    front_rect.plane.transform.axes[1] = box.transform.axes[2];
-    front_rect.plane.transform.axes[2] = box.transform.axes[1];
+    front_rect.plane.transform = Transform(
+        box.transform.pos + box.transform.axes * vec3(0., box.height, box.depth),
+        mat3(
+            box.transform.axes[0],
+            box.transform.axes[2],
+            -box.transform.axes[1]
+        )
+    );
 
     Rectangle left_rect = Rectangle(
-        Plane(box.transform, box.material, vec2(0.), false, vec2(0.)),
+        Plane(Transform(
+            box.transform.pos + box.transform.axes[1] * box.height,
+            mat3(
+                box.transform.axes[2],
+                -box.transform.axes[0],
+                -box.transform.axes[1]
+            )
+        ), box.material, vec2(0.), false, vec2(0.)),
         box.depth,
         box.height
     );
-    left_rect.plane.transform.axes = mat3(
-        box.transform.axes[2],
-        -box.transform.axes[0],
-        box.transform.axes[1]
-    );
     Rectangle right_rect = left_rect;
-    right_rect.plane.transform.pos += box.transform.axes[0] * box.width;
-    right_rect.plane.transform.pos += box.transform.axes[2] * box.depth;
-    right_rect.plane.transform.axes[0] = -box.transform.axes[2];
-    right_rect.plane.transform.axes[1] = box.transform.axes[0];
+    right_rect.plane.transform = Transform(
+        box.transform.pos + box.transform.axes * vec3(box.width, box.height, box.depth),
+        mat3(
+            -box.transform.axes[2],
+            box.transform.axes[0],
+            -box.transform.axes[1]
+        )
+    );
 
     Rectangle rects[6] = Rectangle[](bot_rect, top_rect, front_rect, back_rect, left_rect, right_rect);
 

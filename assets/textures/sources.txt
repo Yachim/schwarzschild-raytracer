@@ -1,0 +1,9 @@
+https://www.solarsystemscope.com/textures/
+ - background/*
+ - 2k_*
+
+own work
+ - cubemap.png
+
+https://commons.wikimedia.org/wiki/File:UV_checker_Map_byValle.jpg
+ - uv_checker.jpg
