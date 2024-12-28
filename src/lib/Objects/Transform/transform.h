@@ -3,6 +3,7 @@
 
 #include <glm/vec3.hpp>
 #include <glm/mat3x3.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include "../Object/object.h"
 
 class Transform : public virtual Object {
@@ -15,6 +16,7 @@ public:
 
     glm::mat3 getAxes();
     void setAxes(glm::mat3 newAxes);
+    void setAxes(glm::quat rot);
 
     glm::vec3 getForward();
     void setForward(glm::vec3 newForward);

@@ -147,11 +147,7 @@ int main(int, char**) {
     Disk disk;
     disk.setRadius(2.);
     disk.setPos(glm::vec3(0., 0., -10.));
-    disk.setAxes(glm::mat3(
-        glm::vec3(-1. / sqrt(6.), sqrt(2. / 3.), -1. / sqrt(6.)),
-        glm::vec3(1. / sqrt(3.), 1. / sqrt(3.), 1. / sqrt(3.)),
-        glm::vec3(1. / sqrt(2.), 0., -1. / sqrt(2.))
-    ));
+    disk.setAxes(glm::angleAxis((float)M_PI / 4.f, glm::normalize(glm::vec3(1.f, 1.f, 1.f))));
     disk.setMaterialTextureIndex(0);
     objectLoader->addDisk(&disk);
 

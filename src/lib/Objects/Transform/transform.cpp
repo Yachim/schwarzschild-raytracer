@@ -1,5 +1,6 @@
 #include <glad/glad.h>
 #include "transform.h"
+#include <glm/gtx/quaternion.hpp>
 
 Transform::Transform() {}
 
@@ -17,6 +18,10 @@ glm::mat3 Transform::getAxes() {
 }
 void Transform::setAxes(glm::mat3 newAxes) {
     m_axes = newAxes;
+}
+
+void Transform::setAxes(glm::quat rot) {
+    m_axes = glm::toMat3(rot);
 }
 
 glm::vec3 Transform::getForward() {
