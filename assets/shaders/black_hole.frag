@@ -17,7 +17,7 @@ uniform vec2 resolution;
 uniform float time;
 uniform sampler2D background_texture;
 
-uniform int max_steps = 1000;
+uniform int max_steps = 100;
 uniform int max_revolutions = 2;
 
 uniform float u_f = 0.01;
@@ -45,8 +45,6 @@ struct Transform {
 struct Camera {
     Transform transform;
     float fov;
-    bool orthographic;
-    float orthographic_width;
 };
 
 uniform Camera cam;
@@ -345,11 +343,6 @@ void rectangle_tangent_space(inout HitInfo hit_info, Rectangle rectangle) {
         -transform.axes[2],
         transform.axes[1]
     );
-}
-
-// rectangle_index: [bot, top, front, back, left, right]
-void box_tangent_space(inout HitInfo hit_info, Box box, int rectangle_index) {
-
 }
 // #endregion
 
@@ -809,10 +802,6 @@ void main() {
 
     vec2 uv_vec = vec2(uv.x, uv.y * resolution.y / resolution.x);
     Ray ray = Ray(cam.transform.pos, normalize(cam.transform.axes * vec3(uv_vec, ray_forward)));
-    if (cam.orthographic) {
-        ray.dir = cam.transform.axes[2];
-        ray.origin = cam.transform.pos + cam.transform.axes * cam.orthographic_width * vec3(uv_vec, 0.);
-    }
 
     vec3 normal_vec = normalize(ray.origin);
     if (

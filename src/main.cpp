@@ -201,7 +201,10 @@ int main(int, char**) {
     glm::vec2 prevMouse = input->getMouse();
     GLint raytraceTypeLoc = glGetUniformLocation(shaderProgram, "raytrace_type");
     GLint curvedPercentageLoc = glGetUniformLocation(shaderProgram, "curved_percentage");
-    int raytraceType = 0;
+    GLint crosshairLoc = glGetUniformLocation(shaderProgram, "crosshair");
+    GLint timeLoc = glGetUniformLocation(shaderProgram, "time");
+    GLint resolutionLoc = glGetUniformLocation(shaderProgram, "resolution");
+    int raytraceType = RaytraceType::CURVED;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
@@ -213,22 +216,11 @@ int main(int, char**) {
         glm::vec2 deltaMouse = mouse - prevMouse;
 
         glClear(GL_COLOR_BUFFER_BIT);
-
-        glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         int height, width;
         glfwGetWindowSize(window, &width, &height);
         glViewport(0, 0, width, height);
-
-        if (input->isPressed(GLFW_KEY_P)) {
-            cam.setOrthographic(false);
-            cam.loadShader();
-        }
-        else if (input->isPressed(GLFW_KEY_O)) {
-            cam.setOrthographic(true);
-            cam.loadShader();
-        }
 
 #pragma region movement
         glm::vec3 camPos = cam.getPos();
@@ -272,36 +264,23 @@ int main(int, char**) {
             cam.setUp(camUp);
         }
         else if (!input->isPressed(GLFW_KEY_LEFT_ALT) && input->isLClicked()) {
-            if (cam.getOrthographic()) {
-                float orthographicWidth = cam.getOrthographicWidth();
-                orthographicWidth += ZOOM_SENSITIVITY * (float)dt * deltaMouse.y;
-                if (orthographicWidth < 0.) orthographicWidth = 0.;
-                cam.setOrthographicWidth(orthographicWidth);
-            }
-            else {
-                float fov = cam.getFov();
-                fov += ZOOM_SENSITIVITY * (float)dt * deltaMouse.y;
-                if (fov < MIN_FOV) fov = MIN_FOV;
-                if (fov > MAX_FOV) fov = MAX_FOV;
-                cam.setFov(fov);
-            }
+            float fov = cam.getFov();
+            fov += ZOOM_SENSITIVITY * (float)dt * deltaMouse.y;
+            if (fov < MIN_FOV) fov = MIN_FOV;
+            if (fov > MAX_FOV) fov = MAX_FOV;
+            cam.setFov(fov);
         }
 #pragma endregion
 
         if (input->isPressed(GLFW_KEY_C)) {
-            glUniform1i(glGetUniformLocation(shaderProgram, "crosshair"), 1);
+            glUniform1i(crosshairLoc, 1);
         }
         else {
-            glUniform1i(glGetUniformLocation(shaderProgram, "crosshair"), 0);
+            glUniform1i(crosshairLoc, 0);
         }
 
         if (input->isPressed(GLFW_KEY_F) && !input->isPressed(GLFW_KEY_F, GLFW_MOD_ALT) && !input->isPressed(GLFW_KEY_F, GLFW_MOD_CAPS_LOCK)) {
-            if (cam.getOrthographic()) {
-                cam.setOrthographicWidth(DEFAULT_ORTHOGRAPHIC_WIDTH);
-            }
-            else {
-                cam.setFov(DEFAULT_FOV);
-            }
+            cam.setFov(DEFAULT_FOV);
         }
 
         double hyperbolicTrajectoryDt = windowTime - hyperbolicTrajectoryStartTime;
@@ -326,8 +305,8 @@ int main(int, char**) {
         if (input->isPressed(GLFW_KEY_L)) cam.lookAt();
 
 #pragma region uniforms
-        glUniform1f(glGetUniformLocation(shaderProgram, "time"), (float)glfwGetTime());
-        glUniform2f(glGetUniformLocation(shaderProgram, "resolution"), width, height);
+        glUniform1f(timeLoc, (float)glfwGetTime());
+        glUniform2f(resolutionLoc, width, height);
 
         cam.loadShader();
 #pragma endregion

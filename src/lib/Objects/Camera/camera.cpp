@@ -17,22 +17,6 @@ float Camera::getFov() {
     return m_fov;
 }
 
-void Camera::setOrthographic(bool orthographic) {
-    m_orthographic = orthographic;
-}
-
-bool Camera::getOrthographic() {
-    return m_orthographic;
-}
-
-void Camera::setOrthographicWidth(float orthographicWidth) {
-    m_orthographicWidth = orthographicWidth;
-}
-
-float Camera::getOrthographicWidth() {
-    return m_orthographicWidth;
-}
-
 void Camera::hyperbolicTrajectory(float initialDistance, float closestDistance, float time) {
     float closestDistanceSquared = pow(closestDistance, 2.);
     float a = -closestDistanceSquared / (-initialDistance + 2 * closestDistance);
@@ -58,14 +42,10 @@ void Camera::setupShader(GLuint program) {
     Transform::setupShader(program, "cam.transform");
 
     m_fovLoc = glGetUniformLocation(program, "cam.fov");
-    m_orthographicLoc = glGetUniformLocation(program, "cam.orthographic");
-    m_orthographicWidthLoc = glGetUniformLocation(program, "cam.orthographic_width");
 }
 
 void Camera::loadShader() {
     Transform::loadShader();
 
     glUniform1f(m_fovLoc, m_fov);
-    glUniform1i(m_orthographicLoc, m_orthographic);
-    glUniform1f(m_orthographicWidthLoc, m_orthographicWidth);
 }
