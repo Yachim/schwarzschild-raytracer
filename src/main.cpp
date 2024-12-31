@@ -39,6 +39,9 @@ const float MAX_ANGLE = 170. * M_PI / 180.;
 #define BACKGROUND_TEXTURE_PATH "assets/textures/background/8k.jpg"
 #endif
 
+// noise optimization, set to < 0 to deactivate
+#define PERCENT_BLACK 0.75
+
 int main(int, char**) {
     if (!glfwInit()) {
         return -1;
@@ -204,6 +207,7 @@ int main(int, char**) {
     GLint crosshairLoc = glGetUniformLocation(shaderProgram, "crosshair");
     GLint timeLoc = glGetUniformLocation(shaderProgram, "time");
     GLint resolutionLoc = glGetUniformLocation(shaderProgram, "resolution");
+    glUniform1f(glGetUniformLocation(shaderProgram, "percent_black"), PERCENT_BLACK);
     int raytraceType = RaytraceType::CURVED;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();

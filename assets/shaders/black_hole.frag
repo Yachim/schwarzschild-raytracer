@@ -37,6 +37,8 @@ const int RAYTRACE_TYPE_HALF_HEIGHT = 3;
 uniform int raytrace_type = 0;
 uniform float curved_percentage = 0.5;
 
+uniform float percent_black = .75;
+
 struct Transform {
     vec3 pos;
     mat3 axes;
@@ -781,6 +783,10 @@ vec4 get_bg(vec3 dir) {
     return texture(background_texture, vec2(u, v));
 }
 
+float rand(vec2 co){
+    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
 void main() {
     FragColor = vec4(0.);
     if (crosshair && ( // dividing by two because uv is in [-1, 1]
@@ -815,6 +821,9 @@ void main() {
         vec4 intersection_color = intersect(ray);
         FragColor += intersection_color;
         if (intersection_color.a != 1.) FragColor += get_bg(ray.dir);
+        return;
+    }
+    else if (rand(uv_vec) <= percent_black) { // if black due to noise optimization
         return;
     }
 
