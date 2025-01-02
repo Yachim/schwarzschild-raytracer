@@ -252,7 +252,7 @@ void plane_tangent_space(inout HitInfo hit_info, Plane plane) {
 
     vec3 local_displacement = transpose(transform.axes) * displacement;
     hit_info.tangent_coordinates = local_displacement.xz;
-    hit_info.tangent_coordinates.y *= -1.;
+    hit_info.tangent_coordinates.y = 1. - hit_info.tangent_coordinates.y;
 
     hit_info.tangent_space = mat3(
         transform.axes[0],
@@ -371,6 +371,10 @@ vec2 rk4_step(float u_i, float du_i, float delta_phi) {
 
 float square_vector(vec3 v) {
     return dot(v, v);
+}
+
+float square_vector(vec2 v) {
+    return square_vector(vec3(v, 0.));
 }
 
 vec4 calculate_lighting(HitInfo hit_info, vec3 view_dir) {
@@ -531,28 +535,29 @@ bool is_in_range(float n, float minimum, float maximum) {
 
 HitInfo cylinder_intersect(Ray ray, Cylinder cylinder, float max_lambda) {
     vec3 pos = cylinder.transform.pos;
-    vec3 axis = cylinder.transform.axes[1];
+    mat3 axes = cylinder.transform.axes;
+    mat3 axesT = transpose(axes);
+    vec3 axis = axes[1];
     float height = cylinder.height;
+    float radius = cylinder.radius;
 
-    vec3 dir_parallel = dot(ray.dir, axis) * axis;
-    vec3 dir_perp = ray.dir - dir_parallel;
-    float dir_perp_length_squared = square_vector(dir_perp);
+    vec3 local_origin = axesT * (ray.origin - pos);
+    vec3 local_dir = axesT * ray.dir;
 
-    float radiusSquared = cylinder.radius * cylinder.radius;
+    // parallel to the base
+    float origin_parallel_sq = square_vector(local_origin.xz);
+    float dir_parallel_sq = square_vector(local_dir.xz);
+    float a = local_origin.x * local_dir.x + local_origin.z * local_dir.z;
 
-    vec3 l_ = pos - ray.origin;
-    vec3 l = l_ - dot(l_, axis) * axis;
-    float lambda_C = dot(l, dir_perp) / dir_perp_length_squared;
-    float dSquared = square_vector(lambda_C * dir_perp - l);
+    float D = a*a + dir_parallel_sq * (radius * radius - origin_parallel_sq);
     HitInfo res;
-    if(dSquared > radiusSquared) {
+    if (D < 0.) {
         res.is_hit = false;
         return res;
     }
-    float lambda_0C = sqrt((radiusSquared - dSquared) / dir_perp_length_squared);
 
-    float lambda1 = lambda_C - lambda_0C;
-    float lambda2 = lambda_C + lambda_0C;
+    float lambda1 = - (a + sqrt(D)) / dir_parallel_sq;
+    float lambda2 = - (a - sqrt(D)) / dir_parallel_sq;
     vec3 intersection_point1 = ray.origin + ray.dir * lambda1;
     vec3 intersection_point2 = ray.origin + ray.dir * lambda2;
     bool inCylinder1 = is_in_range(dot(intersection_point1 - pos, axis), 0., height);
