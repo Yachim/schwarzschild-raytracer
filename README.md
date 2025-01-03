@@ -21,3 +21,5 @@ See the [playlist](https://youtube.com/playlist?list=PLYFrWeMzFKBmzOyN9_OFjNwq-C
    - press `3` to divide the screen vertically into flat space and curved space raytracing
    - press `4` to divide the screen horizontally into flat space and curved space raytracing
  - hold `ALT` and move the mouse to adjust the raytracing split (after pressing `3` or `4`)
+ - press `R` to shoot a test ray
+ - press `T` to hide the test ray
