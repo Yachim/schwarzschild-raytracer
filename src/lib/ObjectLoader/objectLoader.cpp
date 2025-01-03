@@ -103,7 +103,7 @@ void ObjectLoader::load(GLuint program) {
     }
 
     glUniform1i(m_numLightsLoc, m_lights.size());
-    for (int i = 0; i < m_lights.size(); i++) {
+    for (size_t i = 0; i < m_lights.size(); i++) {
         m_lights[i]->loadShader(program, ("lights[" + std::to_string(i) + "]").c_str());
     }
 }

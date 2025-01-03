@@ -81,16 +81,16 @@ GLuint loadTextureArray(const std::vector<std::string>& texturePaths, GLuint pro
             // Resize the texture to match the largest dimensions if necessary
             std::vector<unsigned char> resizedData(maxWidth * maxHeight * maxChannels, 0);
 
-            for (int y = 0; y < maxHeight; ++y) {
-                for (int x = 0; x < maxWidth; ++x) {
+            for (size_t y = 0; y < maxHeight; ++y) {
+                for (size_t x = 0; x < maxWidth; ++x) {
                     int dstIndex = (y * maxWidth + x) * maxChannels;
                     if (x < width && y < height) {
                         int srcIndex = (y * width + x) * channels;
-                        for (int c = 0; c < channels; ++c) {
+                        for (size_t c = 0; c < channels; ++c) {
                             resizedData[dstIndex + c] = data[srcIndex + c];
                         }
                         // Fill missing channels with default value (255 for alpha)
-                        for (int c = channels; c < maxChannels; ++c) {
+                        for (size_t c = channels; c < maxChannels; ++c) {
                             resizedData[dstIndex + c] = (c == 3) ? 255 : 0;
                         }
                     }
