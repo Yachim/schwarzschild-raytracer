@@ -10,19 +10,19 @@ Light::Light(glm::vec3 pos, glm::vec3 color, float intensity, float attenuationC
     m_attenuationLinear(attenuationLinear),
     m_attenuationQuadratic(attenuationQuadratic) {}
 
-glm::vec3 Light::getColor() { return m_color; }
+glm::vec3 Light::getColor() const { return m_color; }
 void Light::setColor(glm::vec3 color) { m_color = color; }
 
-float Light::getIntensity() { return m_intensity; }
+float Light::getIntensity() const { return m_intensity; }
 void Light::setIntensity(float intensity) { m_intensity = intensity; }
 
-float Light::getAttenuationConstant() { return m_attenuationConstant; }
+float Light::getAttenuationConstant() const { return m_attenuationConstant; }
 void Light::setAttenuationConstant(float constant) { m_attenuationConstant = constant; }
 
-float Light::getAttenuationLinear() { return m_attenuationLinear; }
+float Light::getAttenuationLinear() const { return m_attenuationLinear; }
 void Light::setAttenuationLinear(float linear) { m_attenuationLinear = linear; }
 
-float Light::getAttenuationQuadratic() { return m_attenuationQuadratic; }
+float Light::getAttenuationQuadratic() const { return m_attenuationQuadratic; }
 void Light::setAttenuationQuadratic(float quadratic) { m_attenuationQuadratic = quadratic; }
 
 void Light::loadShader(GLuint program, std::string prefix) {

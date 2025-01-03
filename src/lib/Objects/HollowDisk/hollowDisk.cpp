@@ -4,14 +4,14 @@
 HollowDisk::HollowDisk() : Plane() {}
 HollowDisk::HollowDisk(glm::vec3 pos) : Plane(pos) {}
 
-float HollowDisk::getInnerRadius() {
+float HollowDisk::getInnerRadius() const {
     return m_innerRadius;
 }
 void HollowDisk::setInnerRadius(float innerRadius) {
     m_innerRadius = innerRadius;
 }
 
-float HollowDisk::getOuterRadius() {
+float HollowDisk::getOuterRadius() const {
     return m_outerRadius;
 }
 void HollowDisk::setOuterRadius(float outerRadius) {

@@ -4,14 +4,14 @@
 
 LateralCylinder::LateralCylinder() : MaterialObject(), Transform() {}
 
-float LateralCylinder::getHeight() {
+float LateralCylinder::getHeight() const {
     return m_height;
 }
 void LateralCylinder::setHeight(float height) {
     m_height = height;
 }
 
-float LateralCylinder::getRadius() {
+float LateralCylinder::getRadius() const {
     return m_radius;
 }
 void LateralCylinder::setRadius(float radius) {

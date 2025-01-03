@@ -4,91 +4,91 @@
 MaterialObject::MaterialObject() {}
 MaterialObject::MaterialObject(Material mat) : m_material(mat) {}
 
-Material MaterialObject::getMaterial() {
+Material MaterialObject::getMaterial() const {
     return m_material;
 }
 void MaterialObject::setMaterial(Material mat) {
     m_material = mat;
 }
 
-glm::vec4 MaterialObject::getMaterialColor() {
+glm::vec4 MaterialObject::getMaterialColor() const {
     return m_material.getColor();
 }
 void MaterialObject::setMaterialColor(glm::vec4 color) {
     m_material.setColor(color);
 }
 
-float MaterialObject::getMaterialAmbient() {
+float MaterialObject::getMaterialAmbient() const {
     return m_material.getAmbient();
 }
 void MaterialObject::setMaterialAmbient(float ambient) {
     m_material.setAmbient(ambient);
 }
 
-float MaterialObject::getMaterialDiffuse() {
+float MaterialObject::getMaterialDiffuse() const {
     return m_material.getDiffuse();
 }
 void MaterialObject::setMaterialDiffuse(float diffuse) {
     m_material.setDiffuse(diffuse);
 }
 
-float MaterialObject::getMaterialSpecular() {
+float MaterialObject::getMaterialSpecular() const {
     return m_material.getSpecular();
 }
 void MaterialObject::setMaterialSpecular(float specular) {
     m_material.setSpecular(specular);
 }
 
-float MaterialObject::getMaterialShininess() {
+float MaterialObject::getMaterialShininess() const {
     return m_material.getShininess();
 }
 void MaterialObject::setMaterialShininess(float shininess) {
     m_material.setShininess(shininess);
 }
 
-int MaterialObject::getMaterialTextureIndex() {
+int MaterialObject::getMaterialTextureIndex() const {
     return m_material.getTextureIndex();
 }
 void MaterialObject::setMaterialTextureIndex(int index) {
     m_material.setTextureIndex(index);
 }
 
-int MaterialObject::getMaterialNormalMapIndex() {
+int MaterialObject::getMaterialNormalMapIndex() const {
     return m_material.getNormalMapIndex();
 }
 void MaterialObject::setMaterialNormalMapIndex(int index) {
     m_material.setNormalMapIndex(index);
 }
 
-bool MaterialObject::getMaterialInvertUvX() {
+bool MaterialObject::getMaterialInvertUvX() const {
     return m_material.getInvertUvX();
 }
 void MaterialObject::setMaterialInvertUvX(bool invertUvX) {
     m_material.setInvertUvX(invertUvX);
 }
 
-bool MaterialObject::getMaterialInvertUvY() {
+bool MaterialObject::getMaterialInvertUvY() const {
     return m_material.getInvertUvY();
 }
 void MaterialObject::setMaterialInvertUvY(bool invertUvY) {
     m_material.setInvertUvY(invertUvY);
 }
 
-bool MaterialObject::getMaterialSwapUvs() {
+bool MaterialObject::getMaterialSwapUvs() const {
     return m_material.getSwapUvs();
 }
 void MaterialObject::setMaterialSwapUvs(bool swapUvs) {
     m_material.setSwapUvs(swapUvs);
 }
 
-bool MaterialObject::getMaterialDoubleSidedNormals() {
+bool MaterialObject::getMaterialDoubleSidedNormals() const {
     return m_material.getDoubleSidedNormals();
 }
 void MaterialObject::setMaterialDoubleSidedNormals(bool doubleSidedNormals) {
     m_material.setDoubleSidedNormals(doubleSidedNormals);
 }
 
-bool MaterialObject::getMaterialFlipNormals() {
+bool MaterialObject::getMaterialFlipNormals() const {
     return m_material.getFlipNormals();
 }
 void MaterialObject::setMaterialFlipNormals(bool flipNormals) {

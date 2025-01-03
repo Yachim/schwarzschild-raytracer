@@ -4,14 +4,14 @@
 Rectangle::Rectangle() : Plane() {}
 Rectangle::Rectangle(glm::vec3 pos) : Plane(pos) {}
 
-float Rectangle::getWidth() {
+float Rectangle::getWidth() const {
     return m_width;
 }
 void Rectangle::setWidth(float width) {
     m_width = width;
 }
 
-float Rectangle::getHeight() {
+float Rectangle::getHeight() const {
     return m_height;
 }
 void Rectangle::setHeight(float height) {

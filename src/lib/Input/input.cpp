@@ -84,18 +84,18 @@ bool Input::isPressed(int key, int mod) {
     return m_keymap[key] && m_modmap[mod];
 }
 
-bool Input::isLClicked() {
+bool Input::isLClicked() const {
     return m_lClicked;
 }
 
-bool Input::isRClicked() {
+bool Input::isRClicked() const {
     return m_rClicked;
 }
 
-glm::vec2 Input::getMouse() {
+glm::vec2 Input::getMouse() const {
     return m_mouse;
 }
 
-glm::vec2 Input::getScroll() {
+glm::vec2 Input::getScroll() const {
     return m_scroll;
 }

@@ -9,7 +9,7 @@ public:
     Disk();
     Disk(glm::vec3 pos);
 
-    float getRadius();
+    float getRadius() const;
     void setRadius(float radius);
 
     void loadShader(GLuint program, std::string prefix) override;

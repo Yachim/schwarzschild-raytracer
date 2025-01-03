@@ -9,45 +9,45 @@ public:
     MaterialObject();
     MaterialObject(Material mat);
 
-    Material getMaterial();
+    Material getMaterial() const;
     void setMaterial(Material mat);
 
     void loadShader(GLuint program, std::string prefix) override;
 
-    glm::vec4 getMaterialColor();
+    glm::vec4 getMaterialColor() const;
     void setMaterialColor(glm::vec4 color);
 
-    float getMaterialAmbient();
+    float getMaterialAmbient() const;
     void setMaterialAmbient(float ambient);
 
-    float getMaterialDiffuse();
+    float getMaterialDiffuse() const;
     void setMaterialDiffuse(float diffuse);
 
-    float getMaterialSpecular();
+    float getMaterialSpecular() const;
     void setMaterialSpecular(float specular);
 
-    float getMaterialShininess();
+    float getMaterialShininess() const;
     void setMaterialShininess(float shininess);
 
-    int getMaterialTextureIndex();
+    int getMaterialTextureIndex() const;
     void setMaterialTextureIndex(int index);
 
-    int getMaterialNormalMapIndex();
+    int getMaterialNormalMapIndex() const;
     void setMaterialNormalMapIndex(int index);
 
-    bool getMaterialInvertUvX();
+    bool getMaterialInvertUvX() const;
     void setMaterialInvertUvX(bool invertUvX);
 
-    bool getMaterialInvertUvY();
+    bool getMaterialInvertUvY() const;
     void setMaterialInvertUvY(bool invertUvY);
 
-    bool getMaterialSwapUvs();
+    bool getMaterialSwapUvs() const;
     void setMaterialSwapUvs(bool swapUvs);
 
-    bool getMaterialDoubleSidedNormals();
+    bool getMaterialDoubleSidedNormals() const;
     void setMaterialDoubleSidedNormals(bool doubleSidedNormals);
 
-    bool getMaterialFlipNormals();
+    bool getMaterialFlipNormals() const;
     void setMaterialFlipNormals(bool flipNormals);
 
 protected:

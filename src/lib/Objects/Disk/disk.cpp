@@ -4,7 +4,7 @@
 Disk::Disk() : Plane() {}
 Disk::Disk(glm::vec3 pos) : Plane(pos) {}
 
-float Disk::getRadius() {
+float Disk::getRadius() const {
     return m_radius;
 }
 

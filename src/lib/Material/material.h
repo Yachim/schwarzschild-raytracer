@@ -9,40 +9,40 @@ public:
     Material(glm::vec4 color);
     Material(glm::vec4 color, float ambient, float diffuse, float specular, float shininess);
 
-    glm::vec4 getColor();
+    glm::vec4 getColor() const;
     void setColor(glm::vec4 color);
 
-    float getAmbient();
+    float getAmbient() const;
     void setAmbient(float ambient);
 
-    float getDiffuse();
+    float getDiffuse() const;
     void setDiffuse(float diffuse);
 
-    float getSpecular();
+    float getSpecular() const;
     void setSpecular(float specular);
 
-    float getShininess();
+    float getShininess() const;
     void setShininess(float shininess);
 
-    int getTextureIndex();
+    int getTextureIndex() const;
     void setTextureIndex(int index);
 
-    int getNormalMapIndex();
+    int getNormalMapIndex() const;
     void setNormalMapIndex(int index);
 
-    bool getInvertUvX();
+    bool getInvertUvX() const;
     void setInvertUvX(bool invertUvX);
 
-    bool getInvertUvY();
+    bool getInvertUvY() const;
     void setInvertUvY(bool invertUvY);
 
-    bool getSwapUvs();
+    bool getSwapUvs() const;
     void setSwapUvs(bool swapUvs);
 
-    bool getDoubleSidedNormals();
+    bool getDoubleSidedNormals() const;
     void setDoubleSidedNormals(bool doubleSidedNormals);
 
-    bool getFlipNormals();
+    bool getFlipNormals() const;
     void setFlipNormals(bool flipNormals);
 
 private:

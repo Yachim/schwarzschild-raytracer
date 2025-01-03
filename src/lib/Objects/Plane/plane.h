@@ -10,18 +10,18 @@ public:
     Plane();
     Plane(glm::vec3 pos);
 
-    glm::vec2 getTextureSize();
+    glm::vec2 getTextureSize() const;
     void setTextureSize(glm::vec2 size);
 
-    glm::vec2 getTextureOffset();
+    glm::vec2 getTextureOffset() const;
     void setTextureOffset(glm::vec2 offset);
 
-    bool getRepeatTexture();
+    bool getRepeatTexture() const;
     void setRepeatTexture(bool repeatTexture);
 
     void loadShader(GLuint program, std::string prefix) override;
 
-    ObjectType getType()  const override;
+    ObjectType getType() const override;
 
 private:
     glm::vec2 m_textureSize{ 1., 1. };

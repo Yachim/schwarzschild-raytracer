@@ -8,10 +8,10 @@ class LateralCylinder : public MaterialObject, public Transform {
 public:
     LateralCylinder();
 
-    float getHeight();
+    float getHeight() const;
     void setHeight(float height);
 
-    float getRadius();
+    float getRadius() const;
     void setRadius(float radius);
 
     void loadShader(GLuint program, std::string prefix) override;

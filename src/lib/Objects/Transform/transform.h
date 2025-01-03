@@ -11,20 +11,20 @@ public:
     Transform();
     Transform(glm::vec3 pos);
 
-    glm::vec3 getPos();
+    glm::vec3 getPos() const;
     void setPos(glm::vec3 newPos);
 
-    glm::mat3 getAxes();
+    glm::mat3 getAxes() const;
     void setAxes(glm::mat3 newAxes);
     void setAxes(glm::quat rot);
 
-    glm::vec3 getForward();
+    glm::vec3 getForward() const;
     void setForward(glm::vec3 newForward);
 
-    glm::vec3 getRight();
+    glm::vec3 getRight() const;
     void setRight(glm::vec3 newRight);
 
-    glm::vec3 getUp();
+    glm::vec3 getUp() const;
     void setUp(glm::vec3 newUp);
 
     // calculates from the other two

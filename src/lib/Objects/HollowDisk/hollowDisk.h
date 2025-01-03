@@ -9,10 +9,10 @@ public:
     HollowDisk();
     HollowDisk(glm::vec3 pos);
 
-    float getInnerRadius();
+    float getInnerRadius() const;
     void setInnerRadius(float innerRadius);
 
-    float getOuterRadius();
+    float getOuterRadius() const;
     void setOuterRadius(float outerRadius);
 
     void loadShader(GLuint program, std::string prefix) override;

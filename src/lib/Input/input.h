@@ -55,9 +55,9 @@ public:
     glm::vec3 getAxis3D();   // up/down, left/right, forward/backward
     bool isPressed(int key);
     bool isPressed(int key, int mod);
-    bool isLClicked();
-    bool isRClicked();
-    glm::vec2 getMouse();
-    glm::vec2 getScroll();
+    bool isLClicked() const;
+    bool isRClicked() const;
+    glm::vec2 getMouse() const;
+    glm::vec2 getScroll() const;
 };
 #endif

@@ -6,14 +6,14 @@ Transform::Transform() {}
 
 Transform::Transform(glm::vec3 pos) : m_pos(pos) {}
 
-glm::vec3 Transform::getPos() {
+glm::vec3 Transform::getPos() const {
     return m_pos;
 }
 void Transform::setPos(glm::vec3 newPos) {
     m_pos = newPos;
 }
 
-glm::mat3 Transform::getAxes() {
+glm::mat3 Transform::getAxes() const {
     return m_axes;
 }
 void Transform::setAxes(glm::mat3 newAxes) {
@@ -24,21 +24,21 @@ void Transform::setAxes(glm::quat rot) {
     m_axes = glm::toMat3(rot);
 }
 
-glm::vec3 Transform::getForward() {
+glm::vec3 Transform::getForward() const {
     return m_axes[2];
 }
 void Transform::setForward(glm::vec3 newForward) {
     m_axes[2] = newForward;
 }
 
-glm::vec3 Transform::getRight() {
+glm::vec3 Transform::getRight() const {
     return m_axes[0];
 }
 void Transform::setRight(glm::vec3 newRight) {
     m_axes[0] = newRight;
 }
 
-glm::vec3 Transform::getUp() {
+glm::vec3 Transform::getUp() const {
     return m_axes[1];
 }
 void Transform::setUp(glm::vec3 newUp) {

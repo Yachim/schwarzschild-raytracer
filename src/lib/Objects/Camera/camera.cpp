@@ -13,7 +13,7 @@ Camera::Camera(glm::vec3 pos, glm::vec3 forward, glm::vec3 right) : Transform(po
 void Camera::setFov(float fov) {
     m_fov = fov;
 }
-float Camera::getFov() {
+float Camera::getFov() const {
     return m_fov;
 }
 

@@ -25,7 +25,7 @@ public:
     Camera(glm::vec3 pos);
 
     void setFov(float fov);
-    float getFov();
+    float getFov() const;
 
     void hyperbolicTrajectory(float initialDistance, float closestDistance, float time);
     void lookAt(glm::vec3 point = glm::vec3(0., 0., 0.));

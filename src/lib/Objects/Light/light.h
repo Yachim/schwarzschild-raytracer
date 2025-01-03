@@ -12,19 +12,19 @@ public:
         float attenuationLinear = 0.09,
         float attenuationQuadratic = 0.032);
 
-    glm::vec3 getColor();
+    glm::vec3 getColor() const;
     void setColor(const glm::vec3 color);
 
-    float getIntensity();
+    float getIntensity() const;
     void setIntensity(float intensity);
 
-    float getAttenuationConstant();
+    float getAttenuationConstant() const;
     void setAttenuationConstant(float constant);
 
-    float getAttenuationLinear();
+    float getAttenuationLinear() const;
     void setAttenuationLinear(float linear);
 
-    float getAttenuationQuadratic();
+    float getAttenuationQuadratic() const;
     void setAttenuationQuadratic(float quadratic);
 
     void loadShader(GLuint program, std::string prefix) override;

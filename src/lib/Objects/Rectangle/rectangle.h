@@ -9,10 +9,10 @@ public:
     Rectangle();
     Rectangle(glm::vec3 pos);
 
-    float getWidth();
+    float getWidth() const;
     void setWidth(float width);
 
-    float getHeight();
+    float getHeight() const;
     void setHeight(float height);
 
     void loadShader(GLuint program, std::string prefix) override;

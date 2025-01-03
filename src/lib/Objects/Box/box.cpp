@@ -4,21 +4,21 @@
 Box::Box() : MaterialObject(), Transform() {}
 Box::Box(glm::vec3 pos) : MaterialObject(), Transform(pos) {}
 
-float Box::getWidth() {
+float Box::getWidth() const {
     return m_width;
 }
 void Box::setWidth(float width) {
     m_width = width;
 }
 
-float Box::getDepth() {
+float Box::getDepth() const {
     return m_depth;
 }
 void Box::setDepth(float depth) {
     m_depth = depth;
 }
 
-float Box::getHeight() {
+float Box::getHeight() const {
     return m_height;
 }
 void Box::setHeight(float height) {

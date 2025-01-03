@@ -4,21 +4,21 @@
 Plane::Plane() : MaterialObject(), Transform() {}
 Plane::Plane(glm::vec3 pos) : MaterialObject(), Transform(pos) {}
 
-glm::vec2 Plane::getTextureSize() {
+glm::vec2 Plane::getTextureSize() const {
     return m_textureSize;
 }
 void Plane::setTextureSize(glm::vec2 size) {
     m_textureSize = size;
 }
 
-glm::vec2 Plane::getTextureOffset() {
+glm::vec2 Plane::getTextureOffset() const {
     return m_textureOffset;
 }
 void Plane::setTextureOffset(glm::vec2 offset) {
     m_textureOffset = offset;
 }
 
-bool Plane::getRepeatTexture() {
+bool Plane::getRepeatTexture() const {
     return m_repeatTexture;
 }
 void Plane::setRepeatTexture(bool repeatTexture) {

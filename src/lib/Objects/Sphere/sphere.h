@@ -11,7 +11,7 @@ public:
     Sphere(glm::vec3 pos, float radius);
     Sphere(glm::vec3 pos, float radius, Material mat);
 
-    float getRadius();
+    float getRadius() const;
     void setRadius(float radius);
 
     void loadShader(GLuint program, std::string prefix) override;
