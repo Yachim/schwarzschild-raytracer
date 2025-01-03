@@ -58,6 +58,64 @@ std::string readStdin() {
 // noise optimization, set to < 0 to deactivate
 #define PERCENT_BLACK 0.75
 
+#define MAX_STEPS 100
+#define MAX_REVOLUTIONS 2
+#define MAX_TEST_RAY_ANGLE 2. * float(MAX_REVOLUTIONS) * M_PI
+#define TEST_RAY_OFFSET 1.
+
+float ddu(float u) {
+    return -u * (1. - 1.5 * u);
+}
+
+// returns (Δu_{i+1}, Δu'_{i+1})
+glm::vec2 rk4_step(float u_i, float du_i, float delta_phi) {
+    float k1 = du_i;
+    float l1 = ddu(u_i);
+
+    float k2 = du_i + 0.5 * l1 * delta_phi;
+    float l2 = ddu(u_i + 0.5 * k1 * delta_phi);
+
+    float k3 = du_i + 0.5 * l2 * delta_phi;
+    float l3 = ddu(u_i + 0.5 * k2 * delta_phi);
+
+    float k4 = du_i + l3 * delta_phi;
+    float l4 = ddu(u_i + k3 * delta_phi);
+
+    return glm::vec2(delta_phi / 6. * (k1 + 2. * k2 + 2. * k3 + k4), delta_phi / 6. * (l1 + 2. * l2 + 2. * l3 + l4));
+}
+
+std::vector<glm::vec3> calculateTestRayPoints(Camera& cam) {
+    glm::vec3 dir = cam.getForward();
+    glm::vec3 origin = cam.getPos() + dir * float(TEST_RAY_OFFSET);
+
+    glm::vec3 normal_vec = glm::normalize(origin);
+    glm::vec3 tangent_vec = glm::normalize(glm::cross(glm::cross(normal_vec, dir), normal_vec));
+
+    float u = 1. / glm::length(origin);
+    float du = -u * dot(dir, normal_vec) / dot(dir, tangent_vec);
+
+    if (abs(glm::dot(dir, normal_vec)) >= 1. - 0.000001) { // if radial trajectory
+        return { origin, origin + dir };
+    }
+
+    std::vector<glm::vec3> out = { origin };
+
+    float phi = 0.;
+    for (size_t i = 0; i < MAX_STEPS; i++) {
+        float step_size = (MAX_TEST_RAY_ANGLE - phi) / float(MAX_STEPS - i);
+        phi += step_size;
+
+        glm::vec2 rk4_result = rk4_step(u, du, step_size);
+        u += rk4_result.x;
+        if (u < 0. || u > 1.) break;
+        du += rk4_result.y;
+
+        out.push_back((float(cos(phi)) * normal_vec + float(sin(phi)) * tangent_vec) / u);
+    }
+
+    return out;
+}
+
 int main(int, char**) {
     if (!glfwInit()) {
         return -1;
@@ -228,6 +286,12 @@ int main(int, char**) {
     GLint timeLoc = glGetUniformLocation(shaderProgram, "time");
     GLint resolutionLoc = glGetUniformLocation(shaderProgram, "resolution");
     glUniform1f(glGetUniformLocation(shaderProgram, "percent_black"), PERCENT_BLACK);
+    glUniform1i(glGetUniformLocation(shaderProgram, "max_steps"), MAX_STEPS);
+    glUniform1f(glGetUniformLocation(shaderProgram, "max_revolutions"), MAX_REVOLUTIONS);
+    GLint numTestRayCurvedPointsLoc = glGetUniformLocation(shaderProgram, "num_test_ray_curved_points");
+    GLint testRayFlatOriginLoc = glGetUniformLocation(shaderProgram, "test_ray_flat_origin");
+    GLint testRayFlatDirLoc = glGetUniformLocation(shaderProgram, "test_ray_flat_dir");
+    GLint testRayVisibleLoc = glGetUniformLocation(shaderProgram, "test_ray_visible");
     int raytraceType = RaytraceType::CURVED;
     while (!glfwWindowShouldClose(window)) {
         std::string consoleInput = readStdin();
@@ -300,6 +364,24 @@ int main(int, char**) {
             cam.setFov(fov);
         }
 #pragma endregion
+
+        if (input->isPressed(GLFW_KEY_R)) {
+            std::vector<glm::vec3> points = calculateTestRayPoints(cam);
+            glUniform1i(numTestRayCurvedPointsLoc, points.size());
+            for (size_t i = 0; i < points.size(); i++) {
+                glUniform3f(glGetUniformLocation(shaderProgram, ("test_ray_curved_points[" + std::to_string(i) + "]").c_str()), points[i].x, points[i].y, points[i].z);
+            }
+
+            glm::vec3 dir = cam.getForward();
+            glm::vec3 origin = cam.getPos() + dir * float(TEST_RAY_OFFSET);
+            glUniform3f(testRayFlatOriginLoc, origin.x, origin.y, origin.z);
+            glUniform3f(testRayFlatDirLoc, dir.x, dir.y, dir.z);
+
+            glUniform1i(testRayVisibleLoc, true);
+        }
+        if (input->isPressed(GLFW_KEY_T)) {
+            glUniform1i(testRayVisibleLoc, false);
+        }
 
         if (input->isPressed(GLFW_KEY_C)) {
             glUniform1i(crosshairLoc, 1);
