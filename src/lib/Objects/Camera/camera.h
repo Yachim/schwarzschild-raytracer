@@ -30,15 +30,17 @@ public:
     void hyperbolicTrajectory(float initialDistance, float closestDistance, float time);
     void lookAt(glm::vec3 point = glm::vec3(0., 0., 0.));
 
-    void setupShader(GLuint program);
-    void loadShader() override;
+    void loadShader(GLuint program);
+
+    ObjectType getType() const override;
 
 private:
     float m_fov = DEFAULT_FOV;
 
     // uniform locations
+    bool m_locationsSet = false;
     GLint m_fovLoc;
 
-    void setupShader(GLuint program, std::string prefix) override {};
+    void loadShader(GLuint program, std::string prefix) override {};
 };
 #endif

@@ -32,8 +32,7 @@ public:
     void calculateRight();
     void calculateUp();
 
-    void setupShader(GLuint program, std::string prefix) override;
-    void loadShader() override;
+    void loadShader(GLuint program, std::string prefix) override;
 
 protected:
     glm::vec3 m_pos{ 0.f, 0.f, 0.f };
@@ -43,7 +42,9 @@ protected:
         glm::vec3(0., 0., 1.)
     };
 
+private:
     // uniform locations
+    bool m_locationsSet = false;
     GLint m_posLoc;
     GLint m_axesLoc;
 };

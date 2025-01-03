@@ -13,16 +13,20 @@ void Sphere::setRadius(float radius) {
     m_radius = radius;
 }
 
-void Sphere::setupShader(GLuint program, std::string prefix) {
-    MaterialObject::setupShader(program, prefix + ".material");
-    Transform::setupShader(program, prefix + ".transform");
 
-    m_radiusLoc = glGetUniformLocation(program, (prefix + ".radius").c_str());
-}
+void Sphere::loadShader(GLuint program, std::string prefix) {
+    if (!m_locationsSet) {
+        m_radiusLoc = glGetUniformLocation(program, (prefix + ".radius").c_str());
+        m_locationsSet = true;
+    }
 
-void Sphere::loadShader() {
-    MaterialObject::loadShader();
-    Transform::loadShader();
+    Transform::loadShader(program, prefix + ".transform");
+    MaterialObject::loadShader(program, prefix + ".material");
+
 
     glUniform1f(m_radiusLoc, m_radius);
+}
+
+ObjectType Sphere::getType() const {
+    return ObjectType::SPHERE;
 }

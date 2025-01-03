@@ -18,16 +18,19 @@ void Rectangle::setHeight(float height) {
     m_height = height;
 }
 
-void Rectangle::setupShader(GLuint program, std::string prefix) {
-    Plane::setupShader(program, prefix + ".plane");
+void Rectangle::loadShader(GLuint program, std::string prefix) {
+    if (!m_locationsSet) {
+        m_widthLoc = glGetUniformLocation(program, (prefix + ".width").c_str());
+        m_heightLoc = glGetUniformLocation(program, (prefix + ".height").c_str());
+        m_locationsSet = true;
+    }
 
-    m_widthLoc = glGetUniformLocation(program, (prefix + ".width").c_str());
-    m_heightLoc = glGetUniformLocation(program, (prefix + ".height").c_str());
-}
-
-void Rectangle::loadShader() {
-    Plane::loadShader();
+    Plane::loadShader(program, prefix + ".plane");
 
     glUniform1f(m_widthLoc, m_width);
     glUniform1f(m_heightLoc, m_height);
+}
+
+ObjectType Rectangle::getType() const {
+    return ObjectType::RECTANGLE;
 }

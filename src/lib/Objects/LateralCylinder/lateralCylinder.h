@@ -14,13 +14,15 @@ public:
     float getRadius();
     void setRadius(float radius);
 
-    void setupShader(GLuint program, std::string prefix) override;
-    void loadShader() override;
+    void loadShader(GLuint program, std::string prefix) override;
+
+    ObjectType getType() const override;
 
 private:
     float m_height = 5.;
     float m_radius = 1.;
 
+    bool m_locationsSet = false;
     GLint m_heightLoc;
     GLint m_radiusLoc;
 };

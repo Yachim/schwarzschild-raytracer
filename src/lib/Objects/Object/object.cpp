@@ -2,6 +2,8 @@
 
 Object::Object() {}
 
-void Object::setupShader(GLuint program, std::string prefix) {}
+void Object::loadShader(GLuint program, std::string prefix) {}
 
-void Object::loadShader() {}
+ObjectType Object::getType() const {
+    return ObjectType::UNKNOWN;
+}

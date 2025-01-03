@@ -12,14 +12,17 @@ void Disk::setRadius(float radius) {
     m_radius = radius;
 }
 
-void Disk::setupShader(GLuint program, std::string prefix) {
-    Plane::setupShader(program, prefix + ".plane");
+void Disk::loadShader(GLuint program, std::string prefix) {
+    if (!m_locationsSet) {
+        m_radiusLoc = glGetUniformLocation(program, (prefix + ".radius").c_str());
+        m_locationsSet = true;
+    }
 
-    m_radiusLoc = glGetUniformLocation(program, (prefix + ".radius").c_str());
-}
-
-void Disk::loadShader() {
-    Plane::loadShader();
+    Plane::loadShader(program, prefix + ".plane");
 
     glUniform1f(m_radiusLoc, m_radius);
+}
+
+ObjectType Disk::getType() const {
+    return ObjectType::DISK;
 }

@@ -25,20 +25,22 @@ void Box::setHeight(float height) {
     m_height = height;
 }
 
-void Box::setupShader(GLuint program, std::string prefix) {
-    MaterialObject::setupShader(program, prefix + ".material");
-    Transform::setupShader(program, prefix + ".transform");
+void Box::loadShader(GLuint program, std::string prefix) {
+    if (!m_locationsSet) {
+        m_widthLoc = glGetUniformLocation(program, (prefix + ".width").c_str());
+        m_depthLoc = glGetUniformLocation(program, (prefix + ".depth").c_str());
+        m_heightLoc = glGetUniformLocation(program, (prefix + ".height").c_str());
+        m_locationsSet = true;
+    }
 
-    m_widthLoc = glGetUniformLocation(program, (prefix + ".width").c_str());
-    m_depthLoc = glGetUniformLocation(program, (prefix + ".depth").c_str());
-    m_heightLoc = glGetUniformLocation(program, (prefix + ".height").c_str());
-}
-
-void Box::loadShader() {
-    MaterialObject::loadShader();
-    Transform::loadShader();
+    MaterialObject::loadShader(program, prefix + ".material");
+    Transform::loadShader(program, prefix + ".transform");
 
     glUniform1f(m_widthLoc, m_width);
     glUniform1f(m_depthLoc, m_depth);
     glUniform1f(m_heightLoc, m_height);
+}
+
+ObjectType Box::getType() const {
+    return ObjectType::BOX;
 }

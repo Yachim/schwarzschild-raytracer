@@ -12,8 +12,7 @@ public:
     Material getMaterial();
     void setMaterial(Material mat);
 
-    void setupShader(GLuint program, std::string prefix) override;
-    void loadShader() override;
+    void loadShader(GLuint program, std::string prefix) override;
 
     glm::vec4 getMaterialColor();
     void setMaterialColor(glm::vec4 color);
@@ -54,7 +53,9 @@ public:
 protected:
     Material m_material = Material();
 
+private:
     // uniform locations
+    bool m_locationsSet = false;
     GLint m_materialColorLoc;
     GLint m_materialAmbientLoc;
     GLint m_materialDiffuseLoc;

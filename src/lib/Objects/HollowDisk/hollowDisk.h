@@ -15,13 +15,15 @@ public:
     float getOuterRadius();
     void setOuterRadius(float outerRadius);
 
-    void setupShader(GLuint program, std::string prefix) override;
-    void loadShader() override;
+    void loadShader(GLuint program, std::string prefix) override;
+
+    ObjectType getType() const override;
 
 private:
     float m_innerRadius = 2.5;
     float m_outerRadius = 5.;
 
+    bool m_locationsSet = false;
     GLint m_innerRadiusLoc;
     GLint m_outerRadiusLoc;
 };

@@ -19,14 +19,16 @@ public:
     bool getRepeatTexture();
     void setRepeatTexture(bool repeatTexture);
 
-    void setupShader(GLuint program, std::string prefix) override;
-    void loadShader() override;
+    void loadShader(GLuint program, std::string prefix) override;
+
+    ObjectType getType()  const override;
 
 private:
     glm::vec2 m_textureSize{ 1., 1. };
     glm::vec2 m_textureOffset{ 0., 0. };
     bool m_repeatTexture = true;
 
+    bool m_locationsSet = false;
     GLint m_textureSizeLoc;
     GLint m_textureOffsetLoc;
     GLint m_repeatTextureLoc;

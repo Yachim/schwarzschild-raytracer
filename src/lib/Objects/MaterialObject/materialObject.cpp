@@ -95,26 +95,24 @@ void MaterialObject::setMaterialFlipNormals(bool flipNormals) {
     m_material.setFlipNormals(flipNormals);
 }
 
+void MaterialObject::loadShader(GLuint program, std::string prefix) {
+    if (!m_locationsSet) {
+        m_materialColorLoc = glGetUniformLocation(program, (prefix + ".color").c_str());
+        m_materialAmbientLoc = glGetUniformLocation(program, (prefix + ".ambient").c_str());
+        m_materialDiffuseLoc = glGetUniformLocation(program, (prefix + ".diffuse").c_str());
+        m_materialSpecularLoc = glGetUniformLocation(program, (prefix + ".specular").c_str());
+        m_materialShininessLoc = glGetUniformLocation(program, (prefix + ".shininess").c_str());
+        m_materialTextureIndexLoc = glGetUniformLocation(program, (prefix + ".texture_index").c_str());
+        m_materialNormalMapIndexLoc = glGetUniformLocation(program, (prefix + ".normal_map_index").c_str());
+        m_materialInvertUvXLoc = glGetUniformLocation(program, (prefix + ".invert_uv_x").c_str());
+        m_materialInvertUvYLoc = glGetUniformLocation(program, (prefix + ".invert_uv_y").c_str());
+        m_materialSwapUvsLoc = glGetUniformLocation(program, (prefix + ".swap_uvs").c_str());
+        m_materialDoubleSidedNormalsLoc = glGetUniformLocation(program, (prefix + ".double_sided_normals").c_str());
+        m_materialFlipNormalsLoc = glGetUniformLocation(program, (prefix + ".flip_normals").c_str());
+        m_locationsSet = true;
+    }
 
-void MaterialObject::setupShader(GLuint program, std::string prefix) {
-    Object::setupShader(program, prefix);
-
-    m_materialColorLoc = glGetUniformLocation(program, (prefix + ".color").c_str());
-    m_materialAmbientLoc = glGetUniformLocation(program, (prefix + ".ambient").c_str());
-    m_materialDiffuseLoc = glGetUniformLocation(program, (prefix + ".diffuse").c_str());
-    m_materialSpecularLoc = glGetUniformLocation(program, (prefix + ".specular").c_str());
-    m_materialShininessLoc = glGetUniformLocation(program, (prefix + ".shininess").c_str());
-    m_materialTextureIndexLoc = glGetUniformLocation(program, (prefix + ".texture_index").c_str());
-    m_materialNormalMapIndexLoc = glGetUniformLocation(program, (prefix + ".normal_map_index").c_str());
-    m_materialInvertUvXLoc = glGetUniformLocation(program, (prefix + ".invert_uv_x").c_str());
-    m_materialInvertUvYLoc = glGetUniformLocation(program, (prefix + ".invert_uv_y").c_str());
-    m_materialSwapUvsLoc = glGetUniformLocation(program, (prefix + ".swap_uvs").c_str());
-    m_materialDoubleSidedNormalsLoc = glGetUniformLocation(program, (prefix + ".double_sided_normals").c_str());
-    m_materialFlipNormalsLoc = glGetUniformLocation(program, (prefix + ".flip_normals").c_str());
-}
-
-void MaterialObject::loadShader() {
-    Object::loadShader();
+    Object::loadShader(program, prefix);
 
     glm::vec4 matColor = m_material.getColor();
     glUniform4f(m_materialColorLoc, matColor.x, matColor.y, matColor.z, matColor.w);

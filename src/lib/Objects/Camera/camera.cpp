@@ -38,14 +38,17 @@ void Camera::lookAt(glm::vec3 point) {
     m_axes[1] = glm::normalize(glm::cross(m_axes[0], m_axes[2]));
 }
 
-void Camera::setupShader(GLuint program) {
-    Transform::setupShader(program, "cam.transform");
+void Camera::loadShader(GLuint program) {
+    if (!m_locationsSet) {
+        m_fovLoc = glGetUniformLocation(program, "cam.fov");
+        m_locationsSet = true;
+    }
 
-    m_fovLoc = glGetUniformLocation(program, "cam.fov");
-}
-
-void Camera::loadShader() {
-    Transform::loadShader();
+    Transform::loadShader(program, "cam.transform");
 
     glUniform1f(m_fovLoc, m_fov);
+}
+
+ObjectType Camera::getType() const {
+    return ObjectType::CAMERA;
 }

@@ -2,6 +2,7 @@
 #define LIGHT_H
 
 #include "../Transform/transform.h"
+#include <iostream>
 
 class Light : public Transform {
 public:
@@ -26,8 +27,9 @@ public:
     float getAttenuationQuadratic();
     void setAttenuationQuadratic(float quadratic);
 
-    void setupShader(GLuint program, std::string prefix) override;
-    void loadShader() override;
+    void loadShader(GLuint program, std::string prefix) override;
+
+    ObjectType getType() const override;
 
 private:
     glm::vec3 m_color;
@@ -36,6 +38,7 @@ private:
     float m_attenuationLinear;
     float m_attenuationQuadratic;
 
+    bool m_locationsSet = false;
     GLuint m_colorPos;
     GLuint m_intensityPos;
     GLuint m_attenuationConstantPos;

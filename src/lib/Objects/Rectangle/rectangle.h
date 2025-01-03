@@ -15,13 +15,15 @@ public:
     float getHeight();
     void setHeight(float height);
 
-    void setupShader(GLuint program, std::string prefix) override;
-    void loadShader() override;
+    void loadShader(GLuint program, std::string prefix) override;
+
+    ObjectType getType() const override;
 
 private:
     float m_width = 1.;
     float m_height = 1.;
 
+    bool m_locationsSet = false;
     GLint m_widthLoc;
     GLint m_heightLoc;
 };

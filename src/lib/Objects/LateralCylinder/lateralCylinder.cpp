@@ -1,5 +1,6 @@
 #include <glad/glad.h>
 #include "lateralCylinder.h"
+#include <vector>
 
 LateralCylinder::LateralCylinder() : MaterialObject(), Transform() {}
 
@@ -17,18 +18,20 @@ void LateralCylinder::setRadius(float radius) {
     m_radius = radius;
 }
 
-void LateralCylinder::setupShader(GLuint program, std::string prefix) {
-    MaterialObject::setupShader(program, prefix + ".material");
-    Transform::setupShader(program, prefix + ".transform");
+void LateralCylinder::loadShader(GLuint program, std::string prefix) {
+    if (!m_locationsSet) {
+        m_heightLoc = glGetUniformLocation(program, (prefix + ".height").c_str());
+        m_radiusLoc = glGetUniformLocation(program, (prefix + ".radius").c_str());
+        m_locationsSet = true;
+    }
 
-    m_heightLoc = glGetUniformLocation(program, (prefix + ".height").c_str());
-    m_radiusLoc = glGetUniformLocation(program, (prefix + ".radius").c_str());
-}
-
-void LateralCylinder::loadShader() {
-    MaterialObject::loadShader();
-    Transform::loadShader();
+    MaterialObject::loadShader(program, prefix + ".material");
+    Transform::loadShader(program, prefix + ".transform");
 
     glUniform1f(m_heightLoc, m_height);
     glUniform1f(m_radiusLoc, m_radius);
+}
+
+ObjectType LateralCylinder::getType() const {
+    return ObjectType::LATERAL_CYLINDER;
 }

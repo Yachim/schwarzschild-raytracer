@@ -25,22 +25,25 @@ void Light::setAttenuationLinear(float linear) { m_attenuationLinear = linear; }
 float Light::getAttenuationQuadratic() { return m_attenuationQuadratic; }
 void Light::setAttenuationQuadratic(float quadratic) { m_attenuationQuadratic = quadratic; }
 
-void Light::setupShader(GLuint program, std::string prefix) {
-    Transform::setupShader(program, prefix + ".transform");
+void Light::loadShader(GLuint program, std::string prefix) {
+    if (!m_locationsSet) {
+        m_colorPos = glGetUniformLocation(program, (prefix + ".color").c_str());
+        m_intensityPos = glGetUniformLocation(program, (prefix + ".intensity").c_str());
+        m_attenuationConstantPos = glGetUniformLocation(program, (prefix + ".attenuation_constant").c_str());
+        m_attenuationLinearPos = glGetUniformLocation(program, (prefix + ".attenuation_linear").c_str());
+        m_attenuationQuadraticPos = glGetUniformLocation(program, (prefix + ".attenuation_quadratic").c_str());
+        m_locationsSet = true;
+    }
 
-    m_colorPos = glGetUniformLocation(program, (prefix + ".color").c_str());
-    m_intensityPos = glGetUniformLocation(program, (prefix + ".intensity").c_str());
-    m_attenuationConstantPos = glGetUniformLocation(program, (prefix + ".attenuation_constant").c_str());
-    m_attenuationLinearPos = glGetUniformLocation(program, (prefix + ".attenuation_linear").c_str());
-    m_attenuationQuadraticPos = glGetUniformLocation(program, (prefix + ".attenuation_quadratic").c_str());
-}
-
-void Light::loadShader() {
-    Transform::loadShader();
+    Transform::loadShader(program, prefix + ".transform");
 
     glUniform3f(m_colorPos, m_color.x, m_color.y, m_color.z);
     glUniform1f(m_intensityPos, m_intensity);
     glUniform1f(m_attenuationConstantPos, m_attenuationConstant);
     glUniform1f(m_attenuationLinearPos, m_attenuationLinear);
     glUniform1f(m_attenuationQuadraticPos, m_attenuationQuadratic);
+}
+
+ObjectType Light::getType() const {
+    return ObjectType::LIGHT;
 }

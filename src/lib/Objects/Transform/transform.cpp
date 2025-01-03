@@ -55,14 +55,14 @@ void Transform::calculateUp() {
     m_axes[1] = glm::normalize(glm::cross(m_axes[2], m_axes[0]));
 }
 
-void Transform::setupShader(GLuint program, std::string prefix) {
-    Object::setupShader(program, prefix);
+void Transform::loadShader(GLuint program, std::string prefix) {
+    if (!m_locationsSet) {
+        m_posLoc = glGetUniformLocation(program, (prefix + ".pos").c_str());
+        m_axesLoc = glGetUniformLocation(program, (prefix + ".axes").c_str());
+        m_locationsSet = true;
+    }
 
-    m_posLoc = glGetUniformLocation(program, (prefix + ".pos").c_str());
-    m_axesLoc = glGetUniformLocation(program, (prefix + ".axes").c_str());
-}
-void Transform::loadShader() {
-    Object::loadShader();
+    Object::loadShader(program, prefix);
 
     glUniform3f(m_posLoc, m_pos.x, m_pos.y, m_pos.z);
     glUniformMatrix3fv(m_axesLoc, 1, GL_FALSE, &m_axes[0].x);

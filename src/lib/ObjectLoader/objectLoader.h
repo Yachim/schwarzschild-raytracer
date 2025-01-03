@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <mutex>
+#include <GLFW/glfw3.h>
 #include "../Objects/Light/light.h"
 #include "../Objects/Sphere/sphere.h"
 #include "../Objects/Plane/plane.h"
@@ -18,15 +19,11 @@ private:
     static std::mutex m_mutex;
 
     std::vector<Light*> m_lights;
-    std::vector<Sphere*> m_spheres;
-    std::vector<Plane*> m_planes;
-    std::vector<Disk*> m_disks;
-    std::vector<HollowDisk*> m_hollowDisks;
-    std::vector<LateralCylinder*> m_lateralCylinders;
-    std::vector<Rectangle*> m_rectangles;
-    std::vector<Box*> m_boxes;
+    std::vector<Object*> m_objects;
 
-    uint loadType(GLuint program, ObjectType type, uint objectsOffset);
+    bool m_locationsSet = false;
+    GLint m_numObjectsLoc;
+    GLint m_numLightsLoc;
 
 protected:
     ObjectLoader() {};
@@ -38,13 +35,7 @@ public:
     static ObjectLoader* getInstance();
 
     void addLight(Light* light);
-    void addSphere(Sphere* sphere);
-    void addPlane(Plane* plane);
-    void addDisk(Disk* disk);
-    void addHollowDisk(HollowDisk* hollowDisk);
-    void addLateralCylinder(LateralCylinder* lateralCylinder);
-    void addRectangle(Rectangle* rectangle);
-    void addBox(Box* box);
+    void addObject(Object* object);
 
     void load(GLuint program);
 };

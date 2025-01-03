@@ -25,20 +25,22 @@ void Plane::setRepeatTexture(bool repeatTexture) {
     m_repeatTexture = repeatTexture;
 }
 
-void Plane::setupShader(GLuint program, std::string prefix) {
-    MaterialObject::setupShader(program, prefix + ".material");
-    Transform::setupShader(program, prefix + ".transform");
+void Plane::loadShader(GLuint program, std::string prefix) {
+    if (!m_locationsSet) {
+        m_textureSizeLoc = glGetUniformLocation(program, (prefix + ".texture_size").c_str());
+        m_textureOffsetLoc = glGetUniformLocation(program, (prefix + ".texture_offset").c_str());
+        m_repeatTextureLoc = glGetUniformLocation(program, (prefix + ".repeat_texture").c_str());
+        m_locationsSet = true;
+    }
 
-    m_textureSizeLoc = glGetUniformLocation(program, (prefix + ".texture_size").c_str());
-    m_textureOffsetLoc = glGetUniformLocation(program, (prefix + ".texture_offset").c_str());
-    m_repeatTextureLoc = glGetUniformLocation(program, (prefix + ".repeat_texture").c_str());
-}
-
-void Plane::loadShader() {
-    MaterialObject::loadShader();
-    Transform::loadShader();
+    MaterialObject::loadShader(program, prefix + ".material");
+    Transform::loadShader(program, prefix + ".transform");
 
     glUniform2f(m_textureSizeLoc, m_textureSize.x, m_textureSize.y);
     glUniform2f(m_textureOffsetLoc, m_textureOffset.x, m_textureOffset.y);
     glUniform1i(m_repeatTextureLoc, m_repeatTexture);
+}
+
+ObjectType Plane::getType() const {
+    return ObjectType::PLANE;
 }

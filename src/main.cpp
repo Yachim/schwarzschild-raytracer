@@ -145,18 +145,18 @@ int main(int, char**) {
     Sphere sphere(glm::vec3(-10., 0., 0.));
     sphere.setMaterialColor(glm::vec4(1., 0., 0., 1.));
     sphere.setMaterialTextureIndex(0);
-    objectLoader->addSphere(&sphere);
+    objectLoader->addObject(&sphere);
 
     Disk disk;
     disk.setRadius(2.);
     disk.setPos(glm::vec3(0., 0., -10.));
     disk.setAxes(glm::angleAxis((float)M_PI / 4.f, glm::normalize(glm::vec3(1.f, 1.f, 1.f))));
     disk.setMaterialTextureIndex(0);
-    objectLoader->addDisk(&disk);
+    objectLoader->addObject(&disk);
 
     HollowDisk accretionDisk;
     accretionDisk.setMaterialTextureIndex(0);
-    objectLoader->addHollowDisk(&accretionDisk);
+    objectLoader->addObject(&accretionDisk);
 
     Light light;
     light.setIntensity(8.);
@@ -167,24 +167,23 @@ int main(int, char**) {
     rect.setWidth(3.);
     rect.setHeight(2.);
     rect.setMaterialTextureIndex(0);
-    objectLoader->addRectangle(&rect);
+    objectLoader->addObject(&rect);
 
     Box box;
     box.setPos(glm::vec3(10., 0., 0.));
     box.setMaterialTextureIndex(1);
-    objectLoader->addBox(&box);
+    objectLoader->addObject(&box);
 
     LateralCylinder cyl;
     cyl.setPos(glm::vec3(0., 10., 0.));
     cyl.setHeight(5.);
     cyl.setRadius(2.);
     cyl.setMaterialTextureIndex(0);
-    objectLoader->addLateralCylinder(&cyl);
+    objectLoader->addObject(&cyl);
 
     glUseProgram(shaderProgram);
 
-    cam.setupShader(shaderProgram);
-    cam.loadShader();
+    cam.loadShader(shaderProgram);
 
     objectLoader->load(shaderProgram);
 #pragma endregion
@@ -312,7 +311,7 @@ int main(int, char**) {
         glUniform1f(timeLoc, (float)glfwGetTime());
         glUniform2f(resolutionLoc, width, height);
 
-        cam.loadShader();
+        cam.loadShader(shaderProgram);
 #pragma endregion
 
         glfwSwapBuffers(window);

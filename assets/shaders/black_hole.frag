@@ -94,7 +94,6 @@ struct Sphere {
 };
 
 #define MAX_SPHERES 3
-uniform int num_spheres;
 uniform Sphere spheres[MAX_SPHERES];
 
 const mat3 DEFAULT_AXES = mat3(
@@ -114,7 +113,6 @@ struct Plane {
 };
 
 #define MAX_PLANES 3
-uniform int num_planes;
 uniform Plane planes[MAX_PLANES];
 
 struct Disk {
@@ -123,7 +121,6 @@ struct Disk {
 };
 
 #define MAX_DISKS 3
-uniform int num_disks;
 uniform Disk disks[MAX_DISKS];
 
 struct HollowDisk {
@@ -133,7 +130,6 @@ struct HollowDisk {
 };
 
 #define MAX_HOLLOW_DISKS 3
-uniform int num_hollow_disks;
 uniform HollowDisk hollow_disks[MAX_HOLLOW_DISKS];
 
 // only lateral cylinders, bases have to be provided manually as disks
@@ -145,7 +141,6 @@ struct Cylinder {
 };
 
 #define MAX_CYLINDERS 3
-uniform int num_cylinders;
 uniform Cylinder cylinders[MAX_CYLINDERS];
 
 struct Rectangle {
@@ -155,7 +150,6 @@ struct Rectangle {
 };
 
 #define MAX_RECTANGLES 3
-uniform int num_rectangles;
 uniform Rectangle rectangles[MAX_RECTANGLES];
 
 struct Box {
@@ -167,7 +161,6 @@ struct Box {
 };
 
 #define MAX_BOXES 3
-uniform int num_boxes;
 uniform Box boxes[MAX_BOXES];
 
 const int OBJECT_TYPE_SPECIAL     = -42;
@@ -184,6 +177,7 @@ struct Object {
 };
 
 #define MAX_OBJECTS MAX_SPHERES + MAX_PLANES + MAX_DISKS + MAX_HOLLOW_DISKS + MAX_CYLINDERS + MAX_RECTANGLES + MAX_BOXES
+uniform int num_objects;
 uniform Object objects[MAX_OBJECTS];
 
 Material get_object_material(Object object) {
@@ -753,7 +747,6 @@ vec4 intersect(Ray ray, float max_lambda) {
     HitInfo closest_hit = sphere_intersect(ray, BLACK_HOLE, max_lambda);
     if (closest_hit.is_hit) closest_hit.object = Object(OBJECT_TYPE_SPECIAL, -1);
 
-    int num_objects = num_spheres + num_planes + num_disks + num_hollow_disks + num_cylinders + num_rectangles + num_boxes;
     for(int i = 0; i < num_objects; i++) {
         Object current_object = objects[i];
 

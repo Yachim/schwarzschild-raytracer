@@ -1,6 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "objectLoader.h"
+#include <iostream>
 #include <string>
 
 ObjectLoader* ObjectLoader::m_instance(nullptr);
@@ -18,104 +19,74 @@ void ObjectLoader::addLight(Light* light) {
     m_lights.push_back(light);
 }
 
-void ObjectLoader::addSphere(Sphere* sphere) {
-    m_spheres.push_back(sphere);
-}
-
-void ObjectLoader::addPlane(Plane* plane) {
-    m_planes.push_back(plane);
-}
-
-void ObjectLoader::addDisk(Disk* disk) {
-    m_disks.push_back(disk);
-}
-
-void ObjectLoader::addHollowDisk(HollowDisk* hollowDisk) {
-    m_hollowDisks.push_back(hollowDisk);
-}
-
-void ObjectLoader::addLateralCylinder(LateralCylinder* lateralCylinder) {
-    m_lateralCylinders.push_back(lateralCylinder);
-}
-
-void ObjectLoader::addRectangle(Rectangle* rectangle) {
-    m_rectangles.push_back(rectangle);
-}
-
-void ObjectLoader::addBox(Box* box) {
-    m_boxes.push_back(box);
-}
-
-// returns the length of the array
-// objectsOffset is the offset for the objects glsl array
-uint ObjectLoader::loadType(GLuint program, ObjectType type, uint objectsOffset) {
-    std::vector<Object*> objects;
-    std::string numStr;
-    std::string glslListName;
-    switch (type) {
-    case ObjectType::SPHERE:
-        objects.insert(objects.end(), m_spheres.begin(), m_spheres.end());
-        numStr = "num_spheres";
-        glslListName = "spheres";
-        break;
-    case ObjectType::PLANE:
-        objects.insert(objects.end(), m_planes.begin(), m_planes.end());
-        numStr = "num_planes";
-        glslListName = "planes";
-        break;
-    case ObjectType::DISK:
-        objects.insert(objects.end(), m_disks.begin(), m_disks.end());
-        numStr = "num_disks";
-        glslListName = "disks";
-        break;
-    case ObjectType::HOLLOW_DISK:
-        objects.insert(objects.end(), m_hollowDisks.begin(), m_hollowDisks.end());
-        numStr = "num_hollow_disks";
-        glslListName = "hollow_disks";
-        break;
-    case ObjectType::LATERAL_CYLINDER:
-        objects.insert(objects.end(), m_lateralCylinders.begin(), m_lateralCylinders.end());
-        numStr = "num_cylinders";
-        glslListName = "cylinders";
-        break;
-    case ObjectType::RECTANGLE:
-        objects.insert(objects.end(), m_rectangles.begin(), m_rectangles.end());
-        numStr = "num_rectangles";
-        glslListName = "rectangles";
-        break;
-    case ObjectType::BOX:
-        objects.insert(objects.end(), m_boxes.begin(), m_boxes.end());
-        numStr = "num_boxes";
-        glslListName = "boxes";
-        break;
-    default:
-        return 0;
-    }
-
-    glUniform1i(glGetUniformLocation(program, numStr.c_str()), objects.size());
-    for (uint i = 0; i < objects.size(); i++) {
-        objects[i]->setupShader(program, (glslListName + "[" + std::to_string(i) + "]").c_str());
-        objects[i]->loadShader();
-
-        glUniform1i(glGetUniformLocation(program, ("objects[" + std::to_string(objectsOffset + i) + "].type").c_str()), type);
-        glUniform1i(glGetUniformLocation(program, ("objects[" + std::to_string(objectsOffset + i) + "].index").c_str()), i);
-    }
-
-    return objects.size();
+void ObjectLoader::addObject(Object* object) {
+    m_objects.push_back(object);
 }
 
 void ObjectLoader::load(GLuint program) {
-    uint offset = loadType(program, ObjectType::SPHERE, 0);
-    offset += loadType(program, ObjectType::PLANE, offset);
-    offset += loadType(program, ObjectType::DISK, offset);
-    offset += loadType(program, ObjectType::HOLLOW_DISK, offset);
-    offset += loadType(program, ObjectType::LATERAL_CYLINDER, offset);
-    offset += loadType(program, ObjectType::RECTANGLE, offset);
-    offset += loadType(program, ObjectType::BOX, offset);
+    if (!m_locationsSet) {
+        m_numObjectsLoc = glGetUniformLocation(program, "num_objects");
+        m_numLightsLoc = glGetUniformLocation(program, "num_lights");
+        m_locationsSet = true;
+    }
 
-    glUniform1i(glGetUniformLocation(program, "num_lights"), m_lights.size());
-    for (uint i = 0; i < m_lights.size(); i++) {
-        m_lights[i]->setupShader(program, ("lights[" + std::to_string(i) + "]").c_str());
-        m_lights[i]->loadShader();
+    int sphereIndex = 0;
+    int planeIndex = 0;
+    int diskIndex = 0;
+    int hollowDiskIndex = 0;
+    int lateralCylinderIndex = 0;
+    int rectangleIndex = 0;
+    int boxIndex = 0;
+
+    glUniform1i(m_numObjectsLoc, m_objects.size());
+    for (int i = 0; i < m_objects.size(); i++) {
+        std::string glslListName;
+        ObjectType type = m_objects[i]->getType();
+        int* index;
+        switch (type) {
+        case ObjectType::SPHERE:
+            glslListName = "spheres";
+            index = &sphereIndex;
+            break;
+        case ObjectType::PLANE:
+            glslListName = "planes";
+            index = &planeIndex;
+            break;
+        case ObjectType::DISK:
+            glslListName = "disks";
+            index = &diskIndex;
+            break;
+        case ObjectType::HOLLOW_DISK:
+            glslListName = "hollow_disks";
+            index = &hollowDiskIndex;
+            break;
+        case ObjectType::LATERAL_CYLINDER:
+            glslListName = "cylinders";
+            index = &lateralCylinderIndex;
+            break;
+        case ObjectType::RECTANGLE:
+            glslListName = "rectangles";
+            index = &rectangleIndex;
+            break;
+        case ObjectType::BOX:
+            glslListName = "boxes";
+            index = &boxIndex;
+            break;
+        default:
+            std::cout << "Invalid type: " << type << std::endl;
+            continue;
+        }
+
+        m_objects[i]->loadShader(program, (glslListName + "[" + std::to_string(*index) + "]").c_str());
+
+        glUniform1i(glGetUniformLocation(program, ("objects[" + std::to_string(i) + "].type").c_str()), type);
+        glUniform1i(glGetUniformLocation(program, ("objects[" + std::to_string(i) + "].index").c_str()), *index);
+
+        (*index)++;
+    }
+
+    glUniform1i(m_numLightsLoc, m_lights.size());
+    for (int i = 0; i < m_lights.size(); i++) {
+        m_lights[i]->loadShader(program, ("lights[" + std::to_string(i) + "]").c_str());
     }
 }
