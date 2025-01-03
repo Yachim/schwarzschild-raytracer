@@ -3,6 +3,7 @@
 #include "objectLoader.h"
 #include <iostream>
 #include <string>
+#include <map>
 
 ObjectLoader* ObjectLoader::m_instance(nullptr);
 std::mutex ObjectLoader::m_mutex;
@@ -19,7 +20,7 @@ void ObjectLoader::addLight(Light* light) {
     m_lights.push_back(light);
 }
 
-void ObjectLoader::addObject(Object* object) {
+void ObjectLoader::addObject(MaterialObject* object) {
     m_objects.push_back(object);
 }
 
@@ -30,6 +31,8 @@ void ObjectLoader::load(GLuint program) {
         m_locationsSet = true;
     }
 
+    std::map<const Material*, int> matMap;
+
     int sphereIndex = 0;
     int planeIndex = 0;
     int diskIndex = 0;
@@ -39,7 +42,7 @@ void ObjectLoader::load(GLuint program) {
     int boxIndex = 0;
 
     glUniform1i(m_numObjectsLoc, m_objects.size());
-    for (int i = 0; i < m_objects.size(); i++) {
+    for (size_t i = 0; i < m_objects.size(); i++) {
         std::string glslListName;
         ObjectType type = m_objects[i]->getType();
         int* index;
@@ -77,10 +80,24 @@ void ObjectLoader::load(GLuint program) {
             continue;
         }
 
+        const Material* p_mat = m_objects[i]->getMaterial();
+        int matIndex;
+        if (!matMap[p_mat]) {
+            matIndex = matMap.size();
+            matMap[p_mat] = matIndex;
+
+            Material mat = *p_mat;
+            mat.loadShader(program, ("materials[" + std::to_string(matIndex) + "]").c_str());
+        }
+        else {
+            matIndex = matMap[p_mat];
+        }
+
         m_objects[i]->loadShader(program, (glslListName + "[" + std::to_string(*index) + "]").c_str());
 
         glUniform1i(glGetUniformLocation(program, ("objects[" + std::to_string(i) + "].type").c_str()), type);
         glUniform1i(glGetUniformLocation(program, ("objects[" + std::to_string(i) + "].index").c_str()), *index);
+        glUniform1i(glGetUniformLocation(program, ("objects[" + std::to_string(i) + "].material_index").c_str()), matIndex);
 
         (*index)++;
     }

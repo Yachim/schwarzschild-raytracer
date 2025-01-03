@@ -1,9 +1,10 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
+#include "../Object/object.h"
 #include <glm/vec4.hpp>
 
-class Material {
+class Material : public virtual Object {
 public:
     Material();
     Material(glm::vec4 color);
@@ -45,6 +46,9 @@ public:
     bool getFlipNormals() const;
     void setFlipNormals(bool flipNormals);
 
+    void loadShader(GLuint program, std::string prefix) override;
+    ObjectType getType() const override;
+
 private:
     glm::vec4 m_color{ 0.5, 0., 0.5, 1. };
     float m_ambient = 0.1;
@@ -58,5 +62,20 @@ private:
     bool m_swapUvs = false;
     bool m_doubleSidedNormals = true;
     bool m_flipNormals = false;
+
+    // uniform locations
+    bool m_locationsSet = false;
+    GLint m_materialColorLoc;
+    GLint m_materialAmbientLoc;
+    GLint m_materialDiffuseLoc;
+    GLint m_materialSpecularLoc;
+    GLint m_materialShininessLoc;
+    GLint m_materialTextureIndexLoc;
+    GLint m_materialNormalMapIndexLoc;
+    GLint m_materialInvertUvXLoc;
+    GLint m_materialInvertUvYLoc;
+    GLint m_materialSwapUvsLoc;
+    GLint m_materialDoubleSidedNormalsLoc;
+    GLint m_materialFlipNormalsLoc;
 };
 #endif

@@ -5,7 +5,8 @@
 #include <string>
 
 enum ObjectType {
-    UNKNOWN = -3,
+    UNKNOWN = -999,
+    MATERIAL = -3,
     CAMERA = -2,
     LIGHT = -1,
     SPHERE,

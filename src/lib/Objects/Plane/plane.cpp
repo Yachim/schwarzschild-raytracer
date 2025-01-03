@@ -33,7 +33,6 @@ void Plane::loadShader(GLuint program, std::string prefix) {
         m_locationsSet = true;
     }
 
-    MaterialObject::loadShader(program, prefix + ".material");
     Transform::loadShader(program, prefix + ".transform");
 
     glUniform2f(m_textureSizeLoc, m_textureSize.x, m_textureSize.y);

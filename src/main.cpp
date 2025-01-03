@@ -142,44 +142,49 @@ int main(int, char**) {
 
     ObjectLoader* objectLoader = ObjectLoader::getInstance();
 
+    Material mat1;
+    mat1.setTextureIndex(0);
+
     Sphere sphere(glm::vec3(-10., 0., 0.));
-    sphere.setMaterialColor(glm::vec4(1., 0., 0., 1.));
-    sphere.setMaterialTextureIndex(0);
+    sphere.setMaterial(&mat1);
     objectLoader->addObject(&sphere);
 
     Disk disk;
     disk.setRadius(2.);
     disk.setPos(glm::vec3(0., 0., -10.));
     disk.setAxes(glm::angleAxis((float)M_PI / 4.f, glm::normalize(glm::vec3(1.f, 1.f, 1.f))));
-    disk.setMaterialTextureIndex(0);
+    disk.setMaterial(&mat1);
     objectLoader->addObject(&disk);
 
     HollowDisk accretionDisk;
-    accretionDisk.setMaterialTextureIndex(0);
+    accretionDisk.setMaterial(&mat1);
     objectLoader->addObject(&accretionDisk);
-
-    Light light;
-    light.setIntensity(8.);
-    objectLoader->addLight(&light);
-
-    Rectangle rect;
-    rect.setPos(glm::vec3(0., 0., 10.));
-    rect.setWidth(3.);
-    rect.setHeight(2.);
-    rect.setMaterialTextureIndex(0);
-    objectLoader->addObject(&rect);
-
-    Box box;
-    box.setPos(glm::vec3(10., 0., 0.));
-    box.setMaterialTextureIndex(1);
-    objectLoader->addObject(&box);
 
     LateralCylinder cyl;
     cyl.setPos(glm::vec3(0., 10., 0.));
     cyl.setHeight(5.);
     cyl.setRadius(2.);
-    cyl.setMaterialTextureIndex(0);
+    cyl.setMaterial(&mat1);
     objectLoader->addObject(&cyl);
+
+    Rectangle rect;
+    rect.setPos(glm::vec3(0., 0., 10.));
+    rect.setWidth(3.);
+    rect.setHeight(2.);
+    rect.setMaterial(&mat1);
+    objectLoader->addObject(&rect);
+
+    Material mat2;
+    mat2.setTextureIndex(1);
+
+    Box box;
+    box.setPos(glm::vec3(10., 0., 0.));
+    box.setMaterial(&mat2);
+    objectLoader->addObject(&box);
+
+    Light light;
+    light.setIntensity(8.);
+    objectLoader->addLight(&light);
 
     glUseProgram(shaderProgram);
 

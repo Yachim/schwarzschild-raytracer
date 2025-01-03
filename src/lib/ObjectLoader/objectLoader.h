@@ -19,7 +19,7 @@ private:
     static std::mutex m_mutex;
 
     std::vector<Light*> m_lights;
-    std::vector<Object*> m_objects;
+    std::vector<MaterialObject*> m_objects;
 
     bool m_locationsSet = false;
     GLint m_numObjectsLoc;
@@ -35,7 +35,7 @@ public:
     static ObjectLoader* getInstance();
 
     void addLight(Light* light);
-    void addObject(Object* object);
+    void addObject(MaterialObject* object);
 
     void load(GLuint program);
 };

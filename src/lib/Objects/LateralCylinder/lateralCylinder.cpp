@@ -25,7 +25,6 @@ void LateralCylinder::loadShader(GLuint program, std::string prefix) {
         m_locationsSet = true;
     }
 
-    MaterialObject::loadShader(program, prefix + ".material");
     Transform::loadShader(program, prefix + ".transform");
 
     glUniform1f(m_heightLoc, m_height);

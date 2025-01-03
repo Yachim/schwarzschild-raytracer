@@ -33,7 +33,6 @@ void Box::loadShader(GLuint program, std::string prefix) {
         m_locationsSet = true;
     }
 
-    MaterialObject::loadShader(program, prefix + ".material");
     Transform::loadShader(program, prefix + ".transform");
 
     glUniform1f(m_widthLoc, m_width);

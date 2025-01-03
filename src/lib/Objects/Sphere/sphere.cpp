@@ -4,7 +4,6 @@
 Sphere::Sphere() : MaterialObject(), Transform() {}
 Sphere::Sphere(glm::vec3 pos) : MaterialObject(), Transform(pos) {}
 Sphere::Sphere(glm::vec3 pos, float radius) : Transform(pos), MaterialObject(), m_radius(radius) {}
-Sphere::Sphere(glm::vec3 pos, float radius, Material mat) : Transform(pos), MaterialObject(mat), m_radius(radius) {}
 
 float Sphere::getRadius() const {
     return m_radius;
@@ -20,8 +19,6 @@ void Sphere::loadShader(GLuint program, std::string prefix) {
     }
 
     Transform::loadShader(program, prefix + ".transform");
-    MaterialObject::loadShader(program, prefix + ".material");
-
 
     glUniform1f(m_radiusLoc, m_radius);
 }

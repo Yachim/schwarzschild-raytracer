@@ -15,8 +15,8 @@ add_executable(schwarzschild_raytracer
     src/lib/Objects/Object/object.cpp
     src/lib/Objects/Object/object.h
 
-    src/lib/Material/material.cpp
-    src/lib/Material/material.h
+    src/lib/Objects/Material/material.cpp
+    src/lib/Objects/Material/material.h
 
     src/lib/Objects/MaterialObject/materialObject.cpp
     src/lib/Objects/MaterialObject/materialObject.h

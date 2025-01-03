@@ -87,9 +87,11 @@ struct Material {
     bool flip_normals;
 };
 
+#define MAX_MATERIALS 10
+uniform Material materials[MAX_MATERIALS];
+
 struct Sphere {
     Transform transform; // pos - center
-    Material material;
     float radius;
 };
 
@@ -101,12 +103,10 @@ const mat3 DEFAULT_AXES = mat3(
     vec3(0., 1., 0.),
     vec3(0., 0., 1.)
 );
-const Material BLANK_MAT = Material(vec4(0.0, 0.0, 0.0, 1.0), 0.1, 0.0, 0.0, 32.0, -1, -1, false, false, false, false, false);
-const Sphere BLACK_HOLE = Sphere(Transform(vec3(0., 0., 0.), DEFAULT_AXES), BLANK_MAT, 1.0);
+const Sphere BLACK_HOLE = Sphere(Transform(vec3(0., 0., 0.), DEFAULT_AXES), 1.0);
 
 struct Plane {
     Transform transform; // pos - some point
-    Material material;
     vec2 texture_offset;
     bool repeat_texture;
     vec2 texture_size;
@@ -135,7 +135,6 @@ uniform HollowDisk hollow_disks[MAX_HOLLOW_DISKS];
 // only lateral cylinders, bases have to be provided manually as disks
 struct Cylinder {
     Transform transform; // pos - base center
-    Material material;
     float height;
     float radius;
 };
@@ -154,7 +153,6 @@ uniform Rectangle rectangles[MAX_RECTANGLES];
 
 struct Box {
     Transform transform; // pos - left bottom back corner
-    Material material;
     float width;
     float depth;
     float height;
@@ -174,31 +172,12 @@ const int OBJECT_TYPE_BOX         = 6;
 struct Object {
     int type;
     int index; // indexing respective arrays
+    int material_index;
 };
 
 #define MAX_OBJECTS MAX_SPHERES + MAX_PLANES + MAX_DISKS + MAX_HOLLOW_DISKS + MAX_CYLINDERS + MAX_RECTANGLES + MAX_BOXES
 uniform int num_objects;
 uniform Object objects[MAX_OBJECTS];
-
-Material get_object_material(Object object) {
-    int index = object.index;
-    switch (object.type) {
-        case OBJECT_TYPE_SPHERE:
-            return spheres[index].material;
-        case OBJECT_TYPE_PLANE:
-            return planes[index].material;
-        case OBJECT_TYPE_DISK:
-            return disks[index].plane.material;
-        case OBJECT_TYPE_HOLLOW_DISK:
-            return hollow_disks[index].plane.material;
-        case OBJECT_TYPE_CYLINDER:
-            return cylinders[index].material;
-        case OBJECT_TYPE_RECTANGLE:
-            return rectangles[index].plane.material;
-        case OBJECT_TYPE_BOX:
-            return boxes[index].material;
-    }
-}
 
 struct Ray {
     vec3 origin;
@@ -374,7 +353,7 @@ float square_vector(vec2 v) {
 vec4 calculate_lighting(HitInfo hit_info, vec3 view_dir) {
     if (hit_info.object.type == OBJECT_TYPE_SPECIAL) return vec4(0., 0., 0., 1.);
 
-    Material material = get_object_material(hit_info.object);
+    Material material = materials[hit_info.object.material_index];
     if (material.flip_normals) hit_info.tangent_space[2] *= -1.;
     if (!material.double_sided_normals && dot(hit_info.tangent_space[2], view_dir) < 0.) return vec4(0., 0., 0., 0.);
     vec2 object_uv = hit_info.tangent_coordinates;
@@ -599,7 +578,7 @@ HitInfo box_intersect(Ray ray, Box box, float max_lambda) {
                 -box.transform.axes[1],
                 -box.transform.axes[2]
             )
-        ), box.material, vec2(0.), false, vec2(0.)),
+        ), vec2(0.), false, vec2(0.)),
         box.width,
         box.depth
     );
@@ -617,7 +596,7 @@ HitInfo box_intersect(Ray ray, Box box, float max_lambda) {
                 -box.transform.axes[2],
                 -box.transform.axes[1]
             )
-        ), box.material, vec2(0.), false, vec2(0.)),
+        ), vec2(0.), false, vec2(0.)),
         box.width,
         box.height
     );
@@ -639,7 +618,7 @@ HitInfo box_intersect(Ray ray, Box box, float max_lambda) {
                 -box.transform.axes[0],
                 -box.transform.axes[1]
             )
-        ), box.material, vec2(0.), false, vec2(0.)),
+        ), vec2(0.), false, vec2(0.)),
         box.depth,
         box.height
     );
@@ -745,7 +724,7 @@ HitInfo intersect_object(Ray ray, Object object, float max_lambda) {
 vec4 intersect(Ray ray, float max_lambda) {
     // black hole check
     HitInfo closest_hit = sphere_intersect(ray, BLACK_HOLE, max_lambda);
-    if (closest_hit.is_hit) closest_hit.object = Object(OBJECT_TYPE_SPECIAL, -1);
+    if (closest_hit.is_hit) closest_hit.object.type = OBJECT_TYPE_SPECIAL;
 
     for(int i = 0; i < num_objects; i++) {
         Object current_object = objects[i];
@@ -835,7 +814,7 @@ void main() {
     for(int i = 0; i < max_steps; i++) {
         if(u < u_f) {
             // flat space approximation
-            HitInfo u_f_hit = sphere_intersect(ray, Sphere(Transform(vec3(0., 0., 0.), DEFAULT_AXES), BLANK_MAT, 1. / u_f));
+            HitInfo u_f_hit = sphere_intersect(ray, Sphere(Transform(vec3(0., 0., 0.), DEFAULT_AXES), 1. / u_f));
             if (!u_f_hit.is_hit) {
                 vec4 intersection_color = intersect(ray);
                 FragColor += intersection_color;
