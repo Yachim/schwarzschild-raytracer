@@ -12,6 +12,8 @@
 #include "lib/Input/input.h"
 #include "lib/shader_utils/shader_utils.h"
 #include "lib/ObjectLoader/objectLoader.h"
+#include <unistd.h>
+#include <sys/select.h>
 
 const uint DEFAULT_WIDTH = 1280;
 const uint DEFAULT_HEIGHT = 720;
@@ -27,6 +29,23 @@ const float MAX_FOV = 120.;
 // used for clamping
 const float MIN_ANGLE = 10. * M_PI / 180.;
 const float MAX_ANGLE = 170. * M_PI / 180.;
+
+std::string readStdin() {
+    fd_set readfds;
+    FD_ZERO(&readfds);
+    FD_SET(STDIN_FILENO, &readfds);
+
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
+
+    if (select(STDIN_FILENO + 1, &readfds, nullptr, nullptr, &timeout) > 0) {
+        std::string input;
+        std::getline(std::cin, input);
+        return input;
+    }
+    return "";
+}
 
 // 0 for 2k, 1 for 8k
 #define BACKGROUND_TEXTURE_QUALITY 0
@@ -211,6 +230,11 @@ int main(int, char**) {
     glUniform1f(glGetUniformLocation(shaderProgram, "percent_black"), PERCENT_BLACK);
     int raytraceType = RaytraceType::CURVED;
     while (!glfwWindowShouldClose(window)) {
+        std::string consoleInput = readStdin();
+        if (consoleInput != "") {
+            std::cout << consoleInput << std::endl;
+        }
+
         glfwPollEvents();
 
         if (input->isPressed(GLFW_KEY_ESCAPE)) break;
