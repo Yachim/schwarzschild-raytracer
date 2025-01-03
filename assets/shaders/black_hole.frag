@@ -3,7 +3,6 @@
 // camera has left-handed y-up coordinates
 // matrix columns represent the x, y, z axes respectively (right, up, forward)
 // TODO: raytrace towards light?
-// FIXME: make materials not unique (materials array + index)
 
 precision highp float;
 precision highp sampler2D;

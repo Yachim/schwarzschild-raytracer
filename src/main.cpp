@@ -1,8 +1,5 @@
 // TODO: loading
 // TODO: clocks
-// FIXME: accretion disk casts shadow on the moon even if moon is in front of the accretion disk
-// FIXME: accretion disc texture seam
-// FIXME: cylinder visual bug (look from above when close)
 // FIXME: orthographic camera background
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
