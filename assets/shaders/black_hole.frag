@@ -65,7 +65,6 @@ uniform int num_lights;
 uniform Light lights[MAX_LIGHTS];
 
 #define MAX_TEXTURES 10
-uniform int num_textures;
 uniform vec2 texture_sizes[MAX_TEXTURES];
 uniform vec2 max_texture_size;
 uniform sampler2DArray textures;
