@@ -21,6 +21,7 @@
 #include "lib/ObjectLoader/objectLoader.h"
 #include <unistd.h>
 #include <sys/select.h>
+#include "lib/AnimationManager/animationManager.h"
 
 const uint DEFAULT_WIDTH = 1280;
 const uint DEFAULT_HEIGHT = 720;
@@ -282,6 +283,8 @@ int main(int, char**) {
     glfwSetScrollCallback(window, Input::scrollCallback);
 #pragma endregion
 
+    AnimationManager* animationManager = AnimationManager::getInstance();
+
     double hyperbolicTrajectoryStartTime = -(1. + HYPERBOLIC_TRAJECTORY_DURATION);
 
     float speed = MOVE_SPEED;
@@ -314,6 +317,8 @@ int main(int, char**) {
         double dt = windowTime - prevTime;
         glm::vec2 mouse = input->getMouse();
         glm::vec2 deltaMouse = mouse - prevMouse;
+
+        animationManager->update(windowTime);
 
         glClear(GL_COLOR_BUFFER_BIT);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
