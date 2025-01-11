@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <sys/select.h>
 #include "lib/AnimationManager/animationManager.h"
+#include "lib/Animations/TranslateAnimation/translateAnimation.h"
 
 const uint DEFAULT_WIDTH = 1280;
 const uint DEFAULT_HEIGHT = 720;
@@ -285,6 +286,10 @@ int main(int, char**) {
 
     AnimationManager* animationManager = AnimationManager::getInstance();
 
+    TranslateAnimation animation(EaseType::LINEAR, 2., 2., &sphere);
+    animation.setTranslation(glm::vec3(0., 5., 0.));
+    animationManager->addAnimation(&animation);
+
     double hyperbolicTrajectoryStartTime = -(1. + HYPERBOLIC_TRAJECTORY_DURATION);
 
     float speed = MOVE_SPEED;
@@ -302,7 +307,7 @@ int main(int, char**) {
     GLint testRayFlatOriginLoc = glGetUniformLocation(shaderProgram, "test_ray_flat_origin");
     GLint testRayFlatDirLoc = glGetUniformLocation(shaderProgram, "test_ray_flat_dir");
     GLint testRayVisibleLoc = glGetUniformLocation(shaderProgram, "test_ray_visible");
-    int raytraceType = RaytraceType::CURVED;
+    int raytraceType = RaytraceType::FLAT;
     while (!glfwWindowShouldClose(window)) {
         std::string consoleInput = readStdin();
         if (consoleInput != "") {
@@ -319,6 +324,7 @@ int main(int, char**) {
         glm::vec2 deltaMouse = mouse - prevMouse;
 
         animationManager->update(windowTime);
+        objectLoader->load(shaderProgram);
 
         glClear(GL_COLOR_BUFFER_BIT);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
