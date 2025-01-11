@@ -2,8 +2,8 @@
 
 BobbingAnimation::BobbingAnimation(double startTime, double duration, Transform* object) :
     Animation(EaseType::LINEAR, startTime, duration),
-    CombinedAnimation(startTime, duration),
-    m_object(object) {
+    TransformAnimation(EaseType::LINEAR, startTime, duration, object),
+    CombinedAnimation(startTime, duration) {
     setPoints(glm::vec3(0.), glm::vec3(0., 1., 0.), 0.5);
 
     setSubanimations(std::vector<Animation*>{&animation1, & animation2, & animation3});
@@ -11,17 +11,10 @@ BobbingAnimation::BobbingAnimation(double startTime, double duration, Transform*
 }
 BobbingAnimation::BobbingAnimation(const BobbingAnimation& animation) :
     Animation(animation),
-    CombinedAnimation(animation),
-    m_object(animation.getObject()) {
+    TransformAnimation(animation),
+    CombinedAnimation(animation) {
     setSubanimations(std::vector<Animation*>{&animation1, & animation2, & animation3});
     setRepeating(true);
-}
-
-Transform* BobbingAnimation::getObject() const {
-    return m_object;
-}
-void BobbingAnimation::setObject(Transform* object) {
-    m_object = object;
 }
 
 void BobbingAnimation::setPoints(glm::vec3 start, glm::vec3 dir, float dist) {

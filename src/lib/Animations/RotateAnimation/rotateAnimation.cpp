@@ -3,20 +3,13 @@
 
 RotateAnimation::RotateAnimation(EaseType easeType, double startTime, double duration, Transform* object) :
     Animation(easeType, startTime, duration),
-    m_object(object) {}
+    TransformAnimation(easeType, startTime, duration, object) {}
 RotateAnimation::RotateAnimation(const RotateAnimation& animation) :
     Animation(animation),
-    m_object(animation.getObject()),
+    TransformAnimation(animation),
     m_axis(animation.getAxis()),
     m_startAngle(animation.getStartAngle()),
     m_endAngle(animation.getEndAngle()) {}
-
-Transform* RotateAnimation::getObject() const {
-    return m_object;
-}
-void RotateAnimation::setObject(Transform* object) {
-    m_object = object;
-}
 
 glm::vec3 RotateAnimation::getAxis() const {
     return m_axis;

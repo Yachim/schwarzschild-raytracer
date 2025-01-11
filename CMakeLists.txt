@@ -68,6 +68,8 @@ add_executable(schwarzschild_raytracer
     src/lib/AnimationManager/animationManager.h
     src/lib/Animations/Animation/animation.cpp
     src/lib/Animations/Animation/animation.h
+    src/lib/Animations/TransformAnimation/transformAnimation.cpp
+    src/lib/Animations/TransformAnimation/transformAnimation.h
     src/lib/Animations/TranslateAnimation/translateAnimation.cpp
     src/lib/Animations/TranslateAnimation/translateAnimation.h
     src/lib/Animations/CombinedAnimation/combinedAnimation.cpp

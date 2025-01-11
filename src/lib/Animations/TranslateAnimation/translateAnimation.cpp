@@ -2,19 +2,12 @@
 
 TranslateAnimation::TranslateAnimation(EaseType easeType, double startTime, double duration, Transform* object) :
     Animation(easeType, startTime, duration),
-    m_object(object) {}
+    TransformAnimation(easeType, startTime, duration, object) {}
 TranslateAnimation::TranslateAnimation(const TranslateAnimation& animation) :
     Animation(animation),
-    m_object(animation.getObject()),
+    TransformAnimation(animation),
     m_startPos(animation.getStartPos()),
     m_endPos(animation.getEndPos()) {}
-
-Transform* TranslateAnimation::getObject() const {
-    return m_object;
-}
-void TranslateAnimation::setObject(Transform* object) {
-    m_object = object;
-}
 
 glm::vec3 TranslateAnimation::getStartPos() const {
     return m_startPos;
