@@ -23,6 +23,7 @@
 #include <sys/select.h>
 #include "lib/AnimationManager/animationManager.h"
 #include "lib/Animations/BobbingAnimation/bobbingAnimation.h"
+#include "lib/Animations/RotateAnimation/rotateAnimation.h"
 
 const uint DEFAULT_WIDTH = 1280;
 const uint DEFAULT_HEIGHT = 720;
@@ -290,6 +291,14 @@ int main(int, char**) {
     BobbingAnimation bobbingAnimation(3., 2., &sphere);
     bobbingAnimation.setPoints(sphere.getPos(), glm::vec3(0., 1., 0.), 0.5);
     animationManager->addAnimation(&bobbingAnimation);
+
+    RotateAnimation sphereRotateAnimation(EaseType::LINEAR, 0., 5., &sphere);
+    sphereRotateAnimation.setRepeating(true);
+    animationManager->addAnimation(&sphereRotateAnimation);
+
+    RotateAnimation boxRotateAnimation(sphereRotateAnimation);
+    boxRotateAnimation.setObject(&box);
+    animationManager->addAnimation(&boxRotateAnimation);
 
     double hyperbolicTrajectoryStartTime = -(1. + HYPERBOLIC_TRAJECTORY_DURATION);
 
