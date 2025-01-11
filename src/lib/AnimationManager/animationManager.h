@@ -24,5 +24,6 @@ public:
     void update(double time);
 
     void addAnimation(Animation* animation);
+    void play(Animation* animation);
 };
 #endif

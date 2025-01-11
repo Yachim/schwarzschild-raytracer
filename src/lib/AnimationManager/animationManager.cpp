@@ -43,3 +43,9 @@ void AnimationManager::update(double time) {
 void AnimationManager::addAnimation(Animation* animation) {
     m_animations.push_back(animation);
 }
+
+// animation gets mutated
+void AnimationManager::play(Animation* animation) {
+    addAnimation(animation);
+    animation->setStartTime(m_time);
+}

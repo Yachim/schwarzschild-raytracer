@@ -313,7 +313,6 @@ int main(int, char**) {
 
         return x * glm::vec3(0., 0., -1.) + y * glm::vec3(cos(M_PI / 10.), sin(M_PI / 10.), 0.);
         };
-    animationManager->addAnimation(&cameraHyperbolic);
 
     float speed = MOVE_SPEED;
     double prevTime = 0.;
@@ -438,13 +437,9 @@ int main(int, char**) {
         if (cameraHyperbolic.isPlaying()) {
             cam.lookAt();
         }
-        /*double hyperbolicTrajectoryDt = windowTime - hyperbolicTrajectoryStartTime;
-        if (input->isPressed(GLFW_KEY_H) && (hyperbolicTrajectoryDt < 0. || hyperbolicTrajectoryDt > HYPERBOLIC_TRAJECTORY_DURATION)) {
-            hyperbolicTrajectoryStartTime = windowTime;
+        else if (input->isPressed(GLFW_KEY_H)) {
+            animationManager->play(&cameraHyperbolic);
         }
-        if (hyperbolicTrajectoryDt >= 0. && hyperbolicTrajectoryDt <= HYPERBOLIC_TRAJECTORY_DURATION) {
-            cam.hyperbolicTrajectory(30.f, 10.f, (float)hyperbolicTrajectoryDt / HYPERBOLIC_TRAJECTORY_DURATION);
-        }*/
 
         if (input->isPressed(GLFW_KEY_1)) raytraceType = RaytraceType::CURVED;
         else if (input->isPressed(GLFW_KEY_2)) raytraceType = RaytraceType::FLAT;
