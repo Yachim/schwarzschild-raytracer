@@ -5,7 +5,7 @@
 #include <cstddef>
 
 class CombinedAnimation : public virtual Animation {
-private:
+protected:
     size_t m_nSubanimations = 0;
     std::vector<Animation*> m_subanimations;
     double m_minSubanimationStartTime;

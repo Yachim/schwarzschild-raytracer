@@ -22,8 +22,7 @@
 #include <unistd.h>
 #include <sys/select.h>
 #include "lib/AnimationManager/animationManager.h"
-#include "lib/Animations/TranslateAnimation/translateAnimation.h"
-#include "lib/Animations/CombinedAnimation/combinedAnimation.h"
+#include "lib/Animations/BobbingAnimation/bobbingAnimation.h"
 
 const uint DEFAULT_WIDTH = 1280;
 const uint DEFAULT_HEIGHT = 720;
@@ -288,22 +287,9 @@ int main(int, char**) {
 
     AnimationManager* animationManager = AnimationManager::getInstance();
 
-    TranslateAnimation animation1(EaseType::EASE_OUT, 0., 1., &sphere);
-    animation1.setStartPos(spherePos);
-    animation1.setEndPos(spherePos + glm::vec3(0., 0.5, 0.));
-
-    TranslateAnimation animation2(EaseType::EASE_IN_OUT, 1., 2., &sphere);
-    animation2.setStartPos(spherePos + glm::vec3(0., 0.5, 0.));
-    animation2.setEndPos(spherePos - glm::vec3(0., 0.5, 0.));
-
-    TranslateAnimation animation3(EaseType::EASE_IN, 3., 1., &sphere);
-    animation3.setStartPos(spherePos - glm::vec3(0., 0.5, 0.));
-    animation3.setEndPos(spherePos);
-
-    CombinedAnimation animation(3., 2.);
-    animation.setSubanimations(std::vector<Animation*>{&animation1, & animation2, & animation3});
-    animation.setRepeating(true);
-    animationManager->addAnimation(&animation);
+    BobbingAnimation bobbingAnimation(3., 2., &sphere);
+    bobbingAnimation.setPoints(sphere.getPos(), glm::vec3(0., 1., 0.), 0.5);
+    animationManager->addAnimation(&bobbingAnimation);
 
     double hyperbolicTrajectoryStartTime = -(1. + HYPERBOLIC_TRAJECTORY_DURATION);
 
