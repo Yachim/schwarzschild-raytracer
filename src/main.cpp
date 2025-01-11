@@ -286,8 +286,9 @@ int main(int, char**) {
 
     AnimationManager* animationManager = AnimationManager::getInstance();
 
-    TranslateAnimation animation(EaseType::LINEAR, 2., 2., &sphere);
-    animation.setTranslation(glm::vec3(0., 5., 0.));
+    TranslateAnimation animation(EaseType::EASE_IN_OUT, 5., 2., &sphere);
+    animation.setStartPos(sphere.getPos());
+    animation.setEndPos(sphere.getPos() + glm::vec3(0., 5., 0.));
     animationManager->addAnimation(&animation);
 
     double hyperbolicTrajectoryStartTime = -(1. + HYPERBOLIC_TRAJECTORY_DURATION);
