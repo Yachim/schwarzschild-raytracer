@@ -24,6 +24,7 @@
 #include "lib/AnimationManager/animationManager.h"
 #include "lib/Animations/BobbingAnimation/bobbingAnimation.h"
 #include "lib/Animations/RotateAnimation/rotateAnimation.h"
+#include "lib/Animations/TrajectoryAnimation/trajectoryAnimation.h"
 
 const uint DEFAULT_WIDTH = 1280;
 const uint DEFAULT_HEIGHT = 720;
@@ -300,7 +301,19 @@ int main(int, char**) {
     boxRotateAnimation.setObject(&box);
     animationManager->addAnimation(&boxRotateAnimation);
 
-    double hyperbolicTrajectoryStartTime = -(1. + HYPERBOLIC_TRAJECTORY_DURATION);
+    TrajectoryAnimation cameraHyperbolic(EaseType::EASE_IN_OUT, 3., 5., &cam);
+    cameraHyperbolic.m_func = [](double t) {
+        float closestDistanceSquared = pow(10., 2.);
+        float a = -closestDistanceSquared / (-30. + 2 * 10.);
+        float c = 10. + a;
+        float b = sqrt(closestDistanceSquared + 2. * a * 10.);
+
+        float x = -30. + 2. * t * 30.;
+        float y = c - a * sqrt(1 + pow(x / b, 2.));
+
+        return x * glm::vec3(0., 0., -1.) + y * glm::vec3(cos(M_PI / 10.), sin(M_PI / 10.), 0.);
+        };
+    animationManager->addAnimation(&cameraHyperbolic);
 
     float speed = MOVE_SPEED;
     double prevTime = 0.;
@@ -422,13 +435,16 @@ int main(int, char**) {
             cam.setFov(DEFAULT_FOV);
         }
 
-        double hyperbolicTrajectoryDt = windowTime - hyperbolicTrajectoryStartTime;
+        if (cameraHyperbolic.isPlaying()) {
+            cam.lookAt();
+        }
+        /*double hyperbolicTrajectoryDt = windowTime - hyperbolicTrajectoryStartTime;
         if (input->isPressed(GLFW_KEY_H) && (hyperbolicTrajectoryDt < 0. || hyperbolicTrajectoryDt > HYPERBOLIC_TRAJECTORY_DURATION)) {
             hyperbolicTrajectoryStartTime = windowTime;
         }
         if (hyperbolicTrajectoryDt >= 0. && hyperbolicTrajectoryDt <= HYPERBOLIC_TRAJECTORY_DURATION) {
             cam.hyperbolicTrajectory(30.f, 10.f, (float)hyperbolicTrajectoryDt / HYPERBOLIC_TRAJECTORY_DURATION);
-        }
+        }*/
 
         if (input->isPressed(GLFW_KEY_1)) raytraceType = RaytraceType::CURVED;
         else if (input->isPressed(GLFW_KEY_2)) raytraceType = RaytraceType::FLAT;
