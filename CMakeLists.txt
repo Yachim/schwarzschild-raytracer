@@ -70,6 +70,8 @@ add_executable(schwarzschild_raytracer
     src/lib/Animations/Animation/animation.h
     src/lib/Animations/TranslateAnimation/translateAnimation.cpp
     src/lib/Animations/TranslateAnimation/translateAnimation.h
+    src/lib/Animations/CombinedAnimation/combinedAnimation.cpp
+    src/lib/Animations/CombinedAnimation/combinedAnimation.h
 )
 
 add_custom_target(copy_assets ALL

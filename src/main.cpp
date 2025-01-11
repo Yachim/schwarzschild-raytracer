@@ -23,6 +23,7 @@
 #include <sys/select.h>
 #include "lib/AnimationManager/animationManager.h"
 #include "lib/Animations/TranslateAnimation/translateAnimation.h"
+#include "lib/Animations/CombinedAnimation/combinedAnimation.h"
 
 const uint DEFAULT_WIDTH = 1280;
 const uint DEFAULT_HEIGHT = 720;
@@ -228,7 +229,8 @@ int main(int, char**) {
     Material mat1;
     mat1.setTextureIndex(0);
 
-    Sphere sphere(glm::vec3(-10., 0., 0.));
+    glm::vec3 spherePos = glm::vec3(-10., 0., 0.);
+    Sphere sphere(spherePos);
     sphere.setMaterial(&mat1);
     objectLoader->addObject(&sphere);
 
@@ -286,9 +288,21 @@ int main(int, char**) {
 
     AnimationManager* animationManager = AnimationManager::getInstance();
 
-    TranslateAnimation animation(EaseType::EASE_IN_OUT, 5., 2., &sphere);
-    animation.setStartPos(sphere.getPos());
-    animation.setEndPos(sphere.getPos() + glm::vec3(0., 5., 0.));
+    TranslateAnimation animation1(EaseType::EASE_OUT, 0., 1., &sphere);
+    animation1.setStartPos(spherePos);
+    animation1.setEndPos(spherePos + glm::vec3(0., 0.5, 0.));
+
+    TranslateAnimation animation2(EaseType::EASE_IN_OUT, 1., 2., &sphere);
+    animation2.setStartPos(spherePos + glm::vec3(0., 0.5, 0.));
+    animation2.setEndPos(spherePos - glm::vec3(0., 0.5, 0.));
+
+    TranslateAnimation animation3(EaseType::EASE_IN, 3., 1., &sphere);
+    animation3.setStartPos(spherePos - glm::vec3(0., 0.5, 0.));
+    animation3.setEndPos(spherePos);
+
+    CombinedAnimation animation(3., 2.);
+    animation.setSubanimations(std::vector<Animation*>{&animation1, & animation2, & animation3});
+    animation.setRepeating(true);
     animationManager->addAnimation(&animation);
 
     double hyperbolicTrajectoryStartTime = -(1. + HYPERBOLIC_TRAJECTORY_DURATION);
