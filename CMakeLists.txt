@@ -82,6 +82,8 @@ add_executable(schwarzschild_raytracer
     src/lib/Animations/LambdaAnimation/lambdaAnimation.cpp
     src/lib/Animations/TrajectoryAnimation/trajectoryAnimation.cpp
     src/lib/Animations/TrajectoryAnimation/trajectoryAnimation.cpp
+    src/lib/Animations/IdleAnimation/idleAnimation.cpp
+    src/lib/Animations/IdleAnimation/idleAnimation.cpp
 )
 
 add_custom_target(copy_assets ALL
