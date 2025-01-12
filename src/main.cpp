@@ -302,7 +302,7 @@ int main(int, char**) {
     animationManager->addAnimation(&boxRotateAnimation);
 
     TrajectoryAnimation cameraHyperbolic(EaseType::EASE_IN_OUT, 3., 5., &cam);
-    cameraHyperbolic.m_func = [](double t) {
+    cameraHyperbolic.m_trajectory_func = [](double t) {
         float closestDistanceSquared = pow(10., 2.);
         float a = -closestDistanceSquared / (-30. + 2 * 10.);
         float c = 10. + a;

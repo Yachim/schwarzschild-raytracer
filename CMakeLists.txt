@@ -78,6 +78,8 @@ add_executable(schwarzschild_raytracer
     src/lib/Animations/BobbingAnimation/bobbingAnimation.cpp
     src/lib/Animations/RotateAnimation/rotateAnimation.cpp
     src/lib/Animations/RotateAnimation/rotateAnimation.cpp
+    src/lib/Animations/LambdaAnimation/lambdaAnimation.cpp
+    src/lib/Animations/LambdaAnimation/lambdaAnimation.cpp
     src/lib/Animations/TrajectoryAnimation/trajectoryAnimation.cpp
     src/lib/Animations/TrajectoryAnimation/trajectoryAnimation.cpp
 )
