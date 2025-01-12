@@ -306,7 +306,7 @@ void cylinder_tangent_space(inout HitInfo hit_info, Cylinder cylinder) {
 
     hit_info.tangent_coordinates = vec2(
         phi / (2. * PI),
-        local_displacement.y / cylinder.height
+        local_displacement.y / cylinder.height + 0.5
     );
 
     vec3 tangent = cylinder.transform.axes * vec3(cos(phi), 0.0, -sin(phi));
@@ -322,7 +322,7 @@ void rectangle_tangent_space(inout HitInfo hit_info, Rectangle rectangle) {
     vec3 displacement = hit_info.intersection_point - transform.pos;
 
     vec3 local_displacement = transpose(transform.axes) * displacement;
-    hit_info.tangent_coordinates = local_displacement.xz / vec2(rectangle.width, rectangle.height);
+    hit_info.tangent_coordinates = local_displacement.xz / vec2(rectangle.width, rectangle.height) + 0.5;
     hit_info.tangent_coordinates.y = 1. - hit_info.tangent_coordinates.y;
 
     hit_info.tangent_space = mat3(
@@ -547,8 +547,8 @@ HitInfo cylinder_intersect(Ray ray, Cylinder cylinder, float max_lambda) {
     float lambda2 = - (a - sqrt(D)) / dir_parallel_sq;
     vec3 intersection_point1 = ray.origin + ray.dir * lambda1;
     vec3 intersection_point2 = ray.origin + ray.dir * lambda2;
-    bool inCylinder1 = is_in_range(dot(intersection_point1 - pos, axis), 0., height);
-    bool inCylinder2 = is_in_range(dot(intersection_point2 - pos, axis), 0., height);
+    bool inCylinder1 = abs(dot(intersection_point1 - pos, axis)) <= height / 2.;
+    bool inCylinder2 = abs(dot(intersection_point2 - pos, axis)) <= height / 2.;
 
     if (!inCylinder1 && !inCylinder2) {
         res.is_hit = false;
@@ -577,7 +577,7 @@ HitInfo rectangle_intersect(Ray ray, Rectangle rectangle, float max_lambda) {
     Transform transform = rectangle.plane.transform;
     float alpha = dot(res.intersection_point - transform.pos, transform.axes[0]);
     float beta = dot(res.intersection_point - transform.pos, transform.axes[2]);
-    res.is_hit = is_in_range(alpha, 0, rectangle.width) && is_in_range(beta, 0, rectangle.height);
+    res.is_hit = abs(alpha) <= rectangle.width / 2. && abs(beta) <= rectangle.height / 2.;
     if (!res.is_hit) return res;
     rectangle_tangent_space(res, rectangle);
     return res;
@@ -586,7 +586,7 @@ HitInfo rectangle_intersect(Ray ray, Rectangle rectangle, float max_lambda) {
 HitInfo box_intersect(Ray ray, Box box, float max_lambda) {
     Rectangle bot_rect = Rectangle(
         Plane(Transform(
-            box.transform.pos + box.transform.axes[2] * box.depth,
+            box.transform.pos - box.transform.axes[1] * box.height / 2.,
             mat3(
                 box.transform.axes[0],
                 -box.transform.axes[1],
@@ -598,13 +598,13 @@ HitInfo box_intersect(Ray ray, Box box, float max_lambda) {
     );
     Rectangle top_rect = bot_rect;
     top_rect.plane.transform = Transform(
-        box.transform.pos + box.transform.axes[1] * box.height,
+            box.transform.pos + box.transform.axes[1] * box.height / 2.,
         box.transform.axes
     );
 
     Rectangle back_rect = Rectangle(
         Plane(Transform(
-            box.transform.pos + box.transform.axes * vec3(box.width, box.height, 0.),
+            box.transform.pos - box.transform.axes[2] * box.depth / 2.,
             mat3(
                 -box.transform.axes[0],
                 -box.transform.axes[2],
@@ -616,7 +616,7 @@ HitInfo box_intersect(Ray ray, Box box, float max_lambda) {
     );
     Rectangle front_rect = back_rect;
     front_rect.plane.transform = Transform(
-        box.transform.pos + box.transform.axes * vec3(0., box.height, box.depth),
+            box.transform.pos + box.transform.axes[2] * box.depth / 2.,
         mat3(
             box.transform.axes[0],
             box.transform.axes[2],
@@ -626,7 +626,7 @@ HitInfo box_intersect(Ray ray, Box box, float max_lambda) {
 
     Rectangle left_rect = Rectangle(
         Plane(Transform(
-            box.transform.pos + box.transform.axes[1] * box.height,
+            box.transform.pos - box.transform.axes[0] * box.width / 2.,
             mat3(
                 box.transform.axes[2],
                 -box.transform.axes[0],
@@ -638,7 +638,7 @@ HitInfo box_intersect(Ray ray, Box box, float max_lambda) {
     );
     Rectangle right_rect = left_rect;
     right_rect.plane.transform = Transform(
-        box.transform.pos + box.transform.axes * vec3(box.width, box.height, box.depth),
+            box.transform.pos + box.transform.axes[0] * box.width / 2.,
         mat3(
             -box.transform.axes[2],
             box.transform.axes[0],
