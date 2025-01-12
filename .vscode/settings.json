@@ -58,7 +58,10 @@
         "thread": "cpp",
         "cstring": "cpp",
         "list": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "complex": "cpp",
+        "set": "cpp",
+        "iomanip": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

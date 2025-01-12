@@ -3,6 +3,8 @@ project(schwarzschild_raytracer VERSION 0.1.0)
 cmake_policy(SET CMP0072 NEW)
 
 find_package(OpenGL REQUIRED)
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
 
 add_executable(schwarzschild_raytracer
     src/main.cpp
@@ -93,6 +95,7 @@ add_dependencies(schwarzschild_raytracer copy_assets)
 
 include_directories(include)
 target_link_libraries(schwarzschild_raytracer
+    ${OpenCV_LIBS}
     glfw
     OpenGL::GL
 )

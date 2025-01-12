@@ -16,6 +16,8 @@ private:
     static Input* m_instance;
     static std::mutex m_mutex;
 
+    bool m_inputEnabled = true;
+
 #pragma region config
     int m_forwardKey = GLFW_KEY_W;
     int m_leftKey = GLFW_KEY_A;
@@ -49,6 +51,9 @@ public:
     static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
     static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos);
     static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+
+    void setInputEnabled(bool enabled);
+    bool getInputEnabled() const;
 
     float getAxis();         // forward/backward
     glm::vec2 getAxis2D();   // forward/backward, left/right

@@ -52,7 +52,17 @@ void Input::scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
     instance->m_scroll = glm::vec2(xoffset, yoffset);
 }
 
+void Input::setInputEnabled(bool enabled) {
+    m_inputEnabled = enabled;
+}
+
+bool Input::getInputEnabled() const {
+    return m_inputEnabled;
+}
+
 float Input::getSpecifiedAxis(int positive, int negative) {
+    if (!m_inputEnabled) return 0.;
+
     float axis = 0.;
     if (m_keymap[positive]) {
         axis += 1.;
@@ -77,25 +87,25 @@ glm::vec3 Input::getAxis3D() {
 }
 
 bool Input::isPressed(int key) {
-    return m_keymap[key];
+    return m_inputEnabled && m_keymap[key];
 }
 
 bool Input::isPressed(int key, int mod) {
-    return m_keymap[key] && m_modmap[mod];
+    return m_inputEnabled && m_keymap[key] && m_modmap[mod];
 }
 
 bool Input::isLClicked() const {
-    return m_lClicked;
+    return m_inputEnabled && m_lClicked;
 }
 
 bool Input::isRClicked() const {
-    return m_rClicked;
+    return m_inputEnabled && m_rClicked;
 }
 
 glm::vec2 Input::getMouse() const {
-    return m_mouse;
+    return m_inputEnabled ? m_mouse : glm::vec2(0.);
 }
 
 glm::vec2 Input::getScroll() const {
-    return m_scroll;
+    return m_inputEnabled ? m_scroll : glm::vec2(0.);
 }

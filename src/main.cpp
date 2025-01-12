@@ -26,9 +26,10 @@
 #include "lib/Animations/RotateAnimation/rotateAnimation.h"
 #include "lib/Animations/TrajectoryAnimation/trajectoryAnimation.h"
 #include "lib/Animations/IdleAnimation/idleAnimation.h"
+#include <opencv2/opencv.hpp>
 
-const uint DEFAULT_WIDTH = 1280;
-const uint DEFAULT_HEIGHT = 720;
+const uint DEFAULT_WIDTH = 1920;
+const uint DEFAULT_HEIGHT = 1080;
 
 const float MOVE_SPEED_INCREASE_SPEED = 0.25;
 const float MOVE_SPEED = 5.;
@@ -59,16 +60,26 @@ std::string readStdin() {
     return "";
 }
 
+// FIXME: if set to true, crashes on window downsize and crashes for collapse animation
+#define EXPORT_VIDEO true
+#define OUTPUT_FPS 60
+#define VIDEO_LENGTH 12
+
+#if EXPORT_VIDEO
+#define BACKGROUND_TEXTURE_QUALITY 1
+#define PERCENT_BLACK -1.
+#else
+// noise optimization, set to < 0 to deactivate
+#define PERCENT_BLACK 0.75
 // 0 for 2k, 1 for 8k
-#define BACKGROUND_TEXTURE_QUALITY 0
+#define BACKGROUND_TEXTURE_QUALITY 1
+#endif
+
 #if BACKGROUND_TEXTURE_QUALITY == 0
 #define BACKGROUND_TEXTURE_PATH "assets/textures/background/2k.jpg"
 #elif BACKGROUND_TEXTURE_QUALITY == 1
 #define BACKGROUND_TEXTURE_PATH "assets/textures/background/8k.jpg"
 #endif
-
-// noise optimization, set to < 0 to deactivate
-#define PERCENT_BLACK 0.75
 
 #define MAX_STEPS 100
 #define MAX_REVOLUTIONS 2
@@ -346,7 +357,30 @@ int main(int, char**) {
     animationManager->addAnimation(&cameraHyperbolic);
 #pragma endregion
 
+    double windowTime = 0.;
+    double dt = 1. / OUTPUT_FPS;
+
+    input->setInputEnabled(!EXPORT_VIDEO);
+    cv::VideoWriter outputVideo;
+    outputVideo.open("video.mp4", cv::VideoWriter::fourcc('a', 'v', 'c', '1'), double(OUTPUT_FPS), cv::Size(DEFAULT_WIDTH, DEFAULT_HEIGHT), true);
+    if (!outputVideo.isOpened() && EXPORT_VIDEO) {
+        std::cerr << "Failed to open video file for writing." << std::endl;
+        return -1;
+    }
+
     while (!glfwWindowShouldClose(window)) {
+        if (EXPORT_VIDEO) {
+            cv::Mat pixels(DEFAULT_HEIGHT, DEFAULT_WIDTH, CV_8UC3);
+            glReadPixels(0, 0, DEFAULT_WIDTH, DEFAULT_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixels.data);
+            cv::Mat cvPixels(DEFAULT_HEIGHT, DEFAULT_WIDTH, CV_8UC3);
+            for (int y = 0; y < DEFAULT_HEIGHT; y++) for (int x = 0; x < DEFAULT_WIDTH; x++) {
+                cvPixels.at<cv::Vec3b>(y, x)[2] = pixels.at<cv::Vec3b>(DEFAULT_HEIGHT - y - 1, x)[0];
+                cvPixels.at<cv::Vec3b>(y, x)[1] = pixels.at<cv::Vec3b>(DEFAULT_HEIGHT - y - 1, x)[1];
+                cvPixels.at<cv::Vec3b>(y, x)[0] = pixels.at<cv::Vec3b>(DEFAULT_HEIGHT - y - 1, x)[2];
+            }
+            outputVideo << cvPixels;
+        }
+
         std::string consoleInput = readStdin();
         if (consoleInput != "") {
             std::cout << consoleInput << std::endl;
@@ -356,10 +390,17 @@ int main(int, char**) {
 
         if (input->isPressed(GLFW_KEY_ESCAPE)) break;
 
-        double windowTime = glfwGetTime();
-        double dt = windowTime - prevTime;
+        if (!EXPORT_VIDEO) {
+            windowTime = glfwGetTime();
+            dt = windowTime - prevTime;
+        }
+        else {
+            windowTime += dt;
+        }
         glm::vec2 mouse = input->getMouse();
         glm::vec2 deltaMouse = mouse - prevMouse;
+
+        if (windowTime > VIDEO_LENGTH && EXPORT_VIDEO) break;
 
         animationManager->update(windowTime);
         objectLoader->load(shaderProgram);
@@ -481,6 +522,7 @@ int main(int, char**) {
         prevTime = windowTime;
         prevMouse = mouse;
     }
+    outputVideo.release();
 
     glDeleteProgram(shaderProgram);
     glfwTerminate();
