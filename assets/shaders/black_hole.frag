@@ -516,10 +516,6 @@ HitInfo hollow_disk_intersect(Ray ray, HollowDisk disk, float max_lambda) {
     return res;
 }
 
-bool is_in_range(float n, float minimum, float maximum) {
-    return n >= minimum && n <= maximum;
-}
-
 HitInfo cylinder_intersect(Ray ray, Cylinder cylinder, float max_lambda) {
     vec3 pos = cylinder.transform.pos;
     mat3 axes = cylinder.transform.axes;
@@ -862,12 +858,20 @@ void main() {
     vec2 uv_vec = vec2(uv.x, uv.y * resolution.y / resolution.x);
     Ray ray = Ray(cam.transform.pos, normalize(cam.transform.axes * vec3(uv_vec, ray_forward)));
 
+    if (
+        (raytrace_type == RAYTRACE_TYPE_HALF_WIDTH && abs(uv.x - (2. * curved_percentage - 1.)) * resolution.x < 1.) ||
+        (raytrace_type == RAYTRACE_TYPE_HALF_HEIGHT && abs(uv.y - (2. * curved_percentage - 1.)) * resolution.y < 1.)
+    ) {
+        FragColor = vec4(1., 1., 1., 1.);
+        return;
+    }
+
     vec3 normal_vec = normalize(ray.origin);
     if (
         (
             raytrace_type == RAYTRACE_TYPE_FLAT ||
-            (raytrace_type == RAYTRACE_TYPE_HALF_WIDTH && uv.x > 2. * curved_percentage + -1.) ||
-            (raytrace_type == RAYTRACE_TYPE_HALF_HEIGHT && uv.y > 2. * curved_percentage + -1.)
+            (raytrace_type == RAYTRACE_TYPE_HALF_WIDTH && uv.x > 2. * curved_percentage - 1.) ||
+            (raytrace_type == RAYTRACE_TYPE_HALF_HEIGHT && uv.y > 2. * curved_percentage - 1.)
         ) || // flat space
         abs(dot(ray.dir, normal_vec)) >= 1. - epsilon // radial trajectory
     ) {
