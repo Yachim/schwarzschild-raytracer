@@ -25,6 +25,7 @@
 #include "lib/Animations/BobbingAnimation/bobbingAnimation.h"
 #include "lib/Animations/RotateAnimation/rotateAnimation.h"
 #include "lib/Animations/TrajectoryAnimation/trajectoryAnimation.h"
+#include "lib/Animations/IdleAnimation/idleAnimation.h"
 
 const uint DEFAULT_WIDTH = 1280;
 const uint DEFAULT_HEIGHT = 720;
@@ -235,13 +236,6 @@ int main(int, char**) {
     sphere.setMaterial(&mat1);
     objectLoader->addObject(&sphere);
 
-    Disk disk;
-    disk.setRadius(2.);
-    disk.setPos(glm::vec3(0., 0., -10.));
-    disk.setAxes(glm::angleAxis((float)M_PI / 4.f, glm::normalize(glm::vec3(1.f, 1.f, 1.f))));
-    disk.setMaterial(&mat1);
-    objectLoader->addObject(&disk);
-
     HollowDisk accretionDisk;
     accretionDisk.setMaterial(&mat1);
     objectLoader->addObject(&accretionDisk);
@@ -301,7 +295,7 @@ int main(int, char**) {
     boxRotateAnimation.setObject(&box);
     animationManager->addAnimation(&boxRotateAnimation);
 
-    TrajectoryAnimation cameraHyperbolic(EaseType::EASE_IN_OUT, 3., 5., &cam);
+    TrajectoryAnimation cameraHyperbolic(EaseType::EASE_IN_OUT, 3., 7., &cam);
     cameraHyperbolic.m_trajectory_func = [](double t) {
         float closestDistanceSquared = pow(10., 2.);
         float a = -closestDistanceSquared / (-30. + 2 * 10.);
@@ -330,6 +324,28 @@ int main(int, char**) {
     GLint testRayFlatDirLoc = glGetUniformLocation(shaderProgram, "test_ray_flat_dir");
     GLint testRayVisibleLoc = glGetUniformLocation(shaderProgram, "test_ray_visible");
     int raytraceType = RaytraceType::FLAT;
+
+#pragma region raytrace type animation
+    LambdaAnimation raytraceTypeAnim1(EaseType::EASE_IN_OUT, 0., 1.);
+    raytraceTypeAnim1.m_func = [&](double t) {
+        raytraceType = RaytraceType::HALF_WIDTH;
+        glUniform1f(curvedPercentageLoc, t);
+        };
+
+    IdleAnimation raytraceTypeAnim2(1., 2.);
+
+    LambdaAnimation raytraceTypeAnim3(EaseType::EASE_IN_OUT, 3., 1.);
+    raytraceTypeAnim3.m_func = [&](double t) {
+        glUniform1f(curvedPercentageLoc, 1. - t);
+        };
+
+    CombinedAnimation raytraceTypeAnim(5., 5.);
+    raytraceTypeAnim.setSubanimations({ &raytraceTypeAnim1, &raytraceTypeAnim2, &raytraceTypeAnim3 });
+    animationManager->addAnimation(&raytraceTypeAnim);
+    cameraHyperbolic.setStartTime(4.);
+    animationManager->addAnimation(&cameraHyperbolic);
+#pragma endregion
+
     while (!glfwWindowShouldClose(window)) {
         std::string consoleInput = readStdin();
         if (consoleInput != "") {
@@ -447,7 +463,7 @@ int main(int, char**) {
         else if (input->isPressed(GLFW_KEY_4)) raytraceType = RaytraceType::HALF_HEIGHT;
         glUniform1i(raytraceTypeLoc, raytraceType);
 
-        if (input->isPressed(GLFW_KEY_LEFT_ALT) && input->isLClicked()) {
+        if (input->isPressed(GLFW_KEY_LEFT_ALT) && input->isLClicked() && !raytraceTypeAnim.isPlaying()) {
             if (raytraceType == RaytraceType::HALF_WIDTH) glUniform1f(curvedPercentageLoc, mouse.x / width);
             if (raytraceType == RaytraceType::HALF_HEIGHT) glUniform1f(curvedPercentageLoc, 1. - mouse.y / height);
         }
