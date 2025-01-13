@@ -387,6 +387,9 @@ int main(int, char**) {
         }
 
         glfwPollEvents();
+        if (!raytraceTypeAnim.isPlaying()) {
+            raytraceType = RaytraceType::FLAT;
+        }
 
         if (input->isPressed(GLFW_KEY_ESCAPE)) break;
 
