@@ -22,14 +22,11 @@
 #include <unistd.h>
 #include <sys/select.h>
 #include "lib/AnimationManager/animationManager.h"
-#include "lib/Animations/BobbingAnimation/bobbingAnimation.h"
-#include "lib/Animations/RotateAnimation/rotateAnimation.h"
 #include "lib/Animations/TrajectoryAnimation/trajectoryAnimation.h"
-#include "lib/Animations/IdleAnimation/idleAnimation.h"
 #include <opencv2/opencv.hpp>
 
-const uint DEFAULT_WIDTH = 1920;
-const uint DEFAULT_HEIGHT = 1080;
+const uint DEFAULT_WIDTH = 640;
+const uint DEFAULT_HEIGHT = 480;
 
 const float MOVE_SPEED_INCREASE_SPEED = 0.25;
 const float MOVE_SPEED = 5.;
@@ -72,7 +69,7 @@ std::string readStdin() {
 // noise optimization, set to < 0 to deactivate
 #define PERCENT_BLACK 0.75
 // 0 for 2k, 1 for 8k
-#define BACKGROUND_TEXTURE_QUALITY 1
+#define BACKGROUND_TEXTURE_QUALITY 0
 #endif
 
 #if BACKGROUND_TEXTURE_QUALITY == 0
@@ -224,8 +221,7 @@ int main(int, char**) {
     glUniform1i(glGetUniformLocation(shaderProgram, "background_texture"), 0);
 
     std::vector<std::string> texturePaths = {
-        "assets/textures/uv_checker.jpg",
-        "assets/textures/cubemap.png"
+        "assets/textures/2k_sun.jpg"
     };
 
     GLuint textureArrayID = loadTextureArray(texturePaths, shaderProgram);
@@ -235,43 +231,16 @@ int main(int, char**) {
 #pragma endregion
 
 #pragma region objects
-    Camera cam(glm::vec3(0., 2., 15.), -glm::normalize(glm::vec3(0., 2., 15.)), glm::vec3(1., 0., 0.));
+    Camera cam(glm::vec3(0., 6., 45.), -glm::normalize(glm::vec3(0., 2., 15.)), glm::vec3(1., 0., 0.));
 
     ObjectLoader* objectLoader = ObjectLoader::getInstance();
 
-    Material mat1;
-    mat1.setTextureIndex(0);
+    Material sunMat;
+    sunMat.setTextureIndex(0);
 
-    glm::vec3 spherePos = glm::vec3(-10., 0., 0.);
-    Sphere sphere(spherePos);
-    sphere.setMaterial(&mat1);
-    objectLoader->addObject(&sphere);
-
-    HollowDisk accretionDisk;
-    accretionDisk.setMaterial(&mat1);
-    objectLoader->addObject(&accretionDisk);
-
-    LateralCylinder cyl;
-    cyl.setPos(glm::vec3(0., 10., 0.));
-    cyl.setHeight(5.);
-    cyl.setRadius(2.);
-    cyl.setMaterial(&mat1);
-    objectLoader->addObject(&cyl);
-
-    Rectangle rect;
-    rect.setPos(glm::vec3(0., 0., 10.));
-    rect.setWidth(3.);
-    rect.setHeight(2.);
-    rect.setMaterial(&mat1);
-    objectLoader->addObject(&rect);
-
-    Material mat2;
-    mat2.setTextureIndex(1);
-
-    Box box;
-    box.setPos(glm::vec3(10., 0., 0.));
-    box.setMaterial(&mat2);
-    objectLoader->addObject(&box);
+    Sphere sun(glm::vec3(0., 0., 0.), 10.);
+    sun.setMaterial(&sunMat);
+    objectLoader->addObject(&sun);
 
     Light light;
     light.setIntensity(8.);
@@ -294,20 +263,8 @@ int main(int, char**) {
 
     AnimationManager* animationManager = AnimationManager::getInstance();
 
-    BobbingAnimation bobbingAnimation(3., 2., &sphere);
-    bobbingAnimation.setPoints(sphere.getPos(), glm::vec3(0., 1., 0.), 0.5);
-    animationManager->addAnimation(&bobbingAnimation);
-
-    RotateAnimation sphereRotateAnimation(EaseType::LINEAR, 0., 5., &sphere);
-    sphereRotateAnimation.setRepeating(true);
-    animationManager->addAnimation(&sphereRotateAnimation);
-
-    RotateAnimation boxRotateAnimation(sphereRotateAnimation);
-    boxRotateAnimation.setObject(&box);
-    animationManager->addAnimation(&boxRotateAnimation);
-
-    TrajectoryAnimation cameraHyperbolic(EaseType::EASE_IN_OUT, 3., 7., &cam);
-    cameraHyperbolic.m_trajectory_func = [](double t) {
+    TrajectoryAnimation cameraHyperbolicAnimation(EaseType::EASE_IN_OUT, 3., 7., &cam);
+    cameraHyperbolicAnimation.m_trajectory_func = [](double t) {
         float closestDistanceSquared = pow(10., 2.);
         float a = -closestDistanceSquared / (-30. + 2 * 10.);
         float c = 10. + a;
@@ -318,6 +275,18 @@ int main(int, char**) {
 
         return x * glm::vec3(0., 0., -1.) + y * glm::vec3(cos(M_PI / 10.), sin(M_PI / 10.), 0.);
         };
+
+    LambdaAnimation collapseAnimation(EaseType::LINEAR, 2., 10.);
+    collapseAnimation.m_func = [&](double t) {
+        sun.setRadius(10. * (1. - t * t));
+        };
+    animationManager->addAnimation(&collapseAnimation);
+
+    TrajectoryAnimation cameraOrbitAnimation(EaseType::EASE_OUT, 0., 12., &cam);
+    cameraOrbitAnimation.m_trajectory_func = [](double t) {
+        return (45.f - 30.f * float(t)) * glm::vec3(sin(2 * M_PI * t), 0., cos(2 * M_PI * t)) + glm::vec3(0., 6., 0.);
+        };
+    animationManager->addAnimation(&cameraOrbitAnimation);
 
     float speed = MOVE_SPEED;
     double prevTime = 0.;
@@ -334,28 +303,7 @@ int main(int, char**) {
     GLint testRayFlatOriginLoc = glGetUniformLocation(shaderProgram, "test_ray_flat_origin");
     GLint testRayFlatDirLoc = glGetUniformLocation(shaderProgram, "test_ray_flat_dir");
     GLint testRayVisibleLoc = glGetUniformLocation(shaderProgram, "test_ray_visible");
-    int raytraceType = RaytraceType::FLAT;
-
-#pragma region raytrace type animation
-    LambdaAnimation raytraceTypeAnim1(EaseType::EASE_IN_OUT, 0., 1.);
-    raytraceTypeAnim1.m_func = [&](double t) {
-        raytraceType = RaytraceType::HALF_WIDTH;
-        glUniform1f(curvedPercentageLoc, t);
-        };
-
-    IdleAnimation raytraceTypeAnim2(1., 2.);
-
-    LambdaAnimation raytraceTypeAnim3(EaseType::EASE_IN_OUT, 3., 1.);
-    raytraceTypeAnim3.m_func = [&](double t) {
-        glUniform1f(curvedPercentageLoc, 1. - t);
-        };
-
-    CombinedAnimation raytraceTypeAnim(5., 5.);
-    raytraceTypeAnim.setSubanimations({ &raytraceTypeAnim1, &raytraceTypeAnim2, &raytraceTypeAnim3 });
-    animationManager->addAnimation(&raytraceTypeAnim);
-    cameraHyperbolic.setStartTime(4.);
-    animationManager->addAnimation(&cameraHyperbolic);
-#pragma endregion
+    int raytraceType = RaytraceType::CURVED;
 
     double windowTime = 0.;
     double dt = 1. / OUTPUT_FPS;
@@ -387,9 +335,7 @@ int main(int, char**) {
         }
 
         glfwPollEvents();
-        if (!raytraceTypeAnim.isPlaying()) {
-            raytraceType = RaytraceType::FLAT;
-        }
+        cam.lookAt();
 
         if (input->isPressed(GLFW_KEY_ESCAPE)) break;
 
@@ -494,11 +440,11 @@ int main(int, char**) {
             cam.setFov(DEFAULT_FOV);
         }
 
-        if (cameraHyperbolic.isPlaying()) {
+        if (cameraHyperbolicAnimation.isPlaying()) {
             cam.lookAt();
         }
         else if (input->isPressed(GLFW_KEY_H)) {
-            animationManager->play(&cameraHyperbolic);
+            animationManager->play(&cameraHyperbolicAnimation);
         }
 
         if (input->isPressed(GLFW_KEY_1)) raytraceType = RaytraceType::CURVED;
@@ -507,7 +453,7 @@ int main(int, char**) {
         else if (input->isPressed(GLFW_KEY_4)) raytraceType = RaytraceType::HALF_HEIGHT;
         glUniform1i(raytraceTypeLoc, raytraceType);
 
-        if (input->isPressed(GLFW_KEY_LEFT_ALT) && input->isLClicked() && !raytraceTypeAnim.isPlaying()) {
+        if (input->isPressed(GLFW_KEY_LEFT_ALT) && input->isLClicked()) {
             if (raytraceType == RaytraceType::HALF_WIDTH) glUniform1f(curvedPercentageLoc, mouse.x / width);
             if (raytraceType == RaytraceType::HALF_HEIGHT) glUniform1f(curvedPercentageLoc, 1. - mouse.y / height);
         }

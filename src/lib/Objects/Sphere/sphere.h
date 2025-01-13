@@ -9,7 +9,6 @@ public:
     Sphere();
     Sphere(glm::vec3 pos);
     Sphere(glm::vec3 pos, float radius);
-    Sphere(glm::vec3 pos, float radius, Material mat);
 
     float getRadius() const;
     void setRadius(float radius);
