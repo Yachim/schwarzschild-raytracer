@@ -284,7 +284,7 @@ int main(int, char**) {
 
     TrajectoryAnimation cameraOrbitAnimation(EaseType::EASE_OUT, 0., 12., &cam);
     cameraOrbitAnimation.m_trajectory_func = [](double t) {
-        return (45.f - 30.f * float(t)) * glm::vec3(sin(2 * M_PI * t), 0., cos(2 * M_PI * t)) + glm::vec3(0., 6., 0.);
+        return (45.f - 30.f * float(t)) * glm::vec3(sin(2. * M_PI * t), 0., cos(2. * M_PI * t)) + glm::vec3(0., 6., 0.);
         };
     animationManager->addAnimation(&cameraOrbitAnimation);
 
@@ -305,7 +305,7 @@ int main(int, char**) {
     GLint testRayVisibleLoc = glGetUniformLocation(shaderProgram, "test_ray_visible");
     int raytraceType = RaytraceType::CURVED;
 
-    double windowTime = 0.;
+    double windowTime = 11.;
     double dt = 1. / OUTPUT_FPS;
 
     input->setInputEnabled(!EXPORT_VIDEO);

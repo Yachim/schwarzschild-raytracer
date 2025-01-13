@@ -14,7 +14,7 @@ AnimationManager* AnimationManager::getInstance() {
 
 void AnimationManager::update(double time) {
     m_frame++;
-    m_dt = m_time - time;
+    m_dt = time - m_time;
     m_time = time;
 
     std::vector<size_t> toRemove;

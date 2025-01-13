@@ -12,7 +12,7 @@ protected:
     EaseType m_easeType;
     double m_startTime;
     double m_duration;
-    bool m_repeating;
+    bool m_repeating = false;
     bool m_isPlaying = false;
 
 public:
