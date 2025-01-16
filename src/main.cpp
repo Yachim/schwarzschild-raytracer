@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <sys/select.h>
 #include "lib/AnimationManager/animationManager.h"
+#include "lib/Animations/RotateAnimation/rotateAnimation.h"
 #include "lib/Animations/TrajectoryAnimation/trajectoryAnimation.h"
 #include <opencv2/opencv.hpp>
 
@@ -58,7 +59,7 @@ std::string readStdin() {
 }
 
 // FIXME: if set to true, crashes on window downsize and crashes for collapse animation
-#define EXPORT_VIDEO true
+#define EXPORT_VIDEO false
 #define OUTPUT_FPS 60
 #define VIDEO_LENGTH 12
 
@@ -66,10 +67,8 @@ std::string readStdin() {
 #define BACKGROUND_TEXTURE_QUALITY 1
 #define PERCENT_BLACK -1.
 #else
-// noise optimization, set to < 0 to deactivate
-#define PERCENT_BLACK 0.75
-// 0 for 2k, 1 for 8k
-#define BACKGROUND_TEXTURE_QUALITY 0
+#define PERCENT_BLACK 0.75 // noise optimization, set to < 0 to deactivate
+#define BACKGROUND_TEXTURE_QUALITY 0 // 0 for 2k, 1 for 8k
 #endif
 
 #if BACKGROUND_TEXTURE_QUALITY == 0
@@ -221,7 +220,8 @@ int main(int, char**) {
     glUniform1i(glGetUniformLocation(shaderProgram, "background_texture"), 0);
 
     std::vector<std::string> texturePaths = {
-        "assets/textures/2k_sun.jpg"
+        "assets/textures/2k_sun.jpg",
+        "assets/textures/accretion_disk.png"
     };
 
     GLuint textureArrayID = loadTextureArray(texturePaths, shaderProgram);
@@ -231,16 +231,36 @@ int main(int, char**) {
 #pragma endregion
 
 #pragma region objects
-    Camera cam(glm::vec3(0., 6., 45.), -glm::normalize(glm::vec3(0., 2., 15.)), glm::vec3(1., 0., 0.));
+    Camera cam(20.f / 15.f * glm::vec3(0., 2., 15.), -glm::normalize(glm::vec3(0., 2., 15.)), glm::vec3(1., 0., 0.));
 
+    AnimationManager* animationManager = AnimationManager::getInstance();
     ObjectLoader* objectLoader = ObjectLoader::getInstance();
 
+    Material accretionDiskMat;
+    accretionDiskMat.setTextureIndex(1);
+    accretionDiskMat.setTextureOpacity(0.5);
+
+    HollowDisk accretionDisk(glm::vec3(0.));
+    accretionDisk.setMaterial(&accretionDiskMat);
+    accretionDisk.setInnerRadius(3.);
+    accretionDisk.setOuterRadius(6.);
+    objectLoader->addObject(&accretionDisk);
+
+    RotateAnimation accretionDiskSpin(EaseType::LINEAR, 0., 1., &accretionDisk);
+    accretionDiskSpin.setRepeating(true);
+    animationManager->addAnimation(&accretionDiskSpin);
+
     Material sunMat;
+    sunMat.setTextureOpacity(1.);
     sunMat.setTextureIndex(0);
 
-    Sphere sun(glm::vec3(0., 0., 0.), 10.);
+    Sphere sun(glm::vec3(0., 0., 10.));
     sun.setMaterial(&sunMat);
     objectLoader->addObject(&sun);
+
+    RotateAnimation sunSpin(EaseType::LINEAR, 0., 5., &sun);
+    sunSpin.setRepeating(true);
+    animationManager->addAnimation(&sunSpin);
 
     Light light;
     light.setIntensity(8.);
@@ -260,33 +280,6 @@ int main(int, char**) {
     glfwSetCursorPosCallback(window, Input::cursorPosCallback);
     glfwSetScrollCallback(window, Input::scrollCallback);
 #pragma endregion
-
-    AnimationManager* animationManager = AnimationManager::getInstance();
-
-    TrajectoryAnimation cameraHyperbolicAnimation(EaseType::EASE_IN_OUT, 3., 7., &cam);
-    cameraHyperbolicAnimation.m_trajectory_func = [](double t) {
-        float closestDistanceSquared = pow(10., 2.);
-        float a = -closestDistanceSquared / (-30. + 2 * 10.);
-        float c = 10. + a;
-        float b = sqrt(closestDistanceSquared + 2. * a * 10.);
-
-        float x = -30. + 2. * t * 30.;
-        float y = c - a * sqrt(1 + pow(x / b, 2.));
-
-        return x * glm::vec3(0., 0., -1.) + y * glm::vec3(cos(M_PI / 10.), sin(M_PI / 10.), 0.);
-        };
-
-    LambdaAnimation collapseAnimation(EaseType::LINEAR, 2., 10.);
-    collapseAnimation.m_func = [&](double t) {
-        sun.setRadius(10. * (1. - t * t));
-        };
-    animationManager->addAnimation(&collapseAnimation);
-
-    TrajectoryAnimation cameraOrbitAnimation(EaseType::EASE_OUT, 0., 12., &cam);
-    cameraOrbitAnimation.m_trajectory_func = [](double t) {
-        return (45.f - 30.f * float(t)) * glm::vec3(sin(2. * M_PI * t), 0., cos(2. * M_PI * t)) + glm::vec3(0., 6., 0.);
-        };
-    animationManager->addAnimation(&cameraOrbitAnimation);
 
     float speed = MOVE_SPEED;
     double prevTime = 0.;
@@ -438,13 +431,6 @@ int main(int, char**) {
 
         if (input->isPressed(GLFW_KEY_F) && !input->isPressed(GLFW_KEY_F, GLFW_MOD_ALT) && !input->isPressed(GLFW_KEY_F, GLFW_MOD_CAPS_LOCK)) {
             cam.setFov(DEFAULT_FOV);
-        }
-
-        if (cameraHyperbolicAnimation.isPlaying()) {
-            cam.lookAt();
-        }
-        else if (input->isPressed(GLFW_KEY_H)) {
-            animationManager->play(&cameraHyperbolicAnimation);
         }
 
         if (input->isPressed(GLFW_KEY_1)) raytraceType = RaytraceType::CURVED;

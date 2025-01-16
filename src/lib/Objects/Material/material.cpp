@@ -55,6 +55,13 @@ void Material::setNormalMapIndex(int index) {
     m_normalMapIndex = index;
 }
 
+float Material::getTextureOpacity() const {
+    return m_textureOpacity;
+}
+void Material::setTextureOpacity(float opacity) {
+    m_textureOpacity = opacity;
+}
+
 bool Material::getInvertUvX() const {
     return m_invertUvX;
 }
@@ -99,6 +106,7 @@ void Material::loadShader(GLuint program, std::string prefix) {
         m_materialShininessLoc = glGetUniformLocation(program, (prefix + ".shininess").c_str());
         m_materialTextureIndexLoc = glGetUniformLocation(program, (prefix + ".texture_index").c_str());
         m_materialNormalMapIndexLoc = glGetUniformLocation(program, (prefix + ".normal_map_index").c_str());
+        m_materialTextureOpacityLoc = glGetUniformLocation(program, (prefix + ".texture_opacity").c_str());
         m_materialInvertUvXLoc = glGetUniformLocation(program, (prefix + ".invert_uv_x").c_str());
         m_materialInvertUvYLoc = glGetUniformLocation(program, (prefix + ".invert_uv_y").c_str());
         m_materialSwapUvsLoc = glGetUniformLocation(program, (prefix + ".swap_uvs").c_str());
@@ -116,6 +124,7 @@ void Material::loadShader(GLuint program, std::string prefix) {
     glUniform1f(m_materialShininessLoc, m_shininess);
     glUniform1i(m_materialTextureIndexLoc, m_textureIndex);
     glUniform1i(m_materialNormalMapIndexLoc, m_normalMapIndex);
+    glUniform1i(m_materialTextureOpacityLoc, m_textureOpacity);
     glUniform1i(m_materialInvertUvXLoc, m_invertUvX);
     glUniform1i(m_materialInvertUvYLoc, m_invertUvX);
     glUniform1i(m_materialSwapUvsLoc, m_swapUvs);

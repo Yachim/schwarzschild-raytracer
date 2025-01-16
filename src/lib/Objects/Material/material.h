@@ -28,6 +28,9 @@ public:
     int getTextureIndex() const;
     void setTextureIndex(int index);
 
+    float getTextureOpacity() const;
+    void setTextureOpacity(float opacity);
+
     int getNormalMapIndex() const;
     void setNormalMapIndex(int index);
 
@@ -57,6 +60,7 @@ private:
     float m_shininess = 32.;
     int m_textureIndex = -1;
     int m_normalMapIndex = -1;
+    float m_textureOpacity = 1.;
     bool m_invertUvX = false;
     bool m_invertUvY = false;
     bool m_swapUvs = false;
@@ -72,6 +76,7 @@ private:
     GLint m_materialShininessLoc;
     GLint m_materialTextureIndexLoc;
     GLint m_materialNormalMapIndexLoc;
+    GLint m_materialTextureOpacityLoc;
     GLint m_materialInvertUvXLoc;
     GLint m_materialInvertUvYLoc;
     GLint m_materialSwapUvsLoc;

@@ -3,6 +3,7 @@
 // camera has left-handed y-up coordinates
 // matrix columns represent the x, y, z axes respectively (right, up, forward)
 // TODO: raytrace towards light?
+// FIXME: continue raytracing in flat space if hit transparent object
 
 precision highp float;
 precision highp sampler2D;
@@ -75,6 +76,7 @@ struct Material {
     float diffuse;
     float specular;
     float shininess;
+    float texture_opacity;
     int texture_index; // < 0 to disable
     int normal_map_index; // < 0 to disable
     // first swapped, then inverted
@@ -383,7 +385,7 @@ vec4 calculate_lighting(HitInfo hit_info, vec3 view_dir) {
     if (material.texture_index >= 0) {
         vec2 rescaled_uv = object_uv * texture_sizes[material.texture_index] / max_texture_size;
 
-        bool render_color = true;
+        bool render_texture = true;
         if (hit_info.object.type == OBJECT_TYPE_PLANE) {
             Plane plane = planes[hit_info.object.index];
             rescaled_uv -= plane.texture_offset;
@@ -393,14 +395,15 @@ vec4 calculate_lighting(HitInfo hit_info, vec3 view_dir) {
             rescaled_uv.y = mod(rescaled_uv.y, plane.texture_size.y);
             rescaled_uv = rescaled_uv / plane.texture_size;
 
-            render_color = plane.repeat_texture || (
+            render_texture = plane.repeat_texture || (
                 (plane_uv.x >= 0. && plane_uv.x <= 1.) &&
                 (plane_uv.y >= 0. && plane_uv.y <= 1.)
             );
         }
 
-        if (render_color) {
+        if (render_texture) {
             base_color = texture(textures, vec3(rescaled_uv, material.texture_index));
+            base_color.a *= material.texture_opacity;
         }
     }
     vec3 final_color = material.ambient * base_color.rgb; // Ambient component
