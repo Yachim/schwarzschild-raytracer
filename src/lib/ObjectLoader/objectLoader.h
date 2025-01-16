@@ -5,13 +5,7 @@
 #include <mutex>
 #include <GLFW/glfw3.h>
 #include "../Objects/Light/light.h"
-#include "../Objects/Sphere/sphere.h"
-#include "../Objects/Plane/plane.h"
-#include "../Objects/Disk/disk.h"
-#include "../Objects/HollowDisk/hollowDisk.h"
-#include "../Objects/LateralCylinder/lateralCylinder.h"
-#include "../Objects/Rectangle/rectangle.h"
-#include "../Objects/Box/box.h"
+#include "../Objects/MaterialObject/materialObject.h"
 
 class ObjectLoader {
 private:

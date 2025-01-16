@@ -7,6 +7,13 @@
 #include <glm/vec3.hpp>
 #include <glm/geometric.hpp>
 #include "lib/Objects/Camera/camera.h"
+#include "lib/Objects/Object/object.h"
+#include "lib/Objects/Sphere/sphere.h"
+#include "lib/Objects/Disk/disk.h"
+#include "lib/Objects/HollowDisk/hollowDisk.h"
+#include "lib/Objects/LateralCylinder/lateralCylinder.h"
+#include "lib/Objects/Rectangle/rectangle.h"
+#include "lib/Objects/Box/box.h"
 #include "lib/utils/utils.h"
 #include "lib/image_utils/image_utils.h"
 #include "lib/Input/input.h"
