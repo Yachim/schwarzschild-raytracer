@@ -935,8 +935,8 @@ void main() {
         ray.dir = delta_ray / ray_length;
 
         vec4 intersection_color = intersect(Ray(prev_ray_pos, ray.dir), ray_length);
-        FragColor += intersection_color;
-        if(intersection_color.a == 1.) return;
+        FragColor = mix(FragColor, vec4(FragColor.rgb + intersection_color.rgb, 1.), intersection_color.a);
+        if(abs(intersection_color.a - 1.) < epsilon) return;
     }
 
     FragColor += get_bg(ray.dir);

@@ -124,7 +124,7 @@ void Material::loadShader(GLuint program, std::string prefix) {
     glUniform1f(m_materialShininessLoc, m_shininess);
     glUniform1i(m_materialTextureIndexLoc, m_textureIndex);
     glUniform1i(m_materialNormalMapIndexLoc, m_normalMapIndex);
-    glUniform1i(m_materialTextureOpacityLoc, m_textureOpacity);
+    glUniform1f(m_materialTextureOpacityLoc, m_textureOpacity);
     glUniform1i(m_materialInvertUvXLoc, m_invertUvX);
     glUniform1i(m_materialInvertUvYLoc, m_invertUvX);
     glUniform1i(m_materialSwapUvsLoc, m_swapUvs);
