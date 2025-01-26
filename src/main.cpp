@@ -24,6 +24,7 @@
 #include "lib/AnimationManager/animationManager.h"
 #include "lib/Animations/RotateAnimation/rotateAnimation.h"
 #include "lib/Animations/TrajectoryAnimation/trajectoryAnimation.h"
+#include "lib/Animations/BSplineAnimation/bSplineAnimation.h"
 #include <opencv2/opencv.hpp>
 
 const uint DEFAULT_WIDTH = 640;
@@ -262,6 +263,33 @@ int main(int, char**) {
     sunSpin.setRepeating(true);
     animationManager->addAnimation(&sunSpin);
 
+    TrajectoryAnimation sunOrbitAnimation(EaseType::LINEAR, 0., 6., &sun);
+    sunOrbitAnimation.setRepeating(true);
+    sunOrbitAnimation.m_trajectory_func = [](double t) {
+        return 10.f * glm::vec3(sin(2 * M_PI * t), 0, cos(2 * M_PI * t));
+        };
+    animationManager->addAnimation(&sunOrbitAnimation);
+
+    Material def;
+
+    Sphere sph;
+    sph.setRadius(0.25);
+    sph.setMaterial(&def);
+    objectLoader->addObject(&sph);
+
+    BSplineAnimation camAnimation(EaseType::EASE_IN_OUT, 3., 10., &sph);
+    camAnimation.setControlPoints({
+        glm::vec3(-5.7, 0., 5.6),
+        glm::vec3(0., 0., 8.),
+        glm::vec3(6.2, 0., 4.2),
+        glm::vec3(6.2, 0., -2.8),
+        glm::vec3(15.1, 4.2, -3.),
+        glm::vec3(17., 11.6, -2.4),
+        glm::vec3(17.7, 17.8, 1.1),
+        glm::vec3(2.2, 8.2, -1.9)
+        });
+    animationManager->addAnimation(&camAnimation);
+
     Light light;
     light.setIntensity(8.);
     objectLoader->addLight(&light);
@@ -328,7 +356,6 @@ int main(int, char**) {
         }
 
         glfwPollEvents();
-        cam.lookAt();
 
         if (input->isPressed(GLFW_KEY_ESCAPE)) break;
 
