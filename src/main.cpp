@@ -25,6 +25,7 @@
 #include "lib/Animations/RotateAnimation/rotateAnimation.h"
 #include "lib/Animations/TrajectoryAnimation/trajectoryAnimation.h"
 #include "lib/Animations/BSplineAnimation/bSplineAnimation.h"
+#include "lib/Animations/CombinedAnimation/combinedAnimation.h"
 #include <opencv2/opencv.hpp>
 
 const uint DEFAULT_WIDTH = 640;
@@ -60,9 +61,9 @@ std::string readStdin() {
 }
 
 // FIXME: if set to true, crashes on window downsize and crashes for collapse animation
-#define EXPORT_VIDEO false
+#define EXPORT_VIDEO true
 #define OUTPUT_FPS 60
-#define VIDEO_LENGTH 12
+#define VIDEO_LENGTH 8
 
 #if EXPORT_VIDEO
 #define BACKGROUND_TEXTURE_QUALITY 1
@@ -222,7 +223,7 @@ int main(int, char**) {
 
     std::vector<std::string> texturePaths = {
         "assets/textures/2k_sun.jpg",
-        "assets/textures/accretion_disk.png"
+        "assets/textures/2k_saturn_ring_alpha.png"
     };
 
     GLuint textureArrayID = loadTextureArray(texturePaths, shaderProgram);
@@ -270,15 +271,8 @@ int main(int, char**) {
         };
     animationManager->addAnimation(&sunOrbitAnimation);
 
-    Material def;
-
-    Sphere sph;
-    sph.setRadius(0.25);
-    sph.setMaterial(&def);
-    objectLoader->addObject(&sph);
-
-    BSplineAnimation camAnimation(EaseType::EASE_IN_OUT, 3., 10., &sph);
-    camAnimation.setControlPoints({
+    BSplineAnimation camTrajectoryAnimation(EaseType::EASE_IN_OUT, 0., 1., &cam);
+    camTrajectoryAnimation.setControlPoints({
         glm::vec3(-5.7, 0., 5.6),
         glm::vec3(0., 0., 8.),
         glm::vec3(6.2, 0., 4.2),
@@ -288,6 +282,19 @@ int main(int, char**) {
         glm::vec3(17.7, 17.8, 1.1),
         glm::vec3(2.2, 8.2, -1.9)
         });
+
+    glm::vec3 currentLookAt = sun.getPos();
+    cam.lookAt(currentLookAt);
+    LambdaAnimation camLookAnimation(EaseType::LINEAR, 0., 1.);
+    camLookAnimation.m_func = [&](double t) {
+        if (t < 0.5) currentLookAt += (sun.getPos() - currentLookAt) * 0.01f;
+        else currentLookAt *= 0.99;
+
+        cam.lookAt(currentLookAt);
+        };
+
+    CombinedAnimation camAnimation(0., 7.5);
+    camAnimation.setSubanimations({ &camTrajectoryAnimation, &camLookAnimation });
     animationManager->addAnimation(&camAnimation);
 
     Light light;
@@ -326,7 +333,7 @@ int main(int, char**) {
     GLint testRayVisibleLoc = glGetUniformLocation(shaderProgram, "test_ray_visible");
     int raytraceType = RaytraceType::CURVED;
 
-    double windowTime = 11.;
+    double windowTime = 0.;
     double dt = 1. / OUTPUT_FPS;
 
     input->setInputEnabled(!EXPORT_VIDEO);
