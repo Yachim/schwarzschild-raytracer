@@ -11,6 +11,9 @@ private:
     TranslateAnimation animation1 = { EaseType::EASE_OUT, 0., 1., m_object };
     TranslateAnimation animation2 = { EaseType::EASE_IN_OUT, 1., 2., m_object };
     TranslateAnimation animation3 = { EaseType::EASE_IN, 3., 1., m_object };
+
+    using CombinedAnimation::setSubanimations;
+    using CombinedAnimation::getSubanimations;
 public:
     BobbingAnimation(double startTime, double duration, Transform* object);
     BobbingAnimation(const BobbingAnimation& animation);
