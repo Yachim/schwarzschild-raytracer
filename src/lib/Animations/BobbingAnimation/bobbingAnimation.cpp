@@ -4,7 +4,7 @@ BobbingAnimation::BobbingAnimation(double startTime, double duration, Transform*
     Animation(EaseType::LINEAR, startTime, duration),
     TransformAnimation(EaseType::LINEAR, startTime, duration, object),
     CombinedAnimation(startTime, duration) {
-    setPoints(glm::vec3(0.), glm::vec3(0., 1., 0.), 0.5);
+    setPoints(glm::vec3(0.), glm::vec3(0., 0.5, 0.));
 
     setSubanimations(std::vector<Animation*>{&animation1, & animation2, & animation3});
     setRepeating(true);
@@ -17,13 +17,13 @@ BobbingAnimation::BobbingAnimation(const BobbingAnimation& animation) :
     setRepeating(true);
 }
 
-void BobbingAnimation::setPoints(glm::vec3 start, glm::vec3 dir, float dist) {
+void BobbingAnimation::setPoints(glm::vec3 start, glm::vec3 dir) {
     animation1.setStartPos(start);
-    animation1.setEndPos(start + dir * dist);
+    animation1.setEndPos(start + dir);
 
-    animation2.setStartPos(start + dir * dist);
-    animation2.setEndPos(start - dir * dist);
+    animation2.setStartPos(start + dir);
+    animation2.setEndPos(start - dir);
 
-    animation3.setStartPos(start - dir * dist);
+    animation3.setStartPos(start - dir);
     animation3.setEndPos(start);
 }

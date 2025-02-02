@@ -18,6 +18,6 @@ public:
     BobbingAnimation(double startTime, double duration, Transform* object);
     BobbingAnimation(const BobbingAnimation& animation);
 
-    void setPoints(glm::vec3 start, glm::vec3 dir, float dist);
+    void setPoints(glm::vec3 start, glm::vec3 dir);
 };
 #endif
