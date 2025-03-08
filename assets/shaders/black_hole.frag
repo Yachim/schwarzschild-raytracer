@@ -879,7 +879,7 @@ void main() {
         abs(dot(ray.dir, normal_vec)) >= 1. - epsilon // radial trajectory
     ) {
         vec4 intersection_color = intersect(ray);
-        FragColor += intersection_color;
+        FragColor = mix(FragColor, vec4((FragColor + intersection_color).rgb, 1.), intersection_color.a);
         if (intersection_color.a != 1.) FragColor += get_bg(ray.dir);
         return;
     }
@@ -900,7 +900,7 @@ void main() {
             HitInfo u_f_hit = sphere_intersect(ray, Sphere(Transform(vec3(0., 0., 0.), DEFAULT_AXES), 1. / u_f));
             if (!u_f_hit.is_hit) {
                 vec4 intersection_color = intersect(ray);
-                FragColor += intersection_color;
+                FragColor = mix(FragColor, vec4((FragColor + intersection_color).rgb, 1.), intersection_color.a);
                 if(intersection_color.a != 1.) FragColor += get_bg(ray.dir);
                 return;
             }
@@ -908,7 +908,7 @@ void main() {
             normal_vec = normalize(u_f_hit.intersection_point);
             if(abs(dot(ray.dir, normal_vec)) >= 1. - epsilon) { // if radial trajectory
                 vec4 intersection_color = intersect(ray);
-                FragColor += intersection_color;
+                FragColor = mix(FragColor, vec4((FragColor + intersection_color).rgb, 1.), intersection_color.a);
                 if(intersection_color.a != 1.) FragColor += get_bg(ray.dir);
                 return;
             }

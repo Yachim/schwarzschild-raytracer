@@ -26,6 +26,7 @@
 #include "lib/Animations/TrajectoryAnimation/trajectoryAnimation.h"
 #include "lib/Animations/BSplineAnimation/bSplineAnimation.h"
 #include "lib/Animations/CombinedAnimation/combinedAnimation.h"
+#include "lib/Animations/BobbingAnimation/bobbingAnimation.h"
 #include <opencv2/opencv.hpp>
 
 const uint DEFAULT_WIDTH = 640;
@@ -62,8 +63,8 @@ std::string readStdin() {
 
 // FIXME: if set to true, crashes on window downsize and crashes for collapse animation
 #define EXPORT_VIDEO true
-#define OUTPUT_FPS 60
-#define VIDEO_LENGTH 8
+#define OUTPUT_FPS 20
+#define VIDEO_LENGTH 9.5
 
 #if EXPORT_VIDEO
 #define BACKGROUND_TEXTURE_QUALITY 1
@@ -223,7 +224,8 @@ int main(int, char**) {
 
     std::vector<std::string> texturePaths = {
         "assets/textures/2k_sun.jpg",
-        "assets/textures/2k_saturn_ring_alpha.png"
+        "assets/textures/2k_saturn_ring_alpha.png",
+        "assets/textures/light_travel_proper_time.png"
     };
 
     GLuint textureArrayID = loadTextureArray(texturePaths, shaderProgram);
@@ -253,12 +255,25 @@ int main(int, char**) {
     animationManager->addAnimation(&accretionDiskSpin);
 
     Material sunMat;
-    sunMat.setTextureOpacity(1.);
     sunMat.setTextureIndex(0);
 
     Sphere sun(glm::vec3(0., 0., 10.));
     sun.setMaterial(&sunMat);
     objectLoader->addObject(&sun);
+
+    Material rectMat;
+    rectMat.setSpecular(0.);
+    rectMat.setTextureIndex(2);
+
+    Rectangle rect(glm::vec3(0., 15., 0.));
+    rect.setMaterial(&rectMat);
+    rect.setWidth(16. / 9.);
+    rect.setAxes(glm::transpose(glm::mat3(
+        1., 0., 0.,
+        0., -1., 0.,
+        0., 0., -1.
+    )));
+    objectLoader->addObject(&rect);
 
     RotateAnimation sunSpin(EaseType::LINEAR, 0., 5., &sun);
     sunSpin.setRepeating(true);
@@ -271,31 +286,51 @@ int main(int, char**) {
         };
     animationManager->addAnimation(&sunOrbitAnimation);
 
-    BSplineAnimation camTrajectoryAnimation(EaseType::EASE_IN_OUT, 0., 1., &cam);
+    /*Material testMat;
+    Sphere testSphere;
+    testSphere.setMaterial(&testMat);
+    testSphere.setRadius(0.25);
+    objectLoader->addObject(&testSphere);*/
+
+    BSplineAnimation camTrajectoryAnimation(EaseType::EASE_IN_OUT, 0., 4., &cam);
     camTrajectoryAnimation.setControlPoints({
-        glm::vec3(-5.7, 0., 5.6),
-        glm::vec3(0., 0., 8.),
-        glm::vec3(6.2, 0., 4.2),
-        glm::vec3(6.2, 0., -2.8),
-        glm::vec3(15.1, 4.2, -3.),
-        glm::vec3(17., 11.6, -2.4),
-        glm::vec3(17.7, 17.8, 1.1),
-        glm::vec3(2.2, 8.2, -1.9)
+        glm::vec3(8.4, 10.6, 8.4),
+        glm::vec3(11.8, 10.6, 0.),
+        glm::vec3(8.4, 9.9, -8.4),
+        glm::vec3(0., 8.7, -11.8),
+        glm::vec3(-8.4, 7.5, -8.4),
+        glm::vec3(-11.8, 6.9, 0.),
+        glm::vec3(-8.4, 6.2, 8.4),
+        glm::vec3(0., 5.6, 11.8),
+        glm::vec3(8.4, 5.6, 8.4),
         });
+    camTrajectoryAnimation.animate(1.);
+    animationManager->addAnimation(&camTrajectoryAnimation);
 
-    glm::vec3 currentLookAt = sun.getPos();
-    cam.lookAt(currentLookAt);
-    LambdaAnimation camLookAnimation(EaseType::LINEAR, 0., 1.);
-    camLookAnimation.m_func = [&](double t) {
-        if (t < 0.5) currentLookAt += (sun.getPos() - currentLookAt) * 0.01f;
-        else currentLookAt *= 0.99;
+    BobbingAnimation camBobAnimation(4., 2., &cam);
+    camBobAnimation.setPoints(
+        glm::vec3(0., 5.7, 10.6666),
+        glm::vec3(0., 0.02, 0.)
+    );
+    camBobAnimation.setRepeating(false);
+    animationManager->addAnimation(&camBobAnimation);
 
-        cam.lookAt(currentLookAt);
+    TrajectoryAnimation camTrajectoryAnimation2(EaseType::EASE_IN_OUT, 6., 3.5, &cam);
+    camTrajectoryAnimation2.m_trajectory_func = [&](double t) {
+        const auto P0 = glm::vec3(0., 5.7, 10.6666);
+        const auto P1 = glm::vec3(0., 11.2, 8.8);
+        const auto P2 = glm::vec3(0., 13.4, 6.);
+        const auto P3 = glm::vec3(0., 14.15, 0.);
+
+        const auto O0 = glm::vec3(0., 0., 0.);
+        const auto O1 = glm::vec3(0., 0., -6.);
+        const auto O2 = glm::vec3(0., 12., 0.);
+        const auto O3 = glm::vec3(0., 15., 0.);
+        cam.lookAt(O0 + float(t) * (-3.f * O0 + 3.f * O1) + float(t) * float(t) * (3.f * O0 - 6.f * O1 + 3.f * O2) + float(t) * float(t) * float(t) * (-O0 + 3.f * O1 - 3.f * O2 + O3));
+
+        return P0 + float(t) * (-3.f * P0 + 3.f * P1) + float(t) * float(t) * (3.f * P0 - 6.f * P1 + 3.f * P2) + float(t) * float(t) * float(t) * (-P0 + 3.f * P1 - 3.f * P2 + P3);
         };
-
-    CombinedAnimation camAnimation(0., 7.5);
-    camAnimation.setSubanimations({ &camTrajectoryAnimation, &camLookAnimation });
-    animationManager->addAnimation(&camAnimation);
+    animationManager->addAnimation(&camTrajectoryAnimation2);
 
     Light light;
     light.setIntensity(8.);
@@ -361,6 +396,8 @@ int main(int, char**) {
         if (consoleInput != "") {
             std::cout << consoleInput << std::endl;
         }
+
+        if (windowTime < 6.) cam.lookAt();
 
         glfwPollEvents();
 
