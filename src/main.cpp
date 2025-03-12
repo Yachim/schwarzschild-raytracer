@@ -10,6 +10,7 @@
 #include "lib/Objects/Object/object.h"
 #include "lib/Objects/HollowDisk/hollowDisk.h"
 #include "lib/Objects/Curve/curve.h"
+#include "lib/Objects/Sphere/sphere.h"
 #include "lib/utils/utils.h"
 #include "lib/image_utils/image_utils.h"
 #include "lib/Input/input.h"
@@ -19,6 +20,7 @@
 #include <sys/select.h>
 #include "lib/AnimationManager/animationManager.h"
 #include "lib/Animations/RotateAnimation/rotateAnimation.h"
+#include "lib/Animations/TrajectoryAnimation/trajectoryAnimation.h"
 #include <opencv2/opencv.hpp>
 
 const uint DEFAULT_WIDTH = 640;
@@ -245,6 +247,33 @@ int main(int, char**) {
     RotateAnimation accretionDiskSpin(EaseType::LINEAR, 0., 1., &accretionDisk);
     accretionDiskSpin.setRepeating(true);
     animationManager->addAnimation(&accretionDiskSpin);
+
+    Material sunMat;
+    sunMat.setTextureIndex(0);
+
+    Sphere sun(glm::vec3(12.5, 0., 0.));
+    sun.setMaterial(&sunMat);
+    objectLoader->addObject(&sun);
+
+    TrajectoryAnimation sunOrbitAnimation(EaseType::LINEAR, 0., 10., &sun);
+    sunOrbitAnimation.setRepeating(true);
+    sunOrbitAnimation.m_trajectory_func = [](double t) {
+        return 12.5f * glm::vec3(cos(2 * M_PI * t), 0., -sin(2 * M_PI * t));
+        };
+    animationManager->addAnimation(&sunOrbitAnimation);
+
+    Material sunOrbitCurveMaterial;
+    sunOrbitCurveMaterial.setColor(glm::vec4(0., 0., 1., 1.));
+
+    Curve sunOrbitCurve;
+    sunOrbitCurve.setMaterial(&sunOrbitCurveMaterial);
+    sunOrbitCurve.setPoints(sunOrbitAnimation.getPoints());
+    objectLoader->addObject(&sunOrbitCurve);
+
+    RotateAnimation sunRotateAnimation(EaseType::LINEAR, 0., 2., &sun);
+    sunRotateAnimation.setRepeating(true);
+    sunRotateAnimation.setEndAngle(2 * M_PI);
+    animationManager->addAnimation(&sunRotateAnimation);
 
     Material curvedRayMat(glm::vec4(1., 0., 0., 1.));
     Curve curvedRay;

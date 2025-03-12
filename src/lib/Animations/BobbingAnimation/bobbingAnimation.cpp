@@ -27,3 +27,10 @@ void BobbingAnimation::setPoints(glm::vec3 start, glm::vec3 dir) {
     animation3.setStartPos(start - dir);
     animation3.setEndPos(start);
 }
+
+std::vector<glm::vec3> BobbingAnimation::getPoints(int n) const {
+    return {
+        animation2.getEndPos(),
+        animation1.getEndPos()
+    };
+}

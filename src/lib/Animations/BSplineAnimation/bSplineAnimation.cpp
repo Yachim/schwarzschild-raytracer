@@ -16,7 +16,7 @@ void BSplineAnimation::setControlPoints(std::vector<glm::vec3> controlPoints) {
     m_totalSegments = m_controlPoints.size() - 3;
 }
 
-void BSplineAnimation::animate(double t) {
+glm::vec3 BSplineAnimation::getPoint(double t) const {
     double scaledT = t * m_totalSegments;
 
     // clamping occurs when t = 1,
@@ -26,12 +26,24 @@ void BSplineAnimation::animate(double t) {
 
     double t2 = localT * localT;
     double t3 = t2 * localT;
-    glm::vec3 pos = glm::vec4(1, localT, t2, t3) * B_SPLINE_MATRIX * glm::transpose(glm::mat4x3(
+    return glm::vec4(1, localT, t2, t3) * B_SPLINE_MATRIX * glm::transpose(glm::mat4x3(
         m_controlPoints[i],
         m_controlPoints[i + 1],
         m_controlPoints[i + 2],
         m_controlPoints[i + 3]
     ));
+}
 
-    m_object->setPos(pos);
+void BSplineAnimation::animate(double t) {
+    m_object->setPos(getPoint(t));
+}
+
+std::vector<glm::vec3> BSplineAnimation::getPoints(int n) const {
+    std::vector<glm::vec3> points = {};
+    for (size_t i = 0; i < n; i++) {
+        float t = float(i) / float(n);
+        points.push_back(getPoint(t));
+    }
+
+    return points;
 }

@@ -18,3 +18,13 @@ TrajectoryAnimation::TrajectoryAnimation(const TrajectoryAnimation& animation) :
         m_object->setPos(m_trajectory_func(t));
         };
 }
+
+std::vector<glm::vec3> TrajectoryAnimation::getPoints(int n) const {
+    std::vector<glm::vec3> points = {};
+    for (size_t i = 0; i < n; i++) {
+        float t = float(i) / float(n - 1);
+        points.push_back(m_trajectory_func(t));
+    }
+
+    return points;
+}

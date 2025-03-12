@@ -23,6 +23,13 @@ void TranslateAnimation::setEndPos(const glm::vec3 endPos) {
     m_endPos = endPos;
 }
 
+std::vector<glm::vec3> TranslateAnimation::getPoints(int n) const {
+    return {
+        m_startPos,
+        m_endPos
+    };
+}
+
 void TranslateAnimation::animate(double t) {
     m_object->setPos(m_startPos + (m_endPos - m_startPos) * float(t));
 }
