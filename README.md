@@ -13,7 +13,6 @@ See the [playlist](https://youtube.com/playlist?list=PLYFrWeMzFKBmzOyN9_OFjNwq-C
  - hold `left click` and move the mouse up and down to zoom
  - press `F` to reset zoom
  - hold `C` to show crosshair
- - press `H` to perform hyperbolic trajectory
  - press `L` to look at the black hole
  - raytracing modes:
    - press `1` to set curved raytracing
