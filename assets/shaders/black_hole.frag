@@ -161,8 +161,16 @@ struct Box {
 #define MAX_BOXES 3
 uniform Box boxes[MAX_BOXES];
 
-const int OBJECT_TYPE_TEST_RAY_CURVED = -99;
-const int OBJECT_TYPE_TEST_RAY_FLAT   = -98;
+#define MAX_CURVE_POINTS 300
+struct Curve {
+    vec3 points[MAX_CURVE_POINTS];
+    int num_points;
+    float radius;
+};
+
+#define MAX_CURVES 10
+uniform Curve curves[MAX_CURVES];
+
 const int OBJECT_TYPE_SPECIAL         = -42;
 const int OBJECT_TYPE_SPHERE          = 0;
 const int OBJECT_TYPE_PLANE           = 1;
@@ -171,6 +179,7 @@ const int OBJECT_TYPE_HOLLOW_DISK     = 3;
 const int OBJECT_TYPE_CYLINDER        = 4;
 const int OBJECT_TYPE_RECTANGLE       = 5;
 const int OBJECT_TYPE_BOX             = 6;
+const int OBJECT_TYPE_CURVE           = 7;
 struct Object {
     int type;
     int index; // indexing respective arrays
@@ -180,18 +189,6 @@ struct Object {
 #define MAX_OBJECTS MAX_SPHERES + MAX_PLANES + MAX_DISKS + MAX_HOLLOW_DISKS + MAX_CYLINDERS + MAX_RECTANGLES + MAX_BOXES
 uniform int num_objects;
 uniform Object objects[MAX_OBJECTS];
-
-#define MAX_POINTS 1000
-uniform int num_test_ray_curved_points;
-uniform vec3[MAX_POINTS] test_ray_curved_points;
-uniform vec3 test_ray_flat_origin;
-uniform vec3 test_ray_flat_dir;
-uniform bool test_ray_visible = false;
-
-uniform float test_ray_radius = 0.025;
-uniform float test_ray_extended_length = 1000.;
-uniform vec4 test_ray_curved_color = vec4(1., 0., 0., 1.);
-uniform vec4 test_ray_flat_color = vec4(0., 1., 0., 1.);
 
 struct Ray {
     vec3 origin;
@@ -366,10 +363,9 @@ float square_vector(vec2 v) {
 
 vec4 calculate_lighting(HitInfo hit_info, vec3 view_dir) {
     if (hit_info.object.type == OBJECT_TYPE_SPECIAL) return vec4(0., 0., 0., 1.);
-    if (hit_info.object.type == OBJECT_TYPE_TEST_RAY_CURVED) return test_ray_curved_color;
-    if (hit_info.object.type == OBJECT_TYPE_TEST_RAY_FLAT) return test_ray_flat_color;
 
     Material material = materials[hit_info.object.material_index];
+    if (hit_info.object.type == OBJECT_TYPE_CURVE) return material.color;
     if (material.flip_normals) hit_info.tangent_space[2] *= -1.;
     if (!material.double_sided_normals && dot(hit_info.tangent_space[2], view_dir) < 0.) return vec4(0., 0., 0., 0.);
     vec2 object_uv = hit_info.tangent_coordinates;
@@ -693,6 +689,48 @@ HitInfo box_intersect(Ray ray, Box box, float max_lambda) {
     return res;
 }
 
+// project v onto target
+vec3 project(vec3 v, vec3 target) {
+    return dot(v, target) / square_vector(target) * target;
+}
+
+// keeps the direction of y constant
+mat3 gram_schmidt(mat3 m) {
+    m[0] = m[0] - project(m[0], m[1]);
+    m[2] = m[2] - project(m[2], m[1]) - project(m[2], m[0]);
+
+    m[0] = normalize(m[0]);
+    m[1] = normalize(m[1]);
+    m[2] = normalize(m[2]);
+
+    return m;
+}
+
+HitInfo curve_intersect(Ray ray, Curve curve, float max_lambda) {
+    HitInfo closest_hit;
+    closest_hit.is_hit = false;
+    if (curve.num_points < 2) return closest_hit;
+
+    for (int i = 0; i < curve.num_points - 1; i++) {
+        vec3 diff = curve.points[i + 1] - curve.points[i];
+
+        HitInfo hit = cylinder_intersect(ray, Cylinder(
+            Transform(
+                curve.points[i] + diff / 2,
+                gram_schmidt(mat3(diff.xzy, diff, diff.zxy))
+            ),
+            length(diff),
+            curve.radius
+        ), max_lambda);
+
+        if (!hit.is_hit) continue;
+
+        if (!closest_hit.is_hit || hit.dist < closest_hit.dist) closest_hit = hit;
+    }
+
+    return closest_hit;
+}
+
 HitInfo intersect_object(Ray ray, Object object, float max_lambda) {
     int object_type = object.type;
     int object_index = object.index;
@@ -728,78 +766,20 @@ HitInfo intersect_object(Ray ray, Object object, float max_lambda) {
             Box box = boxes[object_index];
             res = box_intersect(ray, box, max_lambda);
             break;
+        case OBJECT_TYPE_CURVE:
+            Curve curve = curves[object_index];
+            res = curve_intersect(ray, curve, max_lambda);
+            break;
     }
     res.object = object;
 
     return res;
 }
 
-// project v onto target
-vec3 project(vec3 v, vec3 target) {
-    return dot(v, target) / square_vector(target) * target;
-}
-
-// keeps the direction of y constant
-mat3 gram_schmidt(mat3 m) {
-    m[0] = m[0] - project(m[0], m[1]);
-    m[2] = m[2] - project(m[2], m[1]) - project(m[2], m[0]);
-
-    m[0] = normalize(m[0]);
-    m[1] = normalize(m[1]);
-    m[2] = normalize(m[2]);
-
-    return m;
-}
-
 vec4 intersect(Ray ray, float max_lambda) {
     // black hole check
     HitInfo closest_hit = sphere_intersect(ray, BLACK_HOLE, max_lambda);
     closest_hit.object.type = OBJECT_TYPE_SPECIAL;
-
-    if (test_ray_visible) {
-        HitInfo hit = cylinder_intersect(ray, Cylinder(
-            Transform(
-                test_ray_flat_origin,
-                gram_schmidt(mat3(test_ray_flat_dir.xzy, test_ray_flat_dir, test_ray_flat_dir.zxy))
-            ),
-            test_ray_extended_length,
-            test_ray_radius
-        ), max_lambda);
-
-        hit.object.type = OBJECT_TYPE_TEST_RAY_FLAT;
-
-        if(hit.is_hit && (!closest_hit.is_hit || hit.dist < closest_hit.dist)) {
-            closest_hit = hit;
-        }
-
-        // test ray curved
-        for (int i = 0; i < num_test_ray_curved_points - 1; i++) {
-            if (num_test_ray_curved_points < 2) break;
-
-            vec3 diff = test_ray_curved_points[i + 1] - test_ray_curved_points[i];
-            float test_ray_length = length(diff);
-            if (i == num_test_ray_curved_points - 2 && length(test_ray_curved_points[num_test_ray_curved_points - 1]) < 1.) {
-                test_ray_length = test_ray_extended_length;
-            }
-
-            HitInfo hit = cylinder_intersect(ray, Cylinder(
-                Transform(
-                    test_ray_curved_points[i],
-                    gram_schmidt(mat3(diff.xzy, diff, diff.zxy))
-                ),
-                test_ray_length,
-                test_ray_radius
-            ), max_lambda);
-
-            hit.object.type = OBJECT_TYPE_TEST_RAY_CURVED;
-
-            if (!hit.is_hit) continue;
-
-            if(!closest_hit.is_hit || hit.dist < closest_hit.dist) {
-                closest_hit = hit;
-            }
-        }
-    }
 
     for (int i = 0; i < num_objects; i++) {
         Object current_object = objects[i];

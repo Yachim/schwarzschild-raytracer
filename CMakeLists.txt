@@ -13,39 +13,30 @@ add_executable(schwarzschild_raytracer
 
     src/lib/Objects/Camera/camera.cpp
     src/lib/Objects/Camera/camera.h
-
     src/lib/Objects/Object/object.cpp
     src/lib/Objects/Object/object.h
-
     src/lib/Objects/Material/material.cpp
     src/lib/Objects/Material/material.h
-
     src/lib/Objects/MaterialObject/materialObject.cpp
     src/lib/Objects/MaterialObject/materialObject.h
-
     src/lib/Objects/Transform/transform.cpp
     src/lib/Objects/Transform/transform.h
-
     src/lib/Objects/Sphere/sphere.cpp
     src/lib/Objects/Sphere/sphere.h
-
     src/lib/Objects/Plane/plane.cpp
     src/lib/Objects/Plane/plane.h
-
     src/lib/Objects/Disk/disk.cpp
     src/lib/Objects/Disk/disk.h
-
     src/lib/Objects/HollowDisk/hollowDisk.cpp
     src/lib/Objects/HollowDisk/hollowDisk.h
-
     src/lib/Objects/LateralCylinder/lateralCylinder.cpp
     src/lib/Objects/LateralCylinder/lateralCylinder.h
-
     src/lib/Objects/Rectangle/rectangle.cpp
     src/lib/Objects/Rectangle/rectangle.h
-
     src/lib/Objects/Box/box.cpp
     src/lib/Objects/Box/box.h
+    src/lib/Objects/Curve/curve.cpp
+    src/lib/Objects/Curve/curve.h
 
     src/lib/Objects/Light/light.cpp
     src/lib/Objects/Light/light.h

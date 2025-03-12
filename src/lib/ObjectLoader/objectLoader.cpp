@@ -40,6 +40,7 @@ void ObjectLoader::load(GLuint program) {
     int lateralCylinderIndex = 0;
     int rectangleIndex = 0;
     int boxIndex = 0;
+    int curveIndex = 0;
 
     glUniform1i(m_numObjectsLoc, m_objects.size());
     for (size_t i = 0; i < m_objects.size(); i++) {
@@ -74,6 +75,10 @@ void ObjectLoader::load(GLuint program) {
         case ObjectType::BOX:
             glslListName = "boxes";
             index = &boxIndex;
+            break;
+        case ObjectType::CURVE:
+            glslListName = "curves";
+            index = &curveIndex;
             break;
         default:
             std::cout << "Invalid type: " << type << std::endl;

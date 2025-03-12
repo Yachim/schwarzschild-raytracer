@@ -8,12 +8,8 @@
 #include <glm/geometric.hpp>
 #include "lib/Objects/Camera/camera.h"
 #include "lib/Objects/Object/object.h"
-#include "lib/Objects/Sphere/sphere.h"
-#include "lib/Objects/Disk/disk.h"
 #include "lib/Objects/HollowDisk/hollowDisk.h"
-#include "lib/Objects/LateralCylinder/lateralCylinder.h"
-#include "lib/Objects/Rectangle/rectangle.h"
-#include "lib/Objects/Box/box.h"
+#include "lib/Objects/Curve/curve.h"
 #include "lib/utils/utils.h"
 #include "lib/image_utils/image_utils.h"
 #include "lib/Input/input.h"
@@ -23,10 +19,6 @@
 #include <sys/select.h>
 #include "lib/AnimationManager/animationManager.h"
 #include "lib/Animations/RotateAnimation/rotateAnimation.h"
-#include "lib/Animations/TrajectoryAnimation/trajectoryAnimation.h"
-#include "lib/Animations/BSplineAnimation/bSplineAnimation.h"
-#include "lib/Animations/CombinedAnimation/combinedAnimation.h"
-#include "lib/Animations/BobbingAnimation/bobbingAnimation.h"
 #include <opencv2/opencv.hpp>
 
 const uint DEFAULT_WIDTH = 640;
@@ -62,7 +54,7 @@ std::string readStdin() {
 }
 
 // FIXME: if set to true, crashes on window downsize and crashes for collapse animation
-#define EXPORT_VIDEO true
+#define EXPORT_VIDEO false
 #define OUTPUT_FPS 20
 #define VIDEO_LENGTH 9.5
 
@@ -123,7 +115,7 @@ std::vector<glm::vec3> calculateTestRayPoints(Camera& cam) {
     std::vector<glm::vec3> out = { origin };
 
     float phi = 0.;
-    for (size_t i = 0; i < MAX_STEPS; i++) {
+    for (size_t i = 0; i < MAX_STEPS - 1; i++) {
         float step_size = (MAX_TEST_RAY_ANGLE - phi) / float(MAX_STEPS - i);
         phi += step_size;
 
@@ -254,83 +246,15 @@ int main(int, char**) {
     accretionDiskSpin.setRepeating(true);
     animationManager->addAnimation(&accretionDiskSpin);
 
-    Material sunMat;
-    sunMat.setTextureIndex(0);
+    Material curvedRayMat(glm::vec4(1., 0., 0., 1.));
+    Curve curvedRay;
+    curvedRay.setMaterial(&curvedRayMat);
+    objectLoader->addObject(&curvedRay);
 
-    Sphere sun(glm::vec3(0., 0., 10.));
-    sun.setMaterial(&sunMat);
-    objectLoader->addObject(&sun);
-
-    Material rectMat;
-    rectMat.setSpecular(0.);
-    rectMat.setTextureIndex(2);
-
-    Rectangle rect(glm::vec3(0., 15., 0.));
-    rect.setMaterial(&rectMat);
-    rect.setWidth(16. / 9.);
-    rect.setAxes(glm::transpose(glm::mat3(
-        1., 0., 0.,
-        0., -1., 0.,
-        0., 0., -1.
-    )));
-    objectLoader->addObject(&rect);
-
-    RotateAnimation sunSpin(EaseType::LINEAR, 0., 5., &sun);
-    sunSpin.setRepeating(true);
-    animationManager->addAnimation(&sunSpin);
-
-    TrajectoryAnimation sunOrbitAnimation(EaseType::LINEAR, 0., 6., &sun);
-    sunOrbitAnimation.setRepeating(true);
-    sunOrbitAnimation.m_trajectory_func = [](double t) {
-        return 10.f * glm::vec3(sin(2 * M_PI * t), 0, cos(2 * M_PI * t));
-        };
-    animationManager->addAnimation(&sunOrbitAnimation);
-
-    /*Material testMat;
-    Sphere testSphere;
-    testSphere.setMaterial(&testMat);
-    testSphere.setRadius(0.25);
-    objectLoader->addObject(&testSphere);*/
-
-    BSplineAnimation camTrajectoryAnimation(EaseType::EASE_IN_OUT, 0., 4., &cam);
-    camTrajectoryAnimation.setControlPoints({
-        glm::vec3(8.4, 10.6, 8.4),
-        glm::vec3(11.8, 10.6, 0.),
-        glm::vec3(8.4, 9.9, -8.4),
-        glm::vec3(0., 8.7, -11.8),
-        glm::vec3(-8.4, 7.5, -8.4),
-        glm::vec3(-11.8, 6.9, 0.),
-        glm::vec3(-8.4, 6.2, 8.4),
-        glm::vec3(0., 5.6, 11.8),
-        glm::vec3(8.4, 5.6, 8.4),
-        });
-    camTrajectoryAnimation.animate(1.);
-    animationManager->addAnimation(&camTrajectoryAnimation);
-
-    BobbingAnimation camBobAnimation(4., 2., &cam);
-    camBobAnimation.setPoints(
-        glm::vec3(0., 5.7, 10.6666),
-        glm::vec3(0., 0.02, 0.)
-    );
-    camBobAnimation.setRepeating(false);
-    animationManager->addAnimation(&camBobAnimation);
-
-    TrajectoryAnimation camTrajectoryAnimation2(EaseType::EASE_IN_OUT, 6., 3.5, &cam);
-    camTrajectoryAnimation2.m_trajectory_func = [&](double t) {
-        const auto P0 = glm::vec3(0., 5.7, 10.6666);
-        const auto P1 = glm::vec3(0., 11.2, 8.8);
-        const auto P2 = glm::vec3(0., 13.4, 6.);
-        const auto P3 = glm::vec3(0., 14.15, 0.);
-
-        const auto O0 = glm::vec3(0., 0., 0.);
-        const auto O1 = glm::vec3(0., 0., -6.);
-        const auto O2 = glm::vec3(0., 12., 0.);
-        const auto O3 = glm::vec3(0., 15., 0.);
-        cam.lookAt(O0 + float(t) * (-3.f * O0 + 3.f * O1) + float(t) * float(t) * (3.f * O0 - 6.f * O1 + 3.f * O2) + float(t) * float(t) * float(t) * (-O0 + 3.f * O1 - 3.f * O2 + O3));
-
-        return P0 + float(t) * (-3.f * P0 + 3.f * P1) + float(t) * float(t) * (3.f * P0 - 6.f * P1 + 3.f * P2) + float(t) * float(t) * float(t) * (-P0 + 3.f * P1 - 3.f * P2 + P3);
-        };
-    animationManager->addAnimation(&camTrajectoryAnimation2);
+    Material flatRayMat(glm::vec4(0., 1., 0., 1.));
+    Curve flatRay;
+    flatRay.setMaterial(&flatRayMat);
+    objectLoader->addObject(&flatRay);
 
     Light light;
     light.setIntensity(8.);
@@ -477,20 +401,15 @@ int main(int, char**) {
 
         if (input->isPressed(GLFW_KEY_R)) {
             std::vector<glm::vec3> points = calculateTestRayPoints(cam);
-            glUniform1i(numTestRayCurvedPointsLoc, points.size());
-            for (size_t i = 0; i < points.size(); i++) {
-                glUniform3f(glGetUniformLocation(shaderProgram, ("test_ray_curved_points[" + std::to_string(i) + "]").c_str()), points[i].x, points[i].y, points[i].z);
-            }
+            curvedRay.setPoints(points);
 
             glm::vec3 dir = cam.getForward();
             glm::vec3 origin = cam.getPos() + dir * float(TEST_RAY_OFFSET);
-            glUniform3f(testRayFlatOriginLoc, origin.x, origin.y, origin.z);
-            glUniform3f(testRayFlatDirLoc, dir.x, dir.y, dir.z);
-
-            glUniform1i(testRayVisibleLoc, true);
+            flatRay.setPoints(std::vector<glm::vec3>({ origin, origin + 100.f * dir }));
         }
         if (input->isPressed(GLFW_KEY_T)) {
-            glUniform1i(testRayVisibleLoc, false);
+            flatRay.setPoints(std::vector<glm::vec3>({}));
+            curvedRay.setPoints(std::vector<glm::vec3>({}));
         }
 
         if (input->isPressed(GLFW_KEY_C)) {
